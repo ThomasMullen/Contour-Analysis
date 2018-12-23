@@ -70,43 +70,45 @@ PatientNonRecurrencew16Frac = PatientsWhoDontRecur.groupby('fractions').get_grou
 patientMapRecurrenceContainer = []
 patientMapNonRecurrenceContainer = []
 
-meanCell = []
-sdCell = []
 
 corLocal = {'200801658','200606193','200610929','200701370'}
 
-# Read in map
-for x in range(0, totalPatients):
-    name = str(PatientID.iloc[x])
-    patientMap = pd.read_csv(r"/Users/Tom/Documents/University/ProstateCode/Data/120x60 Data/"+name+".csv",header=None).as_matrix()
-
-#     Calculate Mean value for entire map
-    meanCellValue = (sum(patientMap.flatten()))/patientMap.size
-
-#     Calculate SD value for entire map    
+'''
+returns sdValue for a given patientMap
+'''
+def calcPatientMapSD(patientMap):
     sxx=0
-    for i in patientMap.flatten():
-        sxx = sxx + (i-meanCellValue)**2
+    mean = calcPatientMapMean(patientMap)
+    for radDiff in patientMap.flatten():
+        sxx = sxx + (radDiff-mean)**2
     sdValue = np.sqrt(sxx/(patientMap.size-1))
+    return (mean, sdValue)
+  
+def calcPatientMapMean(patientMap):
+    return (sum(patientMap.flatten()))/patientMap.size
 
-    if name not in corLocal:
-        meanCell.append(meanCellValue)
-        sdCell.append(sdValue)
-
-
-#    if name in atlas or name in corrupt:
-#        print("Not including patient: " + name)
-#        # Reacurrence
-#    elif Recurrence.iloc[x] == '1':
-#        patientMapRecurrenceContainer.append(patientMap)
-#    elif Recurrence.iloc[x] == 'YES':
-#        patientMapRecurrenceContainer.append(patientMap)
-#        # Non Recurrence
-#    else:
-#        patientMapNonRecurrenceContainer.append(patientMap)
-#        # print
+def loadPatientMap(dataDirectory, patientId): 
+    file = r"%s/%s.csv"%(dataDirectory,patientId)
+    return pd.read_csv(file,header=None).as_matrix()
 
 
+   
+      
+# Read in map
+dataDirectory = r"/Users/Tom/Documents/University/ProstateCode/Data/120x60 Data"   
+
+def extractPatientSDVals(dataDir, allPatientsDF):
+    meanCell = []
+    sdCell = []
+    totalPatients = len(allPatientsDF)
+    for x in range(0, totalPatients):
+        name = str(allPatientsDF["patientList"].iloc[x])
+        if name not in corLocal:
+            patientMap = loadPatientMap(dataDirectory, name)
+            (mean, sdValue) = calcPatientMapSD(patientMap) 
+            meanCell.append(mean)
+            sdCell.append(sdValue)
+    return (meanCell,sdCell)
 
 # =============================================================================
 # Make arrays for theta and phi axes labels
@@ -120,28 +122,29 @@ for x in range(0, totalPatients):
 ## Define ticks
 #phi[0] = 0; phi[30] = 90; phi[60] = 180; phi[90] = 270; phi[119] = 360;
 #theta[0] = -90; theta[30] = 0; theta[59] = 90
+def plotHist(data, colour):
+    result=plt.hist(data,bins=50, alpha=0.5, label='map mean',color=colour)
+    plt.xlabel('single value')
+    plt.ylabel('Frequency')
+    plt.legend(loc='upper left')
+    plt.xlim((min(data), max(data)))
+    #mean = np.mean(meanCell)
+    #variance = np.var(meanCell)
+    #sigma = np.sqrt(variance)
+    #x = np.linspace(min(meanCell), max(meanCell), 100)
+    #plt.plot(x, mlab.normpdf(x, mean, sigma))
+    plt.show()
 
-result=plt.hist(meanCell,bins=50, alpha=0.5, label='map mean',color='red')
-plt.xlabel('single value')
-plt.ylabel('Frequency')
-plt.legend(loc='upper left')
-plt.xlim((min(meanCell), max(meanCell)))
 
-#mean = np.mean(meanCell)
-#variance = np.var(meanCell)
-#sigma = np.sqrt(variance)
-#x = np.linspace(min(meanCell), max(meanCell), 100)
-#plt.plot(x, mlab.normpdf(x, mean, sigma))
-
-plt.show()
 
 # Note: patients out of range +-10: 200801658, 200606193, 200610929, 200701370
+#
+#plt.hist(sdCell, 50, alpha=0.5, label='map spread',normed=True,color='green')
+#plt.xlabel('single value')
+#plt.ylabel('Frequency')
+#plt.legend(loc='upper left')
+#plt.show()
 
-plt.hist(sdCell, 50, alpha=0.5, label='map spread',normed=True,color='green')
-plt.xlabel('single value')
-plt.ylabel('Frequency')
-plt.legend(loc='upper left')
-plt.show()
 # Note: patients above 5: 200801658 21.701085922156444, 200606193 25.6532265835603, 200610929 19.887989619324294, 200701370 22.627171920841946
 
 
@@ -157,3 +160,13 @@ plt.show()
 #print(str(AllPatients.query("patientList == 200606193").patientNumber))
 #print(str(AllPatients.query("patientList == 200600383").patientNumber))
 #print(str(AllPatients.query("patientList == 200511824").patientNumber))
+    
+    
+    
+def main():
+    (meanVals, sdVals) =  extractPatientSDVals(dataDirectory,AllPatients)
+    plotHist(meanVals, 'red')
+    plotHist(sdVals, 'blue')
+    
+    
+main()
