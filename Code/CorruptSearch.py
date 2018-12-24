@@ -15,8 +15,8 @@ import matplotlib.pyplot as plt
 # Load patients list data for all fractions
 # =============================================================================
 
-Patients1920Frac = pd.read_csv(r"/Users/Tom/Documents/University/ProstateCode/Data/60x60 Data/GlobalDifference/AllData19Frac.csv")
-PatientsOld16Frac = pd.read_csv(r"/Users/Tom/Documents/University/ProstateCode/Data/60x60 Data/GlobalDifference/AllDataOld16Frac.csv")
+Patients1920Frac = pd.read_csv(r"../Data/60x60 Data/GlobalDifference/AllData19Frac.csv")
+PatientsOld16Frac = pd.read_csv(r"../Data/60x60 Data/GlobalDifference/AllDataOld16Frac.csv")
 SaveDirect = "/Users/Tom/Documents/University/ProstateCode/LocalAnalysis/Final/"
 #PatientsNew16Frac = pd.read_csv(r"C:/Users/Alexander/Documents/4th_year/Lab/Data/60x60Data/GlobalDifference/AllDataNew16Frac.csv")
 
@@ -72,7 +72,7 @@ patientMapNonRecurrenceContainer = []
 # # Read in map
 # for x in range(0, totalPatients):
 #     name = str(PatientID.iloc[x])
-#     patientMap = pd.read_csv(r"/Users/Tom/Documents/University/ProstateCode/Data/120x60 Data/"+name+".csv",header=None)
+#     patientMap = pd.read_csv(r"../Data/120x60 Data/"+name+".csv",header=None)
 # #    plt.imshow(patientMap, cmap='hot', interpolation='nearest')
 # #    plt.show()
 # #    print(name)
@@ -101,7 +101,7 @@ for i in range(0,60):
 phi[0] = 0; phi[30] = 90; phi[60] = 180; phi[90] = 270; phi[119] = 360;
 theta[0] = -90; theta[30] = 0; theta[59] = 90
 
-mapCor=pd.read_csv(r"/Users/Tom/Documents/University/ProstateCode/Data/120x60 Data/200700427.csv",header=None)
+mapCor=pd.read_csv(r"../Data/120x60 Data/200700427.csv",header=None)
 corruptMap = sns.heatmap(mapCor, center=0,xticklabels=phi,yticklabels=theta)
 corruptMap.set(ylabel='Theta, $\dot{\Theta}$', xlabel='Azimutal, $\phi$')
 plt.show()
