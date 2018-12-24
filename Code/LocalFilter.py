@@ -9,7 +9,7 @@ Created on Thu Dec 13 16:25:18 2018
 import numpy as np
 import pandas as pd
 import seaborn as sns;
-import collections
+
 from Code.AllPatients import AllPatients
 
 sns.set()
@@ -71,7 +71,6 @@ class PatientCalcResults:
 returns sdValue for a given patientMap
 '''
 
-RadialStats = collections.namedtuple('RadialStats', 'mean sd')
 
 def calcPatientMapSD(patientMap):
     sxx = 0
@@ -79,7 +78,7 @@ def calcPatientMapSD(patientMap):
     for radDiff in patientMap.flatten():
         sxx = sxx + (radDiff - mapMean) ** 2
     sdValue = np.sqrt(sxx / (patientMap.size - 1))
-    return RadialStats(mean=mapMean, sd=sdValue)
+    return (mapMean, sdValue)
 
 #
 # def calcPatientMapMean(patientMap):
@@ -121,13 +120,19 @@ def calcPatientMapSD2(dataDir, patientId):
     result =  calcPatientMapSD(matrix)
     return result
 
+def calcPatientMapSD2_mean(dataDir, patientId):
+    (m, s) =  calcPatientMapSD2(dataDir, patientId)
+    return m
+
+def calcPatientMapSD2_sd(dataDir, patientId):
+    (m, s) = calcPatientMapSD2(dataDir, patientId)
+    return s
+
 
 def addCalcCols(dataDir, allPatientsDF):
-
-    df = allPatientsDF.assign(radMapStats=lambda df: df["patientList"].map(lambda x: calcPatientMapSD2(dataDir, x)))
-    df2 = df.apply(mean=lambda df: calcPatientMapSD2(dataDir, df.radMapStats._1))
-    df3 = df2.apply(sd=lambda df: calcPatientMapSD2(dataDir, df["radMapStats"])._2))
-    return df3
+    df = allPatientsDF.assign(mean=lambda df: df["patientList"].map(lambda x: calcPatientMapSD2_mean(dataDir, x)))
+    df2 = df.assign(sd=lambda df: df["patientList"].map(lambda x: calcPatientMapSD2_sd(dataDir, x)))
+    return df2
 
 
 # =============================================================================
