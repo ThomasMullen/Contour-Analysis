@@ -14,7 +14,7 @@ from Code.AllPatients import AllPatients, recurrenceGroups
 
 sns.set()
 import matplotlib.pyplot as plt
-import matplotlib.mlab as mlab
+
 
 # =============================================================================
 # Load patients list data for all fractions
@@ -22,33 +22,21 @@ import matplotlib.mlab as mlab
 
 SaveDirect = "/Users/Tom/Documents/University/ProstateCode/LocalAnalysis/Final/"
 
-# =============================================================================
-# Specify the corrupt patients to be filtered out of analysis
-# =============================================================================
-
-# List the patient ID's of those who are contained in our ATLAS and have corrupted local maps & prothesis
-atlas = {'200806930', '201010804', '201304169', '201100014', '201205737', '201106120', '201204091', '200803943',
-         '200901231', '200805565', '201101453', '200910818', '200811563', '201014420'}
-
-'''we have identified these corrupted from previous contour. we need to check '''
-expected_corrupt_to_check = {'200701370','200700427','200610929','200606193','200600383','200511824', '196708754','200801658','201201119','200911702','200701370','200700427','200610929','200606193','200600383','200511824'}
 
 
-allPatients = AllPatients(r"../Data/OnlyProstateResults/Global",
-                          ['AllData19Frac', 'AllData16Frac_old', 'AllData16Frac', 'AllData19Frac_old'])
-allPatients.removePatients(atlas)
 
 # =============================================================================
 # Group the patients by fractions, and recurrence
 # =============================================================================
-(PatientsWhoRecur, PatientsWhoDontRecur) = allPatients.recurrenceGroups()
+def patientRecurrenceFracs():
+    (PatientsWhoRecur, PatientsWhoDontRecur) = load_global_patients().recurrenceGroups()
 
-# Group patients with fractions
-PatientRecurrencew19Frac = PatientsWhoRecur.groupby('Fractions').get_group(19)
-PatientRecurrencew16Frac = PatientsWhoRecur.groupby('Fractions').get_group(16)
-PatientNonRecurrencew20Frac = PatientsWhoDontRecur.groupby('Fractions').get_group(20)
-PatientNonRecurrencew19Frac = PatientsWhoDontRecur.groupby('Fractions').get_group(19)
-PatientNonRecurrencew16Frac = PatientsWhoDontRecur.groupby('Fractions').get_group(16)
+    # Group patients with fractions
+    PatientRecurrencew19Frac = PatientsWhoRecur.groupby('Fractions').get_group(19)
+    PatientRecurrencew16Frac = PatientsWhoRecur.groupby('Fractions').get_group(16)
+    PatientNonRecurrencew20Frac = PatientsWhoDontRecur.groupby('Fractions').get_group(20)
+    PatientNonRecurrencew19Frac = PatientsWhoDontRecur.groupby('Fractions').get_group(19)
+    PatientNonRecurrencew16Frac = PatientsWhoDontRecur.groupby('Fractions').get_group(16)
 
 # =============================================================================
 # # Read in the patients map and store in correct container
@@ -59,20 +47,6 @@ patientMapNonRecurrenceContainer = []
 
 corLocal = {'200801658', '200606193', '200610929', '200701370'}
 
-'''class to hold calculated data for a givient patient'''
-
-
-class PatientCalcResults:
-    def __init__(self, name, matrix):
-        self.name = name
-        self.matrix = matrix
-
-
-'''
-returns sdValue for a given patientMap
-'''
-
-
 def calcPatientMapSD(patientMap):
     sxx = 0
     mapMean = (sum(patientMap.flatten())) / patientMap.size
@@ -81,39 +55,25 @@ def calcPatientMapSD(patientMap):
     sdValue = np.sqrt(sxx / (patientMap.size - 1))
     return (mapMean, sdValue)
 
-#
-# def calcPatientMapMean(patientMap):
-#     return (sum(patientMap.flatten())) / patientMap.size
-#
-# #
-#
-# def loadPatientMap(dataDirectory, patientId):
-#     file = r"%s/%s.csv" % (dataDirectory, patientId)
-#     matrix = pd.read_csv(file, header=None).as_matrix()
-#     return PatientCalcResults(patientId, matrix)
-#
-# #
-# # # Read in map
-# class SDVAlResult:
-#     def __init__(self, patientId, mean, sd):
-#         self.patientId = patientId
-#         self.mean = mean
-#         self.sd = sd
 
-#
-# def extractPatientSDVals(dataDir, allPatientsDF):
-#     meanCell = []
-#     sdCell = []
-#     totalPatients = len(allPatientsDF)
-#     for x in range(0, totalPatients):
-#         name = str(allPatientsDF["patientList"].iloc[x])
-#         if name not in corLocal:
-#             patientMap = loadPatientMap(dataDir, name)
-#             (mean, sdValue) = calcPatientMapSD(patientMap.matrix)
-#             meanCell.append(mean)
-#             sdCell.append(sdValue)
-#     return (meanCell, sdCell)
-#
+'''
+Specify the corrupt patients to be filtered out of analysis
+# ===================================================================
+'''
+def load_global_patients():
+    # List the patient ID's of those who are contained in our ATLAS and have corrupted local maps & prothesis
+    atlas = {'200806930', '201010804', '201304169', '201100014', '201205737', '201106120', '201204091', '200803943',
+             '200901231', '200805565', '201101453', '200910818', '200811563', '201014420'}
+
+    '''we have identified these corrupted from previous contour. we need to check '''
+    expected_corrupt_to_check = {'200701370', '200700427', '200610929', '200606193', '200600383', '200511824',
+                                 '196708754', '200801658', '201201119', '200911702', '200701370', '200700427',
+                                 '200610929', '200606193', '200600383', '200511824'}
+
+    allPatients = AllPatients(r"../Data/OnlyProstateResults/Global",
+                              ['AllData19Frac', 'AllData16Frac_old', 'AllData16Frac', 'AllData19Frac_old'])
+    allPatients.removePatients(atlas)
+    return allPatients
 
 def calcPatientMapSD2(dataDir, patientId):
     file = r"%s/%s.csv" % (dataDir, patientId)
@@ -191,20 +151,27 @@ def partition_patient_data_with_outliers( data, lower_bound, upper_bound):
     return (selected_patients, lower_patients_outliers, upper_patients_outliers)
 
 
-def main():
+
+def test_filtered():
     dataDirectory = r"../Data/OnlyProstateResults/AllFields"
     outputDirectory = r"../outputResults"
     # (meanVals, sdVals) = extractPatientSDVals(dataDirectory, allPatients.allPatients)
-    enhancedDF = radial_mean_sd_for_patients(dataDirectory, allPatients.allPatients)
-    selected_patients, lower_patients_outliers, upper_patients_outliers = partition_patient_data_with_outliers(enhancedDF, 10, 90)
-    lower_patients_outliers.to_csv('%s/lower_patients_outliers.csv'%outputDirectory)
-    upper_patients_outliers.to_csv('%s/upper_patients_outliers.csv'%outputDirectory)
+    rawPatientData = load_global_patients()
+    enhancedDF = radial_mean_sd_for_patients(dataDirectory, rawPatientData.allPatients)
+    selected_patients, lower_patients_outliers, upper_patients_outliers = partition_patient_data_with_outliers(
+        enhancedDF, 10, 90)
+    lower_patients_outliers.to_csv('%s/lower_patients_outliers.csv' % outputDirectory)
+    upper_patients_outliers.to_csv('%s/upper_patients_outliers.csv' % outputDirectory)
 
     patient_who_recur, patients_who_dont_recur = recurrenceGroups(selected_patients)
 
     plotHist(patient_who_recur['sd'], 'blue', 75, "Standard Deviation of Radial Difference recurrence")
     plotHist(patients_who_dont_recur['sd'], 'green', 75, "Standard Deviation of Radial Difference no recurrence ")
-    # print(upper_patients.head())
+
+
+def main():
+    test_filtered
+
 if __name__ == '__main__':
     main()
 # TODO Cut off upper 10 percentile for local sd
