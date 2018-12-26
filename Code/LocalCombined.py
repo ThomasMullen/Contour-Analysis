@@ -55,67 +55,14 @@ def test_local_field():
     # upper_patients_outliers.to_csv('%s/upper_patients_outliers.csv' % outputDirectory)
 
     patient_who_recur, patients_who_dont_recur = recurrenceGroups(selected_patients)
-    (meanRecurrence, varRecurrence, stdRecurrence) = load_local_field_recurrence(patients_who_dont_recur, dataDirectory)
-    plot_heat_map(meanRecurrence, 'meanRecurrence - patients_who_dont_recur')
-
+    (meanMap, varMap, stdMap) = load_local_field_recurrence(patient_who_recur, dataDirectory)
+    plot_heat_map(meanMap, 'mean map - patients_who_recur')
+    plot_heat_map(varMap, 'variance map - patients_who_recur')
+    plot_heat_map(stdMap, 'standard deviation map - patients_who_recur')
 
 if __name__ == '__main__':
     test_local_field()
 
-# -----------------------------------------------------------------------------------------------------------------------
-# # Read in map
-# for x in range(0, totalPatients):
-#     name = str(PatientID.iloc[x])
-#     patientMap = pd.read_csv(r"/Users/Tom/Documents/University/ProstateCode/Data/120x60 Data/"+name+".csv",header=None)
-# #    plt.imshow(patientMap, cmap='hot', interpolation='nearest')
-# #    plt.show()
-# #    print(name)
-#     if name in atlas or name in corrupt:
-#         print("Not including patient: " + name)
-#         # Reacurrence
-#     elif Recurrence.iloc[x] == '1':
-#         patientMapRecurrenceContainer.append(patientMap)
-#     elif Recurrence.iloc[x] == 'YES':
-#         patientMapRecurrenceContainer.append(patientMap)
-#         # Non Recurrence
-#     else:
-#         patientMapNonRecurrenceContainer.append(patientMap)
-#         # print
-#
-# # =============================================================================
-# #  Create Mean Patient Map
-# # =============================================================================
-#
-# # Calculate Mean and Variance Heat map for patient recurrence
-# totalRecurrencePatients = pd.concat(patientMapRecurrenceContainer)
-# by_row_indexRec = totalRecurrencePatients.groupby(totalRecurrencePatients.index)
-# meanRecurrence = by_row_indexRec.mean()
-# varRecurrence = by_row_indexRec.var()
-# stdRecurrence = by_row_indexRec.std()
-#
-# # Calculate Mean and Variance Heat map for patient non-recurrence
-# totalNonRecurrencePatients = pd.concat(patientMapNonRecurrenceContainer)
-# by_row_indexNonRec = totalNonRecurrencePatients.groupby(totalNonRecurrencePatients.index)
-# meanNonRecurrence = by_row_indexNonRec.mean()
-# varNonRecurrence = by_row_indexNonRec.var()
-#
-# # =============================================================================
-# # Make arrays for theta and phi axes labels
-# # =============================================================================
-# # Create Arrays
-# phi = []; theta =[]
-# for i in range(0,120):
-#     phi.append('')
-# for i in range(0,60):
-#     theta.append('')
-# # Define ticks
-# phi[0] = 0; phi[30] = 90; phi[60] = 180; phi[90] = 270; phi[119] = 360;
-# theta[0] = -90; theta[30] = 0; theta[59] = 90
-#
-# mapCor=pd.read_csv(r"/Users/Tom/Documents/University/ProstateCode/Data/120x60 Data/200700427.csv",header=None)
-# corruptMap = sns.heatmap(mapCor, center=0,xticklabels=phi,yticklabels=theta)
-# corruptMap.set(ylabel='Theta, $\dot{\Theta}$', xlabel='Azimutal, $\phi$')
-# plt.show()
 # # =============================================================================
 # # # Display 2D Heat maps
 # # =============================================================================
