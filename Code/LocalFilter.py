@@ -29,8 +29,10 @@ SaveDirect = "/Users/Tom/Documents/University/ProstateCode/LocalAnalysis/Final/"
 # List the patient ID's of those who are contained in our ATLAS and have corrupted local maps & prothesis
 atlas = {'200806930', '201010804', '201304169', '201100014', '201205737', '201106120', '201204091', '200803943',
          '200901231', '200805565', '201101453', '200910818', '200811563', '201014420'}
-# corrupt = {'196708754','200801658','201201119','200911702','200701370','200700427','200610929','200606193','200600383','200511824'}
-# corrupt16frac = {'200701370','200700427','200610929','200606193','200600383','200511824'}
+
+'''we have identified these corrupted from previous contour. we need to check '''
+expected_corrupt_to_check = {'200701370','200700427','200610929','200606193','200600383','200511824', '196708754','200801658','201201119','200911702','200701370','200700427','200610929','200606193','200600383','200511824'}
+
 
 allPatients = AllPatients(r"../Data/OnlyProstateResults/Global",
                           ['AllData19Frac', 'AllData16Frac_old', 'AllData16Frac', 'AllData19Frac_old'])
@@ -39,7 +41,6 @@ allPatients.removePatients(atlas)
 # =============================================================================
 # Group the patients by fractions, and recurrence
 # =============================================================================
-
 (PatientsWhoRecur, PatientsWhoDontRecur) = allPatients.recurrenceGroups()
 
 # Group patients with fractions
@@ -138,15 +139,7 @@ def addCalcCols(dataDir, allPatientsDF):
 # =============================================================================
 # Make arrays for theta and phi axes labels
 # =============================================================================
-# Create Arrays
-# phi = []; theta =[]
-# for i in range(0,120):
-#    phi.append('')
-# for i in range(0,60):
-#    theta.append('')
-## Define ticks
-# phi[0] = 0; phi[30] = 90; phi[60] = 180; phi[90] = 270; phi[119] = 360;
-# theta[0] = -90; theta[30] = 0; theta[59] = 90
+
 def plotHist(data, colour, bin, name="Single Value"):
     result = plt.hist(data, bins=bin, alpha=0.5, label='map mean', color=colour)
     plt.xlabel(name)
@@ -161,28 +154,31 @@ def plotHist(data, colour, bin, name="Single Value"):
     plt.show()
 
 
-# Not
-# read',normed=True,color='green')
-# plt.xlabel('single value')
-# plt.ylabel('Frequency')
-# plt.legend(loc='upper left')
-# plt.show()
+'''
+plots a heat map of patients radial map: expect df of local field passed in.
+'''
+def plot_heat_map(data,title):
+    phi = [];
+    theta = []
+    for i in range(0, 120):
+        phi.append('')
+    for i in range(0, 60):
+        theta.append('')
+    # Define ticks
+    phi[0] = 0;
+    phi[30] = 90;
+    phi[60] = 180;
+    phi[90] = 270;
+    phi[119] = 360;
+    theta[0] = -90;
+    theta[30] = 0;
+    theta[59] = 90
+    map = data.as_matrix()
+    heat_map = sns.heatmap(map, center=0, xticklabels=phi, yticklabels=theta)
+    heat_map.set(ylabel='Theta, $\dot{\Theta}$', xlabel='Azimutal, $\phi$', title = title)
+    plt.show()
 
-# Note: patients above 5: 200801658 21.701085922156444, 200606193 25.6532265835603, 200610929 19.887989619324294, 200701370 22.627171920841946
 
-
-# mapCor=pd.read_csv(r"../Data/120x60 Data/200700427.csv",header=None).as_matrix()
-# corruptMap = sns.heatmap(mapCor, center=0,xticklabels=phi,yticklabels=theta)
-# corruptMap.set(ylabel='Theta, $\dot{\Theta}$', xlabel='Azimutal, $\phi$')
-# plt.show()
-#
-## Print patient number of corrupt maps
-# print(str(AllPatients.query("patientList == 200701370").patientNumber))
-# print(str(AllPatients.query("patientList == 200700427").patientNumber))
-# print(str(AllPatients.query("patientList == 200610929").patientNumber))
-# print(str(AllPatients.query("patientList == 200606193").patientNumber))
-# print(str(AllPatients.query("patientList == 200600383").patientNumber))
-# print(str(AllPatients.query("patientList == 200511824").patientNumber))
 
 def main():
     dataDirectory = r"../Data/OnlyProstateResults/AllFields"
