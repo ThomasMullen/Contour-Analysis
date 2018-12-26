@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns;
 
-from Code.AllPatients import AllPatients
+from Code.AllPatients import AllPatients, recurrenceGroups
 
 sns.set()
 import matplotlib.pyplot as plt
@@ -129,8 +129,10 @@ def calcPatientMapSD2_sd(dataDir, patientId):
     (m, s) = calcPatientMapSD2(dataDir, patientId)
     return s
 
-
-def addCalcCols(dataDir, allPatientsDF):
+'''
+Finds the Mean and the SD of the radial difference at each solid angle for each patient. And appends data to global patient df
+'''
+def radial_mean_sd_for_patients(dataDir, allPatientsDF):
     df = allPatientsDF.assign(mean=lambda df: df["patientList"].map(lambda x: calcPatientMapSD2_mean(dataDir, x)))
     df2 = df.assign(sd=lambda df: df["patientList"].map(lambda x: calcPatientMapSD2_sd(dataDir, x)))
     return df2
@@ -141,7 +143,7 @@ def addCalcCols(dataDir, allPatientsDF):
 # =============================================================================
 
 def plotHist(data, colour, bin, name="Single Value"):
-    result = plt.hist(data, bins=bin, alpha=0.5, label='map mean', color=colour)
+    result = plt.hist(data, bins=bin, alpha=0.5, label='map sd value', color=colour)
     plt.xlabel(name)
     plt.ylabel('Frequency')
     plt.legend(loc='upper left')
@@ -178,25 +180,30 @@ def plot_heat_map(data,title):
     heat_map.set(ylabel='Theta, $\dot{\Theta}$', xlabel='Azimutal, $\phi$', title = title)
     plt.show()
 
+def partition_patient_data_with_outliers( data, lower_bound, upper_bound):
+
+    lower_cut_off = np.percentile(data['sd'], lower_bound)
+    upper_cut_off = np.percentile(data['sd'], upper_bound)
+    print("%s, %s" % (lower_cut_off, upper_cut_off))
+    selected_patients = data[data.sd.between(lower_cut_off, upper_cut_off)]
+    lower_patients_outliers = data[data.sd < lower_cut_off]
+    upper_patients_outliers = data[data.sd > upper_cut_off]
+    return (selected_patients, lower_patients_outliers, upper_patients_outliers)
 
 
 def main():
     dataDirectory = r"../Data/OnlyProstateResults/AllFields"
     outputDirectory = r"../outputResults"
     # (meanVals, sdVals) = extractPatientSDVals(dataDirectory, allPatients.allPatients)
+    enhancedDF = radial_mean_sd_for_patients(dataDirectory, allPatients.allPatients)
+    selected_patients, lower_patients_outliers, upper_patients_outliers = partition_patient_data_with_outliers(enhancedDF, 10, 90)
+    lower_patients_outliers.to_csv('%s/lower_patients_outliers.csv'%outputDirectory)
+    upper_patients_outliers.to_csv('%s/upper_patients_outliers.csv'%outputDirectory)
 
-    enhancedDF = addCalcCols(dataDirectory, allPatients.allPatients)
-    lower_cut_off = np.percentile(enhancedDF['sd'],10)
-    upper_cut_off = np.percentile(enhancedDF['sd'], 90)
-    print("%s, %s" % (lower_cut_off,upper_cut_off))
-    selected_patients = enhancedDF[enhancedDF.sd.between(0.224015772555, 0.656248627237)]
-    lower_patients_outliers = enhancedDF[enhancedDF.sd < 0.224015772555].to_csv('%s/lower_patients_outliers.csv'%outputDirectory)
-    upper_patients_outliers = enhancedDF[enhancedDF.sd > 0.656248627237].to_csv('%s/upper_patients_outliers.csv'%outputDirectory)
+    patient_who_recur, patients_who_dont_recur = recurrenceGroups(selected_patients)
 
-
-
-    plotHist(enhancedDF['sd'], 'blue', 75, "Standard Deviation of Radial Difference with full data")
-    plotHist(selected_patients['sd'], 'green', 75, "Standard Deviation of Radial Difference with outliers removed ")
+    plotHist(patient_who_recur['sd'], 'blue', 75, "Standard Deviation of Radial Difference recurrence")
+    plotHist(patients_who_dont_recur['sd'], 'green', 75, "Standard Deviation of Radial Difference no recurrence ")
     # print(upper_patients.head())
 if __name__ == '__main__':
     main()

@@ -4,6 +4,19 @@ from collections import namedtuple
 
 
 
+'''
+Group patients by recurrence 
+returns named tuple of PatientsWhoRecur, PatientsWhoDontRecur from the 
+'''
+def recurrenceGroups(allPatients):
+    # Group patients by recurrence
+    AllPatientsGrouped = allPatients.groupby('Recurrence')
+    PatientsWhoRecur = pd.concat([AllPatientsGrouped.get_group('1'), AllPatientsGrouped.get_group('YES')])
+    PatientsWhoDontRecur = pd.concat([AllPatientsGrouped.get_group('0'), AllPatientsGrouped.get_group('censor'),
+                                      AllPatientsGrouped.get_group('NO')])
+    return PatientsWhoRecur, PatientsWhoDontRecur
+
+
 class AllPatients:
     def __init__(self, dataDir, fileNames):
         filePath = r'%s/%s.csv' % (dataDir, fileNames[0])
@@ -20,12 +33,7 @@ class AllPatients:
     returns named tuple of PatientsWhoRecur, PatientsWhoDontRecur from the 
     '''
     def recurrenceGroups(self):
-        # Group patients by recurrence
-        AllPatientsGrouped = self.allPatients.groupby('Recurrence')
-        PatientsWhoRecur = pd.concat([AllPatientsGrouped.get_group('1'), AllPatientsGrouped.get_group('YES')])
-        PatientsWhoDontRecur = pd.concat([AllPatientsGrouped.get_group('0'), AllPatientsGrouped.get_group('censor'),
-                                          AllPatientsGrouped.get_group('NO')])
-        return PatientsWhoRecur, PatientsWhoDontRecur
+        return recurrenceGroups(self.allPatients)
 
 
 
