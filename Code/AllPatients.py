@@ -21,7 +21,7 @@ class AllPatients:
     def __init__(self, dataDir, fileNames):
         filePath = r'%s/%s.csv' % (dataDir, fileNames[0])
         # TODO remove random sample
-        dataFrames = [pd.read_csv(r'%s/%s.csv' % (dataDir, x)).sample(n=100) for x in fileNames]
+        dataFrames = [pd.read_csv(r'%s/%s.csv' % (dataDir, x)) for x in fileNames]
         self.allPatients = pd.concat(dataFrames)
         self.originalAllPatients = self.allPatients
 
