@@ -106,19 +106,22 @@ def plotHist(data, colour, bin, name="Single Value"):
     plt.xlabel(name)
     plt.ylabel('Frequency')
     plt.legend(loc='upper left')
-    plt.xlim((min(data), max(data)))
-    # mean = np.mean(meanCell)
-    # variance = np.var(meanCell)
-    # sigma = np.sqrt(variance)
-    # x = np.linspace(min(meanCell), max(meanCell), 100)
-    # plt.plot(x, mlab.normpdf(x, mean, sigma))
+    # plt.xlim((min(data), max(data)))
     plt.show()
 
+def plotHist2(data1, colour1, bin1, data2, colour2, bin2, name="Single Value"):
+    plt.hist(data1, bins=bin1, alpha=0.5, label='Recurrence', color=colour1)
+    plt.hist(data2, bins=bin2, alpha=0.5, label='No Recurrence', color=colour2)
+    plt.xlabel(name)
+    plt.ylabel('Frequency')
+    plt.legend(loc='upper left')
+    # plt.xlim((min(data1), max(data1)))
+    plt.show()
 
 '''
 plots a heat map of patients radial map: expect df of local field passed in.
 '''
-def plot_heat_map(data,title):
+def plot_heat_map(data, title=" "):
     phi = [];
     theta = []
     for i in range(0, 120):
@@ -149,7 +152,9 @@ def partition_patient_data_with_outliers( data, lower_bound, upper_bound):
     upper_patients_outliers = data[data.sd > upper_cut_off]
     return (selected_patients, lower_patients_outliers, upper_patients_outliers)
 
-
+def return_patient_sample_range(data, size, lower_bound, upper_bound):
+    selected_patients, lower_patients_outliers, upper_patients_outliers = partition_patient_data_with_outliers(data, lower_bound, upper_bound)
+    return selected_patients.sample(n=size)
 
 def test_filtered():
     dataDirectory = r"../Data/OnlyProstateResults/AllFields"
@@ -162,14 +167,35 @@ def test_filtered():
     lower_patients_outliers.to_csv('%s/lower_patients_outliers.csv' % outputDirectory)
     upper_patients_outliers.to_csv('%s/upper_patients_outliers.csv' % outputDirectory)
 
-    patient_who_recur, patients_who_dont_recur = recurrenceGroups(selected_patients)
+    patients_who_recur, patients_who_dont_recur = recurrenceGroups(selected_patients)
+    # # Plot Histograms with raw data
+    # all_patients_with_recurrence, all_patients_without_recurrence = recurrenceGroups(enhancedDF)
+    # plotHist2(all_patients_with_recurrence['sd'], 'red', 75,all_patients_without_recurrence['sd'],'green',75, "Standard Deviation of Radial Difference")
+    # plotHist(all_patients_with_recurrence['sd'], 'red', 75, "Standard Deviation of Radial Difference Recurrence")
+    # plotHist(all_patients_without_recurrence['sd'], 'green', 75, "Standard Deviation of Radial Difference no Recurrence")
+    # plotHist2(all_patients_with_recurrence['sd'], 'blue', 25,all_patients_without_recurrence['sd'],'blue',25, "Standard Deviation of Radial Difference")
+    #
+    # # Plot Histgrams with patients radial Difference SD (cut)
+    # plotHist2(patients_who_recur['sd'], 'red', 75,patients_who_dont_recur['sd'],'green',75, "Standard Deviation of Radial Difference")
+    # plotHist(patients_who_recur['sd'], 'red', 75, "Standard Deviation of Radial Difference Recurrence")
+    # plotHist(patients_who_dont_recur['sd'], 'green', 75, "Standard Deviation of Radial Difference no Recurrence")
+    # plotHist2(patients_who_recur['sd'], 'red', 25,patients_who_dont_recur['sd'],'green',25, "Standard Deviation of Radial Difference")
+    # plotHist(patients_who_recur['sd'], 'red', 25, "Standard Deviation of Radial Difference Recurrence")
+    # plotHist(patients_who_dont_recur['sd'], 'green', 25, "Standard Deviation of Radial Difference no Recurrence")
 
-    plotHist(patient_who_recur['sd'], 'blue', 75, "Standard Deviation of Radial Difference recurrence")
-    plotHist(patients_who_dont_recur['sd'], 'green', 75, "Standard Deviation of Radial Difference no recurrence ")
+#     Output sample of patients within certain percentiles
+    sample1 = return_patient_sample_range(enhancedDF,5,10,20)
+    sample1.to_csv('%s/sample_set1.csv' % outputDirectory)
+    sample2 = return_patient_sample_range(enhancedDF, 5, 30, 50)
+    sample2.to_csv('%s/sample_set2.csv' % outputDirectory)
+    sample3 = return_patient_sample_range(enhancedDF, 5, 50, 80)
+    sample3.to_csv('%s/sample_set3.csv' % outputDirectory)
+    sample4 = return_patient_sample_range(enhancedDF, 5, 80, 90)
+    sample4.to_csv('%s/sample_set4.csv' % outputDirectory)
 
 
 def main():
-    test_filtered
+    test_filtered()
 
 if __name__ == '__main__':
     main()
