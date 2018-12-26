@@ -161,9 +161,8 @@ def plotHist(data, colour, bin, name="Single Value"):
     plt.show()
 
 
-# Note: patients out of range +-10: 200801658, 200606193, 200610929, 200701370
-#
-# plt.hist(sdCell, 50, alpha=0.5, label='map spread',normed=True,color='green')
+# Not
+# read',normed=True,color='green')
 # plt.xlabel('single value')
 # plt.ylabel('Frequency')
 # plt.legend(loc='upper left')
@@ -185,16 +184,27 @@ def plotHist(data, colour, bin, name="Single Value"):
 # print(str(AllPatients.query("patientList == 200600383").patientNumber))
 # print(str(AllPatients.query("patientList == 200511824").patientNumber))
 
-
 def main():
     dataDirectory = r"../Data/OnlyProstateResults/AllFields"
+    outputDirectory = r"../outputResults"
     # (meanVals, sdVals) = extractPatientSDVals(dataDirectory, allPatients.allPatients)
 
     enhancedDF = addCalcCols(dataDirectory, allPatients.allPatients)
-    plotHist(enhancedDF['mean'], 'red', 75, "Mean Radial Difference")
-    plotHist(enhancedDF['sd'], 'blue', 75, "Standard Deviation of Radial Difference")
-    #
+    lower_cut_off = np.percentile(enhancedDF['sd'],10)
+    upper_cut_off = np.percentile(enhancedDF['sd'], 90)
+    print("%s, %s" % (lower_cut_off,upper_cut_off))
+    selected_patients = enhancedDF[enhancedDF.sd.between(0.224015772555, 0.656248627237)]
+    lower_patients_outliers = enhancedDF[enhancedDF.sd < 0.224015772555].to_csv('%s/lower_patients_outliers.csv'%outputDirectory)
+    upper_patients_outliers = enhancedDF[enhancedDF.sd > 0.656248627237].to_csv('%s/upper_patients_outliers.csv'%outputDirectory)
 
 
+
+    plotHist(enhancedDF['sd'], 'blue', 75, "Standard Deviation of Radial Difference with full data")
+    plotHist(selected_patients['sd'], 'green', 75, "Standard Deviation of Radial Difference with outliers removed ")
+    # print(upper_patients.head())
 if __name__ == '__main__':
     main()
+# TODO Cut off upper 10 percentile for local sd
+# TODO Cut off ContourVolumeDifference Upper and Lower
+# TODO Print Histograms
+# TODO Use Local Combined Map to produce an average and variance Radial Patient for recurrence and non-recurrence
