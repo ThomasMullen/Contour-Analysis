@@ -3,7 +3,7 @@
 """
 Created on Thu Dec 13 16:25:18 2018
 
-@author: Tom
+@author: Tom and Alex
 """
 # import pymining as pm
 import numpy as np
