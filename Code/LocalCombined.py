@@ -7,9 +7,11 @@ Created on Thu Dec 13 16:25:18 2018
 """
 import numpy as np
 import pandas as pd
-import seaborn as sns;
+import seaborn as sns
 import os
-
+import pymining as pm
+import matplotlib.pyplot as plt
+from scipy.stats import ttest_ind
 
 
 from AllPatients import recurrenceGroups
@@ -29,11 +31,13 @@ def load_local_field_recurrence(global_df, dataDir = r'../Data/OnlyProstateResul
 
     masterDF = pd.DataFrame.empty
     fieldMaps = []
-
+    # 140=200710358,55=200705181 corrupt patient ID an xi
     x = 0
     for f in dfFiles.file_path:
         if x not in corruptMaps:
             fieldMaps.append(pd.read_csv(f, header=None))
+        else:
+            print(f)
         x = x + 1
 
     masterDF = pd.concat(fieldMaps)
@@ -44,8 +48,10 @@ def load_local_field_recurrence(global_df, dataDir = r'../Data/OnlyProstateResul
 
     return (meanRecurrence, varRecurrence, stdRecurrence)
 
+
+
 def show_local_fields(global_df, dataDir = r'../Data/OnlyProstateResults/AllFields'):
-    ''' A function to print the each patients radial field for inspection '''
+    """ A function to print the each patients radial field for inspection """
 
     df = pd.DataFrame(global_df["patientList"])
     dfFiles = df.assign(file_path=lambda df: df["patientList"].map(lambda x: r'%s/%s.csv' % (dataDir, x)))
@@ -57,6 +63,82 @@ def show_local_fields(global_df, dataDir = r'../Data/OnlyProstateResults/AllFiel
         fieldMaps.append(pd.read_csv(f, header=None))
         plot_heat_map(fieldMaps[x],-1,1,x)
         x = x + 1
+
+
+
+def stack_local_fields(global_df, recurrence_label,  dataDir = r'../Data/OnlyProstateResults/AllFields'):
+    """
+    :param global_df: either recurring non-recurring global data field
+    :param recurrence_label:  =0 for non-recurring or =1 for recurring
+    :param dataDir: Data directory containing local field data file
+    :return: 3d np array of local field stacked 120x60xnumber of recurrence/non-recurrence i.e [theta x phi x patient_index] and label
+    """
+    df = pd.DataFrame(global_df["patientList"])
+    dfFiles = df.assign(file_path=lambda df: df["patientList"].map(lambda x: r'%s/%s.csv' % (dataDir, x)))
+    numberOfPatients = len(dfFiles)
+    fieldMaps = np.zeros((60, 120, numberOfPatients))
+
+    if recurrence_label == 1:
+        label_array = np.ones(numberOfPatients)
+    else:
+        label_array = np.zeros(numberOfPatients)
+
+    i = 0
+    for f in dfFiles.file_path:
+        fieldMaps[:, :, i] = pd.read_csv(f, header=None).as_matrix()[:, :]
+        i += 1
+
+    return fieldMaps, label_array
+
+
+
+def pyminingLocalField(selected_patients):
+    patients_who_recur, patients_who_dont_recur = recurrenceGroups(selected_patients)
+    (rec_fieldMaps, rec_label_array) = stack_local_fields(patients_who_recur, 1)
+    (nonrec_fieldMaps, nonrec_label_array) = stack_local_fields(patients_who_dont_recur, 0)
+
+    # Concatenate the two
+    totalPatients = np.concatenate((rec_fieldMaps, nonrec_fieldMaps), axis=-1)
+
+    # Label first 31 recurring as 1
+    labels = np.concatenate((rec_label_array, nonrec_label_array))
+
+    # ## Use scipy ttest, we should get the same result later
+    # print(ttest_ind(patientMapRecurrenceContainer, patientMapNonRecurrenceContainer, equal_var=False, axis=-1))
+
+    # ## Now use pymining to get a global p value. It should be similar to that from scipy
+    globalp, tthresh = pm.permutationTest(totalPatients, labels)
+    print(globalp)
+
+    # Plot Threshold histogram
+
+    # plt.hist(tthresh, 20, alpha=0.5, label='t-Test Threshold', normed=True, color='green')
+    # plt.xlabel('t value')
+    # plt.ylabel('Frequency')
+    # plt.legend(loc='upper left')
+    # # fig.savefig('/Users/Tom/Documents/University/ProstateCode/LocalAnalysis/T-testHist.png')
+    # plt.show()
+
+    # Plot Threshhold Map
+    tThresh = sns.heatmap(pm.imagesTTest(totalPatients, labels)[0], center=0)
+    tThresh.set(ylabel='Theta, $\dot{\Theta}$', xlabel='Azimutal, $\phi$')
+
+    plt.show()
+
+def test_pymining():
+    dataDirectory = r"../Data/OnlyProstateResults/AllFields"
+    outputDirectory = r"../outputResults"
+    # (meanVals, sdVals) = extractPatientSDVals(dataDirectory, allPatients.allPatients)
+    rawPatientData = load_global_patients()
+    enhancedDF = radial_mean_sd_for_patients(dataDirectory, rawPatientData.allPatients)
+    patients_who_recur, patients_who_dont_recur = recurrenceGroups(enhancedDF)
+
+    selected_patients, _, _ = partition_patient_data_with_outliers(enhancedDF, 0, 99) # 0-99.6 grabs 4 at large std dev # 99.73 std
+    selected_patients, _, _ = partition_patient_data_with_outliers(selected_patients, 0, 98.5, discriminator_fieldname="maxval") # 0-99.6 grabs 4 at large std dev # 99.73 std
+    selected_patients, _, _ = partition_patient_data_with_outliers(selected_patients, 5, 100, discriminator_fieldname="DSC") # 0-99.6 grabs 4 at large std dev # 99.73 std
+    selected_patients, _, _ = partition_patient_data_with_outliers(selected_patients, 5, 95, discriminator_fieldname="volumeContourDifference") # 0-99.6 grabs 4 at large std dev # 99.73 std
+
+    pyminingLocalField(selected_patients)
 
 
 def test_local_field():
@@ -147,7 +229,7 @@ def test_local_field():
     plot_heat_map(varMap, 0, 1, 'variance map - patients_who_recur')
     plot_heat_map(stdMap, 0, 1, 'standard deviation map - patients_who_recur')
 
-    (meanMap2, varMap, stdMap) = load_local_field_recurrence(patients_who_dont_recur, dataDirectory, corruptMaps = [140,55])
+    (meanMap2, varMap, stdMap) = load_local_field_recurrence(patients_who_dont_recur, dataDirectory)
     plot_heat_map(meanMap2, -1, 1, 'mean map - patients_who_dont_recur')
     plot_heat_map(varMap, 0, 1, 'variance map - patients_who_dont_recur')
     plot_heat_map(stdMap, 0, 1, 'standard deviation map - patients_who_dont_recur')
@@ -160,4 +242,5 @@ def test_local_field():
 
 
 if __name__ == '__main__':
-    selected_patients = test_local_field()
+    # selected_patients = test_local_field()
+    test_pymining()

@@ -5,7 +5,7 @@ Created on Thu Dec 13 16:25:18 2018
 
 @author: Tom and Alex
 """
-# import pymining as pm
+
 import numpy as np
 import pandas as pd
 import seaborn as sns;
@@ -65,14 +65,14 @@ def load_global_patients():
              '200901231', '200805565', '201101453', '200910818', '200811563', '201014420'}
 
     '''we have identified these corrupted from previous contour. we need to check '''
-    expected_corrupt_to_check = {}
+    expected_corrupt_to_check = {200710358,200705181}
     #{'200701370', '200700427', '200610929', '200606193', '200600383', '200511824','196708754', '200801658', '201201119', '200911702', '200701370', '200700427','200610929', '200606193', '200600383', '200511824'}
 
 
-    corrupt = atlas.union(expected_corrupt_to_check)
+    patients_ID_to_exclude = atlas.union(expected_corrupt_to_check)
     allPatients = AllPatients(r"../Data/OnlyProstateResults/Global",
                               ['AllData19Frac', 'AllData16Frac_old', 'AllData16Frac', 'AllData19Frac_old'])
-    allPatients.removePatients(corrupt)
+    allPatients.removePatients(patients_ID_to_exclude)
     return allPatients
 
 def calcPatientMapSD2(dataDir, patientId):
