@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+
 """
 Created on Thu Dec 13 16:25:18 2018
 
@@ -8,60 +7,35 @@ Created on Thu Dec 13 16:25:18 2018
 
 import numpy as np
 import pandas as pd
-import seaborn as sns; sns.set()
+import seaborn as sns;
+
+from Code.AllPatients import AllPatients, recurrenceGroups
+
+sns.set()
 import matplotlib.pyplot as plt
-import matplotlib.mlab as mlab
+
 
 # =============================================================================
 # Load patients list data for all fractions
 # =============================================================================
 
-Patients1920Frac = pd.read_csv(r"/Users/Tom/Documents/University/ProstateCode/Data/60x60 Data/GlobalDifference/AllData19Frac.csv")
-PatientsOld16Frac = pd.read_csv(r"/Users/Tom/Documents/University/ProstateCode/Data/60x60 Data/GlobalDifference/AllDataOld16Frac.csv")
 SaveDirect = "/Users/Tom/Documents/University/ProstateCode/LocalAnalysis/Final/"
-#PatientsNew16Frac = pd.read_csv(r"C:/Users/Alexander/Documents/4th_year/Lab/Data/60x60Data/GlobalDifference/AllDataNew16Frac.csv")
 
-# Concatonate all the patients into a singular dataframe
-AllPatients = pd.concat([Patients1920Frac,PatientsOld16Frac])
 
-# =============================================================================
-# Specify the corrupt patients to be filtered out of analysis
-# =============================================================================
 
-# List the patient ID's of those who are contained in our ATLAS and have corrupted local maps & prothesis
-atlas = {'200806930','201010804', '201304169', '201100014', '201205737','201106120', '201204091', '200803943', '200901231', '200805565', '201101453', '200910818', '200811563','201014420'}
-corrupt = {'196708754','200801658','201201119','200911702','200701370','200700427','200610929','200606193','200600383','200511824'}
-corrupt16frac = {'200701370','200700427','200610929','200606193','200600383','200511824'}
-
-# Join two sets together
-listRemovedPatients = corrupt.union(atlas)
-
-# Filter corrupt or biased patients from list
-FilteredPatients = AllPatients[~AllPatients['patientList'].isin(listRemovedPatients)]
 
 # =============================================================================
 # Group the patients by fractions, and recurrence
 # =============================================================================
+def patientRecurrenceFracs():
+    (PatientsWhoRecur, PatientsWhoDontRecur) = load_global_patients().recurrenceGroups()
 
-# Access patient ID numbers and recurrence
-PatientID = AllPatients["patientList"]
-Recurrence = AllPatients["reccurrence"]
-
-# Get total number of patients
-totalPatients = PatientID.size
-
-# Group patients by recurrence
-AllPatientsGrouped = FilteredPatients.groupby('reccurrence')
-PatientsWhoRecur = pd.concat([AllPatientsGrouped.get_group('1'),AllPatientsGrouped.get_group('YES')])
-PatientsWhoDontRecur = pd.concat([AllPatientsGrouped.get_group('0'),AllPatientsGrouped.get_group('censor'),AllPatientsGrouped.get_group('NO')])
- 
-# Group patients with fractions
-#PatientRecurrencew20Frac = PatientsWhoRecur.groupby('fractions').get_group(20)
-PatientRecurrencew19Frac = PatientsWhoRecur.groupby('fractions').get_group(19)
-PatientRecurrencew16Frac = PatientsWhoRecur.groupby('fractions').get_group(16)
-PatientNonRecurrencew20Frac = PatientsWhoDontRecur.groupby('fractions').get_group(20)
-PatientNonRecurrencew19Frac = PatientsWhoDontRecur.groupby('fractions').get_group(19)
-PatientNonRecurrencew16Frac = PatientsWhoDontRecur.groupby('fractions').get_group(16)
+    # Group patients with fractions
+    PatientRecurrencew19Frac = PatientsWhoRecur.groupby('Fractions').get_group(19)
+    PatientRecurrencew16Frac = PatientsWhoRecur.groupby('Fractions').get_group(16)
+    PatientNonRecurrencew20Frac = PatientsWhoDontRecur.groupby('Fractions').get_group(20)
+    PatientNonRecurrencew19Frac = PatientsWhoDontRecur.groupby('Fractions').get_group(19)
+    PatientNonRecurrencew16Frac = PatientsWhoDontRecur.groupby('Fractions').get_group(16)
 
 # =============================================================================
 # # Read in the patients map and store in correct container
@@ -70,103 +44,162 @@ PatientNonRecurrencew16Frac = PatientsWhoDontRecur.groupby('fractions').get_grou
 patientMapRecurrenceContainer = []
 patientMapNonRecurrenceContainer = []
 
+corLocal = {'200801658', '200606193', '200610929', '200701370'}
 
-corLocal = {'200801658','200606193','200610929','200701370'}
-
-'''
-returns sdValue for a given patientMap
-'''
 def calcPatientMapSD(patientMap):
-    sxx=0
-    mean = calcPatientMapMean(patientMap)
+    sxx = 0
+    mapMean = (sum(patientMap.flatten())) / patientMap.size
     for radDiff in patientMap.flatten():
-        sxx = sxx + (radDiff-mean)**2
-    sdValue = np.sqrt(sxx/(patientMap.size-1))
-    return (mean, sdValue)
-  
-def calcPatientMapMean(patientMap):
-    return (sum(patientMap.flatten()))/patientMap.size
-
-def loadPatientMap(dataDirectory, patientId): 
-    file = r"%s/%s.csv"%(dataDirectory,patientId)
-    return pd.read_csv(file,header=None).as_matrix()
+        sxx = sxx + (radDiff - mapMean) ** 2
+    sdValue = np.sqrt(sxx / (patientMap.size - 1))
+    return (mapMean, sdValue)
 
 
-   
-      
-# Read in map
-dataDirectory = r"/Users/Tom/Documents/University/ProstateCode/Data/120x60 Data"   
+'''
+Specify the corrupt patients to be filtered out of analysis
+# ===================================================================
+'''
+def load_global_patients():
+    # List the patient ID's of those who are contained in our ATLAS and have corrupted local maps & prothesis
+    atlas = {'200806930', '201010804', '201304169', '201100014', '201205737', '201106120', '201204091', '200803943',
+             '200901231', '200805565', '201101453', '200910818', '200811563', '201014420'}
 
-def extractPatientSDVals(dataDir, allPatientsDF):
-    meanCell = []
-    sdCell = []
-    totalPatients = len(allPatientsDF)
-    for x in range(0, totalPatients):
-        name = str(allPatientsDF["patientList"].iloc[x])
-        if name not in corLocal:
-            patientMap = loadPatientMap(dataDirectory, name)
-            (mean, sdValue) = calcPatientMapSD(patientMap) 
-            meanCell.append(mean)
-            sdCell.append(sdValue)
-    return (meanCell,sdCell)
+    '''we have identified these corrupted from previous contour. we need to check '''
+    expected_corrupt_to_check = {'200701370', '200700427', '200610929', '200606193', '200600383', '200511824',
+                                 '196708754', '200801658', '201201119', '200911702', '200701370', '200700427',
+                                 '200610929', '200606193', '200600383', '200511824'}
+
+    allPatients = AllPatients(r"../Data/OnlyProstateResults/Global",
+                              ['AllData19Frac', 'AllData16Frac_old', 'AllData16Frac', 'AllData19Frac_old'])
+    allPatients.removePatients(atlas)
+    return allPatients
+
+def calcPatientMapSD2(dataDir, patientId):
+    file = r"%s/%s.csv" % (dataDir, patientId)
+    matrix = pd.read_csv(file, header=None).as_matrix()
+    result =  calcPatientMapSD(matrix)
+    return result
+
+def calcPatientMapSD2_mean(dataDir, patientId):
+    (m, s) =  calcPatientMapSD2(dataDir, patientId)
+    return m
+
+def calcPatientMapSD2_sd(dataDir, patientId):
+    (m, s) = calcPatientMapSD2(dataDir, patientId)
+    return s
+
+'''
+Finds the Mean and the SD of the radial difference at each solid angle for each patient. And appends data to global patient df
+'''
+def radial_mean_sd_for_patients(dataDir, allPatientsDF):
+    df = allPatientsDF.assign(mean=lambda df: df["patientList"].map(lambda x: calcPatientMapSD2_mean(dataDir, x)))
+    df2 = df.assign(sd=lambda df: df["patientList"].map(lambda x: calcPatientMapSD2_sd(dataDir, x)))
+    return df2
+
 
 # =============================================================================
 # Make arrays for theta and phi axes labels
 # =============================================================================
-# Create Arrays
-#phi = []; theta =[]
-#for i in range(0,120):
-#    phi.append('')
-#for i in range(0,60):
-#    theta.append('')
-## Define ticks
-#phi[0] = 0; phi[30] = 90; phi[60] = 180; phi[90] = 270; phi[119] = 360;
-#theta[0] = -90; theta[30] = 0; theta[59] = 90
-def plotHist(data, colour):
-    result=plt.hist(data,bins=50, alpha=0.5, label='map mean',color=colour)
-    plt.xlabel('single value')
+
+def plotHist(data, colour, bin, name="Single Value"):
+    result = plt.hist(data, bins=bin, alpha=0.5, label='map sd value', color=colour)
+    plt.xlabel(name)
     plt.ylabel('Frequency')
     plt.legend(loc='upper left')
-    plt.xlim((min(data), max(data)))
-    #mean = np.mean(meanCell)
-    #variance = np.var(meanCell)
-    #sigma = np.sqrt(variance)
-    #x = np.linspace(min(meanCell), max(meanCell), 100)
-    #plt.plot(x, mlab.normpdf(x, mean, sigma))
+    # plt.xlim((min(data), max(data)))
     plt.show()
 
+def plotHist2(data1, colour1, bin1, data2, colour2, bin2, name="Single Value"):
+    plt.hist(data1, bins=bin1, alpha=0.5, label='Recurrence', color=colour1)
+    plt.hist(data2, bins=bin2, alpha=0.5, label='No Recurrence', color=colour2)
+    plt.xlabel(name)
+    plt.ylabel('Frequency')
+    plt.legend(loc='upper left')
+    # plt.xlim((min(data1), max(data1)))
+    plt.show()
+
+'''
+plots a heat map of patients radial map: expect df of local field passed in.
+'''
+def plot_heat_map(data, title=" "):
+    phi = [];
+    theta = []
+    for i in range(0, 120):
+        phi.append('')
+    for i in range(0, 60):
+        theta.append('')
+    # Define ticks
+    phi[0] = 0;
+    phi[30] = 90;
+    phi[60] = 180;
+    phi[90] = 270;
+    phi[119] = 360;
+    theta[0] = -90;
+    theta[30] = 0;
+    theta[59] = 90
+    map = data.as_matrix()
+    heat_map = sns.heatmap(map, center=0, xticklabels=phi, yticklabels=theta)
+    heat_map.set(ylabel='Theta, $\dot{\Theta}$', xlabel='Azimutal, $\phi$', title = title)
+    plt.show()
+
+def partition_patient_data_with_outliers( data, lower_bound, upper_bound):
+
+    lower_cut_off = np.percentile(data['sd'], lower_bound)
+    upper_cut_off = np.percentile(data['sd'], upper_bound)
+    print("%s, %s" % (lower_cut_off, upper_cut_off))
+    selected_patients = data[data.sd.between(lower_cut_off, upper_cut_off)]
+    lower_patients_outliers = data[data.sd < lower_cut_off]
+    upper_patients_outliers = data[data.sd > upper_cut_off]
+    return (selected_patients, lower_patients_outliers, upper_patients_outliers)
+
+def return_patient_sample_range(data, size, lower_bound, upper_bound):
+    selected_patients, lower_patients_outliers, upper_patients_outliers = partition_patient_data_with_outliers(data, lower_bound, upper_bound)
+    return selected_patients.sample(n=size)
+
+def test_filtered():
+    dataDirectory = r"../Data/OnlyProstateResults/AllFields"
+    outputDirectory = r"../outputResults"
+    # (meanVals, sdVals) = extractPatientSDVals(dataDirectory, allPatients.allPatients)
+    rawPatientData = load_global_patients()
+    enhancedDF = radial_mean_sd_for_patients(dataDirectory, rawPatientData.allPatients)
+    selected_patients, lower_patients_outliers, upper_patients_outliers = partition_patient_data_with_outliers(
+        enhancedDF, 10, 90)
+    lower_patients_outliers.to_csv('%s/lower_patients_outliers.csv' % outputDirectory)
+    upper_patients_outliers.to_csv('%s/upper_patients_outliers.csv' % outputDirectory)
+
+    patients_who_recur, patients_who_dont_recur = recurrenceGroups(selected_patients)
+    # # Plot Histograms with raw data
+    # all_patients_with_recurrence, all_patients_without_recurrence = recurrenceGroups(enhancedDF)
+    # plotHist2(all_patients_with_recurrence['sd'], 'red', 75,all_patients_without_recurrence['sd'],'green',75, "Standard Deviation of Radial Difference")
+    # plotHist(all_patients_with_recurrence['sd'], 'red', 75, "Standard Deviation of Radial Difference Recurrence")
+    # plotHist(all_patients_without_recurrence['sd'], 'green', 75, "Standard Deviation of Radial Difference no Recurrence")
+    # plotHist2(all_patients_with_recurrence['sd'], 'blue', 25,all_patients_without_recurrence['sd'],'blue',25, "Standard Deviation of Radial Difference")
+    #
+    # # Plot Histgrams with patients radial Difference SD (cut)
+    # plotHist2(patients_who_recur['sd'], 'red', 75,patients_who_dont_recur['sd'],'green',75, "Standard Deviation of Radial Difference")
+    # plotHist(patients_who_recur['sd'], 'red', 75, "Standard Deviation of Radial Difference Recurrence")
+    # plotHist(patients_who_dont_recur['sd'], 'green', 75, "Standard Deviation of Radial Difference no Recurrence")
+    # plotHist2(patients_who_recur['sd'], 'red', 25,patients_who_dont_recur['sd'],'green',25, "Standard Deviation of Radial Difference")
+    # plotHist(patients_who_recur['sd'], 'red', 25, "Standard Deviation of Radial Difference Recurrence")
+    # plotHist(patients_who_dont_recur['sd'], 'green', 25, "Standard Deviation of Radial Difference no Recurrence")
+
+#     Output sample of patients within certain percentiles
+    sample1 = return_patient_sample_range(enhancedDF,5,10,20)
+    sample1.to_csv('%s/sample_set1.csv' % outputDirectory)
+    sample2 = return_patient_sample_range(enhancedDF, 5, 30, 50)
+    sample2.to_csv('%s/sample_set2.csv' % outputDirectory)
+    sample3 = return_patient_sample_range(enhancedDF, 5, 50, 80)
+    sample3.to_csv('%s/sample_set3.csv' % outputDirectory)
+    sample4 = return_patient_sample_range(enhancedDF, 5, 80, 90)
+    sample4.to_csv('%s/sample_set4.csv' % outputDirectory)
 
 
-# Note: patients out of range +-10: 200801658, 200606193, 200610929, 200701370
-#
-#plt.hist(sdCell, 50, alpha=0.5, label='map spread',normed=True,color='green')
-#plt.xlabel('single value')
-#plt.ylabel('Frequency')
-#plt.legend(loc='upper left')
-#plt.show()
-
-# Note: patients above 5: 200801658 21.701085922156444, 200606193 25.6532265835603, 200610929 19.887989619324294, 200701370 22.627171920841946
-
-
-#mapCor=pd.read_csv(r"/Users/Tom/Documents/University/ProstateCode/Data/120x60 Data/200700427.csv",header=None).as_matrix()
-#corruptMap = sns.heatmap(mapCor, center=0,xticklabels=phi,yticklabels=theta)
-#corruptMap.set(ylabel='Theta, $\dot{\Theta}$', xlabel='Azimutal, $\phi$')
-#plt.show()
-#
-## Print patient number of corrupt maps
-#print(str(AllPatients.query("patientList == 200701370").patientNumber))
-#print(str(AllPatients.query("patientList == 200700427").patientNumber))
-#print(str(AllPatients.query("patientList == 200610929").patientNumber))
-#print(str(AllPatients.query("patientList == 200606193").patientNumber))
-#print(str(AllPatients.query("patientList == 200600383").patientNumber))
-#print(str(AllPatients.query("patientList == 200511824").patientNumber))
-    
-    
-    
 def main():
-    (meanVals, sdVals) =  extractPatientSDVals(dataDirectory,AllPatients)
-    plotHist(meanVals, 'red')
-    plotHist(sdVals, 'blue')
-    
-    
-main()
+    test_filtered()
+
+if __name__ == '__main__':
+    main()
+# TODO Cut off upper 10 percentile for local sd
+# TODO Cut off ContourVolumeDifference Upper and Lower
+# TODO Print Histograms
+# TODO Use Local Combined Map to produce an average and variance Radial Patient for recurrence and non-recurrence

@@ -2,19 +2,24 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-import pandas as pd
-import seaborn as sns; sns.set()
+import seaborn as sns;
+
+from Code.AllPatients import AllPatients
+
+sns.set()
 import matplotlib.pyplot as plt
-import matplotlib.mlab as mlab
+import pandas as pd
+
+
 
 SaveDirect = "/Users/Tom/Documents/University/ProstateCode/AllDataResults/2018_12_22/"
 
 # =============================================================================
 # Load patients list data for all fractions
 # =============================================================================
-AllData19Frac = pd.read_csv(r"/Users/Tom/Documents/University/ProstateCode/Data/OnlyProstateResults/Global/AllData19Frac_old.csv")
-AllData16Frac_old = pd.read_csv(r"/Users/Tom/Documents/University/ProstateCode/Data/OnlyProstateResults/Global/AllData16Frac_old.csv")
-AllData16Frac = pd.read_csv(r"/Users/Tom/Documents/University/ProstateCode/Data/OnlyProstateResults/Global/AllData16Frac.csv")
+AllData19Frac = pd.read_csv(r"../../Data/OnlyProstateResults/Global/AllData19Frac_old.csv")
+AllData16Frac_old = pd.read_csv(r"../../Data/OnlyProstateResults/Global/AllData16Frac_old.csv")
+AllData16Frac = pd.read_csv(r"../../Data/OnlyProstateResults/Global/AllData16Frac.csv")
 
 AllPatients = pd.concat([AllData19Frac,AllData16Frac_old,AllData16Frac])
 
@@ -129,3 +134,4 @@ rogueVolDiffPatients = AllPatients.query("volumeContourDifference < -14.87373428
 # =============================================================================
 # Local Analysis
 # =============================================================================
+
