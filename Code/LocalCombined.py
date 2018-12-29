@@ -3,7 +3,7 @@
 """
 Created on Thu Dec 13 16:25:18 2018
 
-@author: Tom & AJ
+@author: Tom
 """
 
 import numpy as np
@@ -69,8 +69,9 @@ def test_local_field():
     enhancedDF = radial_mean_sd_for_patients(dataDirectory, rawPatientData.allPatients)
     patients_who_recur, patients_who_dont_recur = recurrenceGroups(enhancedDF)
 
-    DSCbins = 75 #[0,0.5,0.6,0.7,0.8,0.9,1]
-    VolBins = 75 #[-40,-16,-10,-2.5,2.5,10,16,40]
+    DSCbins = [0,0.45,0.65,0.75,0.85,0.95,1]
+    VolBins = [-55,-40,-30,-20,-10,0,10,20,30,40,55,200]
+    
     # =============================================================================
     #     Cut based on standard deviation of each map, eliminates global anomalies on maps
     # =============================================================================
@@ -89,7 +90,7 @@ def test_local_field():
 #    plotHist2(patients_who_recur['DSC'], 'r', DSCbins, patients_who_dont_recur['DSC'], 'g', DSCbins, name="Dice coefficient",legendPos ="upper left")
 #    
         # sd plot after cuts
-    plotHist2(patients_who_recur['sd'], 'red', 75,patients_who_dont_recur['sd'],'green',75, "Standard Deviation of radial difference, $\sigma_{\Delta R}$")
+    plotHist2(patients_who_recur['sd'], 'red', 75,patients_who_dont_recur['sd'],'green',75, 0.001, 3, "Standard Deviation of radial difference, $\sigma_{\Delta R}$")
     
     # =============================================================================
     #     Cut based on the maximum value of each map, eliminates local map anomalies
@@ -105,14 +106,14 @@ def test_local_field():
 #    plotHist2(patients_who_recur['DSC'], 'r', DSCbins, patients_who_dont_recur['DSC'], 'g', DSCbins, name="Dice coefficient",legendPos ="upper left")
        
         # max value map after cuts
-    plotHist2(patients_who_recur['maxval'], 'red', 75,patients_who_dont_recur['maxval'],'green',75, "Maximum value of radial difference, $max(\Delta R)$")
+    plotHist2(patients_who_recur['maxval'], 'red', 75,patients_who_dont_recur['maxval'],'green',75, 0.001, 5, "Maximum value of radial difference, $max(\Delta R)$")
     
     # =============================================================================
     #     Remove patients based on DSC and Vdiff globally
     # =============================================================================
         
             # DSC before cuts
-    plotHist2(patients_who_recur['DSC'], 'red', DSCbins, patients_who_dont_recur['DSC'], 'green', DSCbins, name="Dice coefficient",legendPos ="upper left")
+    plotHist2(patients_who_recur['DSC'], 'red', DSCbins, patients_who_dont_recur['DSC'], 'green', DSCbins, 0.001, 1, name="Dice coefficient",legendPos ="upper left")
     
     # DSC cut & local maps
     selected_patients, lower_patients_outliers, upper_patients_outliers = partition_patient_data_with_outliers(selected_patients, 5, 100, select_what = "DSC") # 0-99.6 grabs 4 at large std dev # 99.73 std
@@ -122,21 +123,32 @@ def test_local_field():
 #    plotHist2(patients_who_recur['volumeContourDifference'], 'r', VolBins, patients_who_dont_recur['volumeContourDifference'], 'g', VolBins, name="Volume difference between contour and auto-contour, $\Delta V$",legendPos="upper right")
      
         # DSC after cuts
-    plotHist2(patients_who_recur['DSC'], 'red', DSCbins, patients_who_dont_recur['DSC'], 'green', DSCbins, name="Dice coefficient",legendPos ="upper left")
+    plotHist2(patients_who_recur['DSC'], 'red', DSCbins, patients_who_dont_recur['DSC'], 'green', DSCbins, 0.001, 1, name="Dice coefficient",legendPos ="upper left")
     
     
       # Vdiff before cuts
-    plotHist2(patients_who_recur['volumeContourDifference'], 'red', VolBins, patients_who_dont_recur['volumeContourDifference'], 'green', VolBins, name="Volume difference between contour and auto-contour, $\Delta V$",legendPos="upper right")
+    plotHist2(patients_who_recur['volumeContourDifference'], 'red', VolBins, patients_who_dont_recur['volumeContourDifference'], 'green', VolBins, -55, 100, name="Volume difference between contour and auto-contour, $\Delta V$",legendPos="upper right")
    
-    # Vdiff, DSC & local maps cut
-    selected_patients, lower_patients_outliers, upper_patients_outliers = partition_patient_data_with_outliers(selected_patients, 5, 95, select_what = "volumeContourDifference") # 0-99.6 grabs 4 at large std dev # 99.73 std
+    # Remove patients with SV contoured
+    StagePatients = selected_patients.groupby('Stage')
+    StageT3bPatients = pd.concat([StagePatients.get_group('T3b'), StagePatients.get_group('T3B'), StagePatients.get_group('T3b/T4'),StagePatients.get_group('T4')])    
+    selected_patients = selected_patients[~selected_patients['patientList'].isin(StageT3bPatients['patientList'])]
+    patients_who_recur, patients_who_dont_recur = recurrenceGroups(selected_patients)
+    #show_local_fields(StageT3bPatients,dataDirectory) # print the local fields to see if they are damaged
+          
+       # Vdiff after SV cuts
+    plotHist2(patients_who_recur['volumeContourDifference'], 'red', VolBins, patients_who_dont_recur['volumeContourDifference'], 'green', VolBins, -55, 100, name="Volume difference between contour and auto-contour, $\Delta V$",legendPos="upper right")
+    
+    # Vdiff cuts
+    selected_patients, lower_patients_outliers, upper_patients_outliers = partition_patient_data_with_outliers(selected_patients, 4, 96, select_what = "volumeContourDifference") # 0-99.6 grabs 4 at large std dev # 99.73 std
     lower_patients_outliers.to_csv('%s/lower_patients_outliers_Vdiff.csv' % outputDirectory)
     upper_patients_outliers.to_csv('%s/upper_patients_outliers_Vdiff.csv' % outputDirectory)
     patients_who_recur, patients_who_dont_recur = recurrenceGroups(selected_patients)
-
+    
+        
        # Vdiff after cuts
-    plotHist2(patients_who_recur['volumeContourDifference'], 'red', VolBins, patients_who_dont_recur['volumeContourDifference'], 'green', VolBins, name="Volume difference between contour and auto-contour, $\Delta V$",legendPos="upper right")
-        # scatter plot of volume contour to auto-contour
+    plotHist2(patients_who_recur['volumeContourDifference'], 'red', VolBins, patients_who_dont_recur['volumeContourDifference'], 'green', VolBins, -55, 100, name="Volume difference between contour and auto-contour, $\Delta V$",legendPos="upper right")
+#        # scatter plot of volume contour to auto-contour
     plot_scatter(selected_patients,'r','upper left')
     
     # =============================================================================
