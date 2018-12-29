@@ -70,7 +70,7 @@ def load_global_patients():
 
 
     corrupt = atlas.union(expected_corrupt_to_check)
-    allPatients = AllPatients(r"../Data/OnlyProstateResults/Global",
+    allPatients = AllPatients(r"../Data/OnlyProstateResults/GlobalwStage",
                               ['AllData19Frac', 'AllData16Frac_old', 'AllData16Frac', 'AllData19Frac_old'])
     allPatients.removePatients(corrupt)
     return allPatients
@@ -115,13 +115,14 @@ def plotHist(data, colour, bin, name="Single Value"):
     # plt.xlim((min(data), max(data)))
     plt.show()
 
-def plotHist2(data1, colour1, bin1, data2, colour2, bin2, name="Single Value",legendPos="upper right"):
+def plotHist2(data1, colour1, bin1, data2, colour2, bin2, xmin = 0, xmax = 0, name="Single Value",legendPos="upper right"):
     plt.hist(data1, bins=bin1, alpha=0.5, label='Recurrence', color=colour1,normed=True)
     plt.hist(data2, bins=bin2, alpha=0.5, label='No Recurrence', color=colour2,normed=True)
     plt.xlabel(name)
     plt.ylabel('Frequency')
     plt.legend(loc=legendPos)
-    #plt.xlim(xmin, xmax)
+    if xmin != 0 and xmax != 0:
+        plt.xlim(xmin, xmax)
     plt.show()
 
 '''
