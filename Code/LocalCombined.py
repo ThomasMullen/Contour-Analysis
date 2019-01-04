@@ -5,18 +5,16 @@ Created on Thu Dec 13 16:25:18 2018
 
 @author: Tom & AJ
 """
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import seaborn as sns
-import os
 import pymining as pm
-import matplotlib.pyplot as plt
-from scipy.stats import ttest_ind
+import seaborn as sns
 
-
-from AllPatients import recurrenceGroups
+from AllPatients import separate_by_recurrence
 from LocalFilter import load_global_patients, radial_mean_sd_for_patients, partition_patient_data_with_outliers, \
-    plot_heat_map, plotHist2, return_patient_sample_range, plot_scatter
+    plot_heat_map, plotHist2, plot_scatter
+
 sns.set()
 
 # List the patient ID's of those who are contained in our ATLAS and have corrupted local maps & prothesis
@@ -93,7 +91,7 @@ def stack_local_fields(global_df, recurrence_label,  dataDir = r'../Data/OnlyPro
 
 
 def pyminingLocalField(selected_patients):
-    patients_who_recur, patients_who_dont_recur = recurrenceGroups(selected_patients)
+    patients_who_recur, patients_who_dont_recur = separate_by_recurrence(selected_patients)
     (rec_fieldMaps, rec_label_array) = stack_local_fields(patients_who_recur, 1)
     (nonrec_fieldMaps, nonrec_label_array) = stack_local_fields(patients_who_dont_recur, 0)
 
@@ -107,7 +105,7 @@ def pyminingLocalField(selected_patients):
     # print(ttest_ind(patientMapRecurrenceContainer, patientMapNonRecurrenceContainer, equal_var=False, axis=-1))
 
     # ## Now use pymining to get a global p value. It should be similar to that from scipy
-    globalp, tthresh = pm.permutationTest(totalPatients, labels)
+    globalp, tthresh = pm.permutationTest(totalPatients, labels,10)
     print(globalp)
 
     # Plot Threshold histogram
@@ -120,7 +118,7 @@ def pyminingLocalField(selected_patients):
     # plt.show()
 
     # Plot Threshhold Map
-    tThresh = sns.heatmap(pm.imagesTTest(totalPatients, labels)[0], center=0)
+    tThresh = sns.heatmap(pm.imagesTTest(totalPatients, labels)[0], center=0, cmap='RdBu')
     tThresh.set(ylabel='Theta, $\dot{\Theta}$', xlabel='Azimutal, $\phi$')
 
     plt.show()
@@ -131,7 +129,7 @@ def test_pymining():
     # (meanVals, sdVals) = extractPatientSDVals(dataDirectory, allPatients.allPatients)
     rawPatientData = load_global_patients()
     enhancedDF = radial_mean_sd_for_patients(dataDirectory, rawPatientData.allPatients)
-    patients_who_recur, patients_who_dont_recur = recurrenceGroups(enhancedDF)
+    patients_who_recur, patients_who_dont_recur = separate_by_recurrence(enhancedDF)
 
     selected_patients, _, _ = partition_patient_data_with_outliers(enhancedDF, 0, 99) # 0-99.6 grabs 4 at large std dev # 99.73 std
     selected_patients, _, _ = partition_patient_data_with_outliers(selected_patients, 0, 98.5, discriminator_fieldname="maxval") # 0-99.6 grabs 4 at large std dev # 99.73 std
@@ -147,7 +145,7 @@ def test_local_field():
     # (meanVals, sdVals) = extractPatientSDVals(dataDirectory, allPatients.allPatients)
     rawPatientData = load_global_patients()
     enhancedDF = radial_mean_sd_for_patients(dataDirectory, rawPatientData.allPatients)
-    patients_who_recur, patients_who_dont_recur = recurrenceGroups(enhancedDF)
+    patients_who_recur, patients_who_dont_recur = separate_by_recurrence(enhancedDF)
 
     DSCbins = 75 #[0,0.5,0.6,0.7,0.8,0.9,1]
     VolBins = 75 #[-40,-16,-10,-2.5,2.5,10,16,40]
@@ -163,7 +161,7 @@ def test_local_field():
     selected_patients, lower_patients_outliers, upper_patients_outliers = partition_patient_data_with_outliers(enhancedDF, 0, 99) # 0-99.6 grabs 4 at large std dev # 99.73 std
     lower_patients_outliers.to_csv('%s/lower_patients_outliers_localMaps.csv' % outputDirectory)
     upper_patients_outliers.to_csv('%s/upper_patients_outliers_localMaps.csv' % outputDirectory)
-    patients_who_recur, patients_who_dont_recur = recurrenceGroups(selected_patients)
+    patients_who_recur, patients_who_dont_recur = separate_by_recurrence(selected_patients)
 
 #    plotHist2(patients_who_recur['volumeContourDifference'], 'r', VolBins, patients_who_dont_recur['volumeContourDifference'], 'g', VolBins, name="Volume difference between contour and auto-contour, $\Delta V$",legendPos="upper right")
 #    plotHist2(patients_who_recur['DSC'], 'r', DSCbins, patients_who_dont_recur['DSC'], 'g', DSCbins, name="Dice coefficient",legendPos ="upper left")
@@ -180,7 +178,7 @@ def test_local_field():
     selected_patients, lower_patients_outliers, upper_patients_outliers = partition_patient_data_with_outliers(selected_patients, 0, 98.5, discriminator_fieldname="maxval") # 0-99.6 grabs 4 at large std dev # 99.73 std
     lower_patients_outliers.to_csv('%s/lower_patients_outliers_maxval.csv' % outputDirectory)
     upper_patients_outliers.to_csv('%s/upper_patients_outliers_maxval.csv' % outputDirectory)
-    patients_who_recur, patients_who_dont_recur = recurrenceGroups(selected_patients)
+    patients_who_recur, patients_who_dont_recur = separate_by_recurrence(selected_patients)
 #    plotHist2(patients_who_recur['volumeContourDifference'], 'r', VolBins, patients_who_dont_recur['volumeContourDifference'], 'g', VolBins, name="Volume difference between contour and auto-contour, $\Delta V$",legendPos="upper right")
 #    plotHist2(patients_who_recur['DSC'], 'r', DSCbins, patients_who_dont_recur['DSC'], 'g', DSCbins, name="Dice coefficient",legendPos ="upper left")
 
@@ -198,7 +196,7 @@ def test_local_field():
     selected_patients, lower_patients_outliers, upper_patients_outliers = partition_patient_data_with_outliers(selected_patients, 5, 100, discriminator_fieldname="DSC") # 0-99.6 grabs 4 at large std dev # 99.73 std
     lower_patients_outliers.to_csv('%s/lower_patients_outliers_DSC.csv' % outputDirectory)
     upper_patients_outliers.to_csv('%s/upper_patients_outliers_DSC.csv' % outputDirectory)
-    patients_who_recur, patients_who_dont_recur = recurrenceGroups(selected_patients)
+    patients_who_recur, patients_who_dont_recur = separate_by_recurrence(selected_patients)
 #    plotHist2(patients_who_recur['volumeContourDifference'], 'r', VolBins, patients_who_dont_recur['volumeContourDifference'], 'g', VolBins, name="Volume difference between contour and auto-contour, $\Delta V$",legendPos="upper right")
 
         # DSC after cuts
@@ -212,7 +210,7 @@ def test_local_field():
     selected_patients, lower_patients_outliers, upper_patients_outliers = partition_patient_data_with_outliers(selected_patients, 5, 95, discriminator_fieldname="volumeContourDifference") # 0-99.6 grabs 4 at large std dev # 99.73 std
     lower_patients_outliers.to_csv('%s/lower_patients_outliers_Vdiff.csv' % outputDirectory)
     upper_patients_outliers.to_csv('%s/upper_patients_outliers_Vdiff.csv' % outputDirectory)
-    patients_who_recur, patients_who_dont_recur = recurrenceGroups(selected_patients)
+    patients_who_recur, patients_who_dont_recur = separate_by_recurrence(selected_patients)
 
        # Vdiff after cuts
     plotHist2(patients_who_recur['volumeContourDifference'], 'red', VolBins, patients_who_dont_recur['volumeContourDifference'], 'green', VolBins, name="Volume difference between contour and auto-contour, $\Delta V$",legendPos="upper right")
