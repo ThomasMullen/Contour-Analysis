@@ -19,9 +19,9 @@ import matplotlib.pyplot as plt
 
 
 #Directory Main
-tomLocalAnalysis = "/Users/Tom/Documents/University/ProstateCode/LocalAnalysis/Final/OARLocationsinPython/"
-tomRadialMap = "/Users/Tom/Documents/University/ProstateCode/Data/60x60 Data/RadialDifference/"
-tomProstateLink = "Tom/Documents/University/ProstateCode/Data/60x60 Data/GlobalDifference/"
+#tomLocalAnalysis = "/Users/Tom/Documents/University/ProstateCode/LocalAnalysis/Final/OARLocationsinPython/"
+#tomRadialMap = "/Users/Tom/Documents/University/ProstateCode/Data/60x60 Data/RadialDifference/"
+#tomProstateLink = "Tom/Documents/University/ProstateCode/Data/60x60 Data/GlobalDifference/"
 
 
 # Create containers to store patients prostate maps
@@ -30,13 +30,14 @@ patientMapNonRecurrenceContainer = []
 
 # Get total number of patients
 
-patientBladderMap = pd.read_csv(r"/Users/Tom/Documents/University/ProstateCode/Data/OARlocations/bladder.csv",header=None).as_matrix()
-patientSVMap = pd.read_csv(r"/Users/Tom/Documents/University/ProstateCode/Data/OARlocations/SemiV_ADMIRE.csv",header=None).as_matrix()
-patientRectumMap = pd.read_csv(r"/Users/Tom/Documents/University/ProstateCode/Data/OARlocations/rectum.csv",header=None).as_matrix()
-patientProstateMap = pd.read_csv(r"/Users/Tom/Documents/University/ProstateCode/Data/OARlocations/prostate.csv",header=None).as_matrix()
+patientBladderMap = pd.read_csv(r"C:/Users/Alexander/Documents/4th_year/Lab/Contour-Analysis/Data/OARlocations/bladder.csv",header=None).as_matrix()
+patientSVMap = pd.read_csv(r"C:/Users/Alexander/Documents/4th_year/Lab/Contour-Analysis/Data/OARlocations/SemiV_ADMIRE.csv",header=None).as_matrix()
+patientRectumMap = pd.read_csv(r"C:/Users/Alexander/Documents/4th_year/Lab/Contour-Analysis/Data/OARlocations/rectum.csv",header=None).as_matrix()
+patientProstateMap = pd.read_csv(r"C:/Users/Alexander/Documents/4th_year/Lab/Contour-Analysis/Data/OARlocations/Prostate.csv",header=None).as_matrix()
 # =============================================================================
 # Make arrays for theta and phi axes labels
 # =============================================================================
+
 # Create Arrays
 phi = []; theta =[]
 for i in range(0,120):

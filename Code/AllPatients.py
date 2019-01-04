@@ -1,13 +1,11 @@
 import pandas as pd
 from collections import namedtuple
 
-
-
-
 '''
 Group patients by recurrence 
 returns named tuple of PatientsWhoRecur, PatientsWhoDontRecur from the 
 '''
+
 def recurrenceGroups(allPatients):
     # Group patients by recurrence
     AllPatientsGrouped = allPatients.groupby('Recurrence')
