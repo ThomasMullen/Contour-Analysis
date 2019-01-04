@@ -84,27 +84,11 @@ def load_global_patients():
     return all_patients
 
 
-def calcPatientMapSD2(dataDir, patientId):
+def patients_mean_sd_maxvalue(dataDir, patientId):
     file = r"%s/%s.csv" % (dataDir, patientId)
     matrix = pd.read_csv(file, header=None).values
     result = calcPatientMapSD(matrix)
     return result
-
-
-def calcPatientMapSD2_mean(dataDir, patientId):
-    (m, s, maxval) = calcPatientMapSD2(dataDir, patientId)
-    return m
-
-
-def calcPatientMapSD2_sd(dataDir, patientId):
-    (m, s, maxval) = calcPatientMapSD2(dataDir, patientId)
-    return s
-
-
-def calcPatientMapSD2_max(dataDir, patientId):
-    (m, s, maxval) = calcPatientMapSD2(dataDir, patientId)
-    return maxval
-
 
 '''
 Finds the Mean and the SD of the radial difference at each solid angle for each patient. And appends data to global patient df
@@ -112,10 +96,11 @@ Finds the Mean and the SD of the radial difference at each solid angle for each 
 
 
 def radial_mean_sd_for_patients(dataDir, allPatientsDF):
-    df = allPatientsDF.assign(mean=lambda df: df["patientList"].map(lambda x: calcPatientMapSD2_mean(dataDir, x)))
-    df2 = df.assign(sd=lambda df: df["patientList"].map(lambda x: calcPatientMapSD2_sd(dataDir, x)))
-    df3 = df2.assign(maxval=lambda df2: df2["patientList"].map(lambda x: calcPatientMapSD2_max(dataDir, x)))
-    return df3
+    df = allPatientsDF.assign(mean_sd_maxV=lambda df: df["patientList"].map(lambda x: patients_mean_sd_maxvalue(dataDir, x)))\
+        .assign(mean=lambda df: df["mean_sd_maxV"].map(lambda x: x[0]))\
+        .assign(sd=lambda df: df["mean_sd_maxV"].map(lambda x: x[1])) \
+        .assign(maxval=lambda df: df["mean_sd_maxV"].map(lambda x: x[2]))
+    return df
 
 
 # =============================================================================
