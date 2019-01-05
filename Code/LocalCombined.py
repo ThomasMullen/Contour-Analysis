@@ -13,7 +13,7 @@ import seaborn as sns
 
 from AllPatients import separate_by_recurrence
 from LocalFilter import load_global_patients, radial_mean_sd_for_patients, partition_patient_data_with_outliers, \
-    plot_heat_map, plot_histogram_with_two_data_sets, plot_scatter, plot_histogram, plot_heat_map_np
+    plot_heat_map, plot_histogram_with_two_data_sets, plot_scatter, plot_histogram, plot_heat_map_np, create_polar_axis
 
 sns.set()
 
@@ -99,7 +99,7 @@ def pyminingLocalField(selected_patients):
     labels = np.concatenate((rec_label_array, nonrec_label_array))
 
     # Now use pymining to get a global p value. It should be similar to that from scipy
-    globalp, tthresh = pm.permutationTest(totalPatients, labels, 10)
+    globalp, tthresh = pm.permutationTest(totalPatients, labels, 1000)
     max_t_value_map = pm.imagesTTest(totalPatients, labels)[0]
 
     return globalp, tthresh, max_t_value_map
@@ -170,9 +170,7 @@ def p_value_contour_plot(max_tvalue_map, tthresh):
     fmt = {}
     for l, s in zip(CS.levels, strs):
         fmt[l] = s
-
-    # plt.clabel(CS, fontsize=10, fmt=fmt)
-
+    plt.clabel(CS, fontsize=10, fmt=fmt)
     plt.show()
 
 
@@ -192,7 +190,7 @@ def test_pymining():
     selected_patients, _, _ = partition_patient_data_with_outliers(selected_patients, 5, 95,
                                                                    discriminator_fieldname="volumeContourDifference")  # 0-99.6 grabs 4 at large std dev # 99.73 std
     (globalp, tthresh, max_t_value_map) = pyminingLocalField(selected_patients)
-    plot_sample_mean_and_sd_maps(selected_patients)
+    # plot_sample_mean_and_sd_maps(selected_patients)
     plot_tTest_data(globalp, tthresh, max_t_value_map)
 
 
