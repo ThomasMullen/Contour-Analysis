@@ -90,14 +90,16 @@ def patients_mean_sd_maxvalue(dataDir, patientId):
     result = calcPatientMapSD(matrix)
     return result
 
+
 '''
 Finds the Mean and the SD of the radial difference at each solid angle for each patient. And appends data to global patient df
 '''
 
 
 def radial_mean_sd_for_patients(dataDir, allPatientsDF):
-    df = allPatientsDF.assign(mean_sd_maxV=lambda df: df["patientList"].map(lambda x: patients_mean_sd_maxvalue(dataDir, x)))\
-        .assign(mean=lambda df: df["mean_sd_maxV"].map(lambda x: x[0]))\
+    df = allPatientsDF.assign(
+        mean_sd_maxV=lambda df: df["patientList"].map(lambda x: patients_mean_sd_maxvalue(dataDir, x))) \
+        .assign(mean=lambda df: df["mean_sd_maxV"].map(lambda x: x[0])) \
         .assign(sd=lambda df: df["mean_sd_maxV"].map(lambda x: x[1])) \
         .assign(maxval=lambda df: df["mean_sd_maxV"].map(lambda x: x[2]))
     return df
@@ -107,16 +109,17 @@ def radial_mean_sd_for_patients(dataDir, allPatientsDF):
 # Make arrays for theta and phi axes labels
 # =============================================================================
 
-def plotHist(data, colour, bin, name="Single Value"):
+def plot_histogram(data, colour, bin, name="Single Value"):
     result = plt.hist(data, bins=bin, alpha=0.5, label='map sd value', color=colour)
     plt.xlabel(name)
     plt.ylabel('Frequency')
     plt.legend(loc='upper left')
-    # plt.xlim((min(data), max(data)))
+    plt.xlim((min(data), max(data)))
     plt.show()
 
 
-def plotHist2(data1, colour1, bin1, data2, colour2, bin2, name="Single Value", legendPos="upper right"):
+def plot_histogram_with_two_data_sets(data1, colour1, bin1, data2, colour2, bin2, name="Single Value",
+                                      legendPos="upper right"):
     plt.hist(data1, bins=bin1, alpha=0.5, label='Recurrence', color=colour1, normed=True)
     plt.hist(data2, bins=bin2, alpha=0.5, label='No Recurrence', color=colour2, normed=True)
     plt.xlabel(name)
@@ -153,6 +156,7 @@ def create_polar_axis():
     theta[59] = 90
     return phi, theta
 
+
 def plot_heat_map(data, lower_limit, upper_limit, title=" "):
     """
     defines the ticks on the 2d histogram axis
@@ -166,6 +170,18 @@ def plot_heat_map(data, lower_limit, upper_limit, title=" "):
     heat_map = sns.heatmap(data.as_matrix(), center=0, xticklabels=axes[0], yticklabels=axes[1], vmin=lower_limit,
                            vmax=upper_limit,
                            cmap='RdBu')
+    heat_map.set(ylabel='Theta, $\dot{\Theta}$', xlabel='Azimutal, $\phi$', title=title)
+    plt.show()
+
+def plot_heat_map_np(data, title=" "):
+    """
+    defines the ticks on the 2d histogram axis
+    :param: data is the field to be plotted
+    :param: title is the title given to the heat map default is empty
+    :returns: $\phi$ array with values and a $\theta$ array with values
+    """
+    axes = create_polar_axis()
+    heat_map = sns.heatmap(data, center=0, xticklabels=axes[0], yticklabels=axes[1], cmap='RdBu')
     heat_map.set(ylabel='Theta, $\dot{\Theta}$', xlabel='Azimutal, $\phi$', title=title)
     plt.show()
 
