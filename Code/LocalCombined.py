@@ -99,7 +99,7 @@ def pyminingLocalField(selected_patients):
     labels = np.concatenate((rec_label_array, nonrec_label_array))
 
     # Now use pymining to get a global p value. It should be similar to that from scipy
-    globalp, tthresh = pm.permutationTest(totalPatients, labels, 10)
+    globalp, tthresh = pm.permutationTest(totalPatients, labels, 1000)
     max_t_value_map = pm.imagesTTest(totalPatients, labels)[0]
 
     return globalp, tthresh, max_t_value_map
