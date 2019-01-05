@@ -21,10 +21,7 @@ def global_remove_stageT3(all_patients):
     :param all_patients: The global data of all patients including late stages
     :return: returns the global patient data with stages >T3 removed
     """
-    # late_staged_patients = pd.concat(
-    #     [all_patients.groupby('Stage').get_group('T3b'), all_patients.groupby('Stage').get_group('T3B'),
-    #      all_patients.groupby('Stage').get_group('T3b/T4'),
-    #      all_patients.groupby('Stage').get_group('T4')])
+
     late_staged_patients = ('T3b', 'T3b/T4', 'T4', 'T3B')
     early_staged_patients = all_patients[~all_patients['Stage'].isin(late_staged_patients)]
     return early_staged_patients
