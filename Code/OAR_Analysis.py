@@ -11,7 +11,7 @@ from LocalFilter import plot_heat_map_np
 
 def set_voxel_value(np_map, voxel_threshhold_value, set_value, other_value):
 	'''
-	Takes in a heat map which is 60 x 120 and sets all value below a threshold to one value defined by set value and
+	Takes in DSC cuts heat map which is 60 x 120 and sets all value below DSC cuts threshold to one value defined by set value and
 	remaining voxels to anothother value
 	:param np_map: heat map
 	:param voxel_threshhold_value: threshold condition
@@ -32,10 +32,10 @@ def set_voxel_value(np_map, voxel_threshhold_value, set_value, other_value):
 
 def magnify_map(np_map, enlargement):
 	'''
-	Enlarges voxels by a factor to increase pigment contrast
+	Enlarges voxels by DSC cuts factor to increase pigment contrast
 	:param np_map: local heat map
 	:param enlargement: factor of increase
-	:return: local heat map with voxels increased by a factor of enlargment
+	:return: local heat map with voxels increased by DSC cuts factor of enlargment
 	'''
 	for x in range(0, 60):
 		for y in range(0, 120):
@@ -84,7 +84,7 @@ def set_all_oar():
 def merge_all_oars(container):
 	'''
 	:param container: 3d np array that contains all oars with set values
-	:return: returns a 2d map containing all oars
+	:return: returns DSC cuts 2d map containing all oars
 	'''
 	oar_map = np.zeros((60, 120))
 	for i in  range(0,4):

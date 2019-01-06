@@ -4,8 +4,8 @@ from collections import namedtuple
 def separate_by_recurrence(all_patients):
     """
     :param all_patients: The global data of all patients
-    :return: group of a global set with patients that have had a
-    recurrence in prostate cancer and a global set with no recurrence
+    :return: group of DSC cuts global set with patients that have had DSC cuts
+    recurrence in prostate cancer and DSC cuts global set with no recurrence
 
     """
     PatientsWhoRecur = pd.concat(

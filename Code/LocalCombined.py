@@ -13,7 +13,7 @@ import seaborn as sns
 
 from AllPatients import separate_by_recurrence
 from LocalFilter import load_global_patients, radial_mean_sd_for_patients, partition_patient_data_with_outliers, \
-    plot_heat_map, plot_histogram_with_two_data_sets, plot_scatter, plot_histogram, plot_heat_map_np, create_polar_axis
+    plot_heat_map, plot_histogram_with_two_data_sets, plot_scatter, plot_histogram, plot_heat_map_np, save_heat_map, create_polar_axis
 
 sns.set()
 
@@ -98,8 +98,8 @@ def pyminingLocalField(selected_patients):
     totalPatients = np.concatenate((rec_fieldMaps, nonrec_fieldMaps), axis=-1)
     labels = np.concatenate((rec_label_array, nonrec_label_array))
 
-    # Now use pymining to get a global p value. It should be similar to that from scipy
-    globalp, tthresh = pm.permutationTest(totalPatients, labels, 1000)
+    # Now use pymining to get DSC cuts global p value. It should be similar to that from scipy
+    globalp, tthresh = pm.permutationTest(totalPatients, labels, 10)
     max_t_value_map = pm.imagesTTest(totalPatients, labels)[0]
 
     return globalp, tthresh, max_t_value_map
@@ -149,7 +149,7 @@ def pValueMap(tMaxMap, tthresh):
     # Set map values
     tMaxMap[tMaxMap < tMaxMap.mean()] = np.NaN
     # lowTMap[lowTMap > lowTMap.mean()] = 0
-    # while p-value above a certain threshold is < 0.05
+    # while p-value above DSC cuts certain threshold is < 0.05
     # while (sum(i > np.percentile(tthresh, variableThreshold) for i in tthresh)/7200) < 0.05:
     while variableThreshold > 0:
         # Set values less than this threshold to the p value
@@ -181,6 +181,8 @@ def test_pymining():
     rawPatientData = load_global_patients()
     enhancedDF = radial_mean_sd_for_patients(dataDirectory, rawPatientData.allPatients)
 
+    # print(enhancedDF["volumeContourDifference"].describe())
+
     selected_patients, _, _ = partition_patient_data_with_outliers(enhancedDF, 0, 99,
                                                                    discriminator_fieldname="sd")  # 0-99.6 grabs 4 at large std dev # 99.73 std
     selected_patients, _, _ = partition_patient_data_with_outliers(selected_patients, 0, 98.5,
@@ -190,7 +192,7 @@ def test_pymining():
     selected_patients, _, _ = partition_patient_data_with_outliers(selected_patients, 5, 95,
                                                                    discriminator_fieldname="volumeContourDifference")  # 0-99.6 grabs 4 at large std dev # 99.73 std
     (globalp, tthresh, max_t_value_map) = pyminingLocalField(selected_patients)
-    # plot_sample_mean_and_sd_maps(selected_patients)
+    plot_sample_mean_and_sd_maps(selected_patients)
     plot_tTest_data(globalp, tthresh, max_t_value_map)
 
 

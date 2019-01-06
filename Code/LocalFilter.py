@@ -62,10 +62,39 @@ Specify the corrupt patients to be filtered out of analysis
 '''
 
 
+def load_map(data_directory, name):
+    file = r"%s/%s.csv" % (data_directory, name)
+    return pd.read_csv(file, header=None).values
+
+
+def test_on_single_map():
+    dataDirectory = r"../Data/OnlyProstateResults/AllFields"
+    map = load_map(dataDirectory, "196708754")
+    hm = save_heat_map(map, -2, 2, 'testmap', "tester")
+
+
+def save_heat_map(data, lower_limit, upper_limit, save_name=" ", local_folder=" "):
+    """
+    defines the ticks on the 2d histogram axis
+    :param: data is the field to be plotted
+    :param: lower_limit minimum heat colour
+    :param: upper_limit maximum heat colour
+    :param: title is the title given to the heat map default is empty
+    :returns: $\phi$ array with values and DSC cuts $\theta$ array with values
+    """
+    axes = create_polar_axis()
+    heat_map = sns.heatmap(data, center=0, xticklabels=axes[0], yticklabels=axes[1], vmin=lower_limit,
+                           vmax=upper_limit,
+                           cmap='RdBu')
+    heat_map.set(ylabel='Theta, $\dot{\Theta}$', xlabel='Azimutal, $\phi$')
+    plt.show()
+    plt.savefig('../Neat-Output-Contour-Analysis/%s/%s.png' % (local_folder, save_name))
+
+
 def load_global_patients():
     """
     Loads all data frames, removes atlas and corrupt patients and patients that have PC >= T3
-    :return: All global data of all patients in a single df
+    :return: All global data of all patients in DSC cuts single df
     """
     # List the patient ID's of those who are contained in our ATLAS and have corrupted local maps & prothesis
     atlas = {'200806930', '201010804', '201304169', '201100014', '201205737', '201106120', '201204091', '200803943',
@@ -130,14 +159,14 @@ def plot_histogram_with_two_data_sets(data1, colour1, bin1, data2, colour2, bin2
 
 
 '''
-plots a heat map of patients radial map: expect df of local field passed in.
+plots DSC cuts heat map of patients radial map: expect df of local field passed in.
 '''
 
 
 def create_polar_axis():
     """
     defines the ticks on the 2d histogram axis
-    :returns: $\phi$ array with values and a $\theta$ array with values
+    :returns: $\phi$ array with values and DSC cuts $\theta$ array with values
     """
     phi = [];
     theta = []
@@ -164,7 +193,7 @@ def plot_heat_map(data, lower_limit, upper_limit, title=" "):
     :param: lower_limit minimum heat colour
     :param: upper_limit maximum heat colour
     :param: title is the title given to the heat map default is empty
-    :returns: $\phi$ array with values and a $\theta$ array with values
+    :returns: $\phi$ array with values and DSC cuts $\theta$ array with values
     """
     axes = create_polar_axis()
     heat_map = sns.heatmap(data.as_matrix(), center=0, xticklabels=axes[0], yticklabels=axes[1], vmin=lower_limit,
@@ -173,12 +202,13 @@ def plot_heat_map(data, lower_limit, upper_limit, title=" "):
     heat_map.set(ylabel='Theta, $\dot{\Theta}$', xlabel='Azimutal, $\phi$', title=title)
     plt.show()
 
+
 def plot_heat_map_np(data, title=" "):
     """
     defines the ticks on the 2d histogram axis
     :param: data is the field to be plotted
     :param: title is the title given to the heat map default is empty
-    :returns: $\phi$ array with values and a $\theta$ array with values
+    :returns: $\phi$ array with values and DSC cuts $\theta$ array with values
     """
     axes = create_polar_axis()
     heat_map = sns.heatmap(data, center=0, xticklabels=axes[0], yticklabels=axes[1], cmap='RdBu')
@@ -188,10 +218,10 @@ def plot_heat_map_np(data, title=" "):
 
 def plot_scatter(data, colour, legendPos="upper right"):
     # =============================================================================
-    # Plot a scatter graph for the volume of contour versus auto-contour
+    # Plot DSC cuts scatter graph for the volume of contour versus auto-contour
     # =============================================================================
 
-    # Fitting a linear regression for comparison
+    # Fitting DSC cuts linear regression for comparison
     fit = np.polyfit(data["volumeContour"], data["volumeContourAuto"], 1)
     fit_fn = np.poly1d(fit)
 
@@ -222,7 +252,7 @@ def partition_patient_data_with_outliers(data, lower_bound, upper_bound, discrim
 
 
 def partition_patient_data_with_range(data, lower_bound, upper_bound, discriminator_fieldname):
-    ''' A function to return a dataframe of all patients within a certain range '''
+    ''' A function to return DSC cuts dataframe of all patients within DSC cuts certain range '''
     lower_cut_off = data.loc[data[discriminator_fieldname] < lower_bound]
     upper_cut_off = data.loc[data[discriminator_fieldname] > upper_bound]
     selected_patients = data[data[discriminator_fieldname].between(lower_cut_off, upper_cut_off)]
@@ -260,7 +290,8 @@ def test_filtered():
 
 def main():
     test_filtered()
-
+    # test_on_single_map()
 
 if __name__ == '__main__':
     main()
+
