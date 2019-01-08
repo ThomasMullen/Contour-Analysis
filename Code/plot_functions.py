@@ -1,5 +1,6 @@
 import numpy as np
 import seaborn as sns
+import pandas as pd
 import matplotlib.pyplot as plt
 sns.set()
 
@@ -122,3 +123,21 @@ def save_heat_map(data, lower_limit, upper_limit, save_name=" ", local_folder=" 
     heat_map.set(ylabel='Theta, $\dot{\Theta}$', xlabel='Azimutal, $\phi$')
     plt.show()
     plt.savefig('../Neat-Output-Contour-Analysis/%s/%s.png' % (local_folder, save_name))
+
+
+def load_map(data_directory, name):
+    file = r"%s/%s.csv" % (data_directory, name)
+    return pd.read_csv(file, header=None)
+
+
+def test_on_single_map():
+    dataDirectory = r"../Data/OnlyProstateResults/AllFields"
+    map = load_map(dataDirectory, "200710358")
+    plot_heat_map(map, -2, 2, title=" ")
+    # save_heat_map(map, -2, 2, 'testmap', "tester")
+
+def main():
+    test_on_single_map()
+
+if __name__ == '__main__':
+    main()

@@ -12,8 +12,10 @@ import pymining as pm
 import seaborn as sns
 
 from AllPatients import separate_by_recurrence
-from LocalFilter import load_global_patients, radial_mean_sd_for_patients, partition_patient_data_with_outliers, \
-    plot_heat_map, plot_histogram_with_two_data_sets, plot_scatter, plot_histogram, plot_heat_map_np, save_heat_map, create_polar_axis
+from LocalFilter import load_global_patients, radial_mean_sd_for_patients, partition_patient_data_with_outliers
+from plot_functions import plot_heat_map, plot_histogram_with_two_data_sets, plot_scatter, plot_histogram, \
+    plot_heat_map_np, save_heat_map, \
+    create_polar_axis
 
 sns.set()
 
@@ -24,19 +26,20 @@ sns.set()
 # corrupt16frac = {'200701370','200700427','200610929','200606193','200600383','200511824'}
 
 
-def load_local_field_recurrence(global_df, dataDir=r'../Data/OnlyProstateResults/AllFields', corrupt_maps=[]):
+def make_average_field(global_df, dataDir=r'../Data/OnlyProstateResults/AllFields'):
+    '''
+
+    :param global_df: global data frame with patients which will contribute to the ave and variance map
+    :param dataDir: local field directory
+    :return: map of average, variance, std
+    '''
     df = pd.DataFrame(global_df["patientList"])
     dfFiles = df.assign(file_path=lambda df: df["patientList"].map(lambda x: r'%s/%s.csv' % (dataDir, x)))
-
     masterDF = pd.DataFrame.empty
     fieldMaps = []
-    # 140=200710358,55=200705181 corrupt patient ID an xi
     x = 0
     for f in dfFiles.file_path:
-        if x not in corrupt_maps:
-            fieldMaps.append(pd.read_csv(f, header=None))
-        else:
-            print(f)
+        fieldMaps.append(pd.read_csv(f, header=None))
         x = x + 1
 
     masterDF = pd.concat(fieldMaps)
@@ -49,17 +52,18 @@ def load_local_field_recurrence(global_df, dataDir=r'../Data/OnlyProstateResults
 
 
 def show_local_fields(global_df, dataDir=r'../Data/OnlyProstateResults/AllFields'):
-    """ A function to print the each patients radial field for inspection """
-
+    '''
+    :param global_df: Data frame that contains patient list number
+    :param dataDir: Directory which contains local field map
+    :return: a radial plot of map title with patient ID
+    '''
     df = pd.DataFrame(global_df["patientList"])
     dfFiles = df.assign(file_path=lambda df: df["patientList"].map(lambda x: r'%s/%s.csv' % (dataDir, x)))
-
-    fieldMaps = []
-
     x = 0
+    print(dfFiles.patientList)
     for f in dfFiles.file_path:
-        fieldMaps.append(pd.read_csv(f, header=None))
-        plot_heat_map(fieldMaps[x], -1, 1, x)
+        print(dfFiles.iloc[x].patientList)
+        plot_heat_map(pd.read_csv(f, header=None), -3, 3, dfFiles.iloc[x].patientList)
         x = x + 1
 
 
@@ -99,7 +103,7 @@ def pyminingLocalField(selected_patients):
     labels = np.concatenate((rec_label_array, nonrec_label_array))
 
     # Now use pymining to get DSC cuts global p value. It should be similar to that from scipy
-    globalp, tthresh = pm.permutationTest(totalPatients, labels, 10)
+    globalp, tthresh = pm.permutationTest(totalPatients, labels, 100)
     max_t_value_map = pm.imagesTTest(totalPatients, labels)[0]
 
     return globalp, tthresh, max_t_value_map
@@ -107,7 +111,7 @@ def pyminingLocalField(selected_patients):
 
 def plot_tTest_data(globalp, tthresh, max_tvalue_map):
     # Print Global p value
-    print('Global p: %s' % globalp)
+    print('Global p: %.6f' % globalp)
 
     # Plot Threshold histogram
     plot_histogram(tthresh, 'red', 20, "T-value")
@@ -127,12 +131,12 @@ def plot_sample_mean_and_sd_maps(selected_patients):
     patients_who_recur, patients_who_dont_recur = separate_by_recurrence(selected_patients)
     # (meanMap1, varMap, stdMap) = load_local_field_recurrence(selected_patients, dataDirectory)
 
-    (meanMap1, varMap1, stdMap1) = load_local_field_recurrence(patients_who_recur, dataDirectory)
+    (meanMap1, varMap1, stdMap1) = make_average_field(patients_who_recur, dataDirectory)
     plot_heat_map(meanMap1, -1, 1, 'mean map - patients_who_recur')
     plot_heat_map(varMap1, 0, 1, 'variance map - patients_who_recur')
     plot_heat_map(stdMap1, 0, 1, 'standard deviation map - patients_who_recur')
 
-    (meanMap2, varMap2, stdMap2) = load_local_field_recurrence(patients_who_dont_recur, dataDirectory)
+    (meanMap2, varMap2, stdMap2) = make_average_field(patients_who_dont_recur, dataDirectory)
     plot_heat_map(meanMap2, -1, 1, 'mean map - patients_who_dont_recur')
     plot_heat_map(varMap2, 0, 1, 'variance map - patients_who_dont_recur')
     plot_heat_map(stdMap2, 0, 1, 'standard deviation map - patients_who_dont_recur')
@@ -174,6 +178,18 @@ def p_value_contour_plot(max_tvalue_map, tthresh):
     plt.show()
 
 
+def print_volume_difference_details(patientsDF):
+    '''
+    :param patientsDF: is a dataframe that contains the patients global variables
+    :return: prints volume difference statistics for collectiver patient, then patients with recurrence and patients /
+    without
+    '''
+    print(patientsDF["volumeContourDifference"].describe())
+    patients_who_recur, patients_who_dont_recur = separate_by_recurrence(patientsDF)
+    print(patients_who_recur["volumeContourDifference"].describe())
+    print(patients_who_dont_recur["volumeContourDifference"].describe())
+
+
 def test_pymining():
     dataDirectory = r"../Data/OnlyProstateResults/AllFields"
     outputDirectory = r"../outputResults"
@@ -181,17 +197,21 @@ def test_pymining():
     rawPatientData = load_global_patients()
     enhancedDF = radial_mean_sd_for_patients(dataDirectory, rawPatientData.allPatients)
 
-    # print(enhancedDF["volumeContourDifference"].describe())
-
+    print_volume_difference_details(enhancedDF)
     selected_patients, _, _ = partition_patient_data_with_outliers(enhancedDF, 0, 99,
                                                                    discriminator_fieldname="sd")  # 0-99.6 grabs 4 at large std dev # 99.73 std
+    print_volume_difference_details(selected_patients)
     selected_patients, _, _ = partition_patient_data_with_outliers(selected_patients, 0, 98.5,
                                                                    discriminator_fieldname="maxval")  # 0-99.6 grabs 4 at large std dev # 99.73 std
+    print_volume_difference_details(selected_patients)
     selected_patients, _, _ = partition_patient_data_with_outliers(selected_patients, 5, 100,
                                                                    discriminator_fieldname="DSC")  # 0-99.6 grabs 4 at large std dev # 99.73 std
-    selected_patients, _, _ = partition_patient_data_with_outliers(selected_patients, 5, 95,
+    print_volume_difference_details(selected_patients)
+    selected_patients, _, upper = partition_patient_data_with_outliers(selected_patients, 2.5, 97.5,
                                                                    discriminator_fieldname="volumeContourDifference")  # 0-99.6 grabs 4 at large std dev # 99.73 std
-    (globalp, tthresh, max_t_value_map) = pyminingLocalField(selected_patients)
+
+
+    (globalp, tthresh, max_t_value_map) = pyminingLocalField(enhancedDF)
     plot_sample_mean_and_sd_maps(selected_patients)
     plot_tTest_data(globalp, tthresh, max_t_value_map)
 
@@ -327,12 +347,12 @@ def method_of_refining_data():
     # =============================================================================
 
     # Maps with corrupt patients fully cut out
-    (meanMap1, varMap, stdMap) = load_local_field_recurrence(patients_who_recur, dataDirectory)
+    (meanMap1, varMap, stdMap) = make_average_field(patients_who_recur, dataDirectory)
     plot_heat_map(meanMap1, -1, 1, 'mean map - patients_who_recur')
     plot_heat_map(varMap, 0, 1, 'variance map - patients_who_recur')
     plot_heat_map(stdMap, 0, 1, 'standard deviation map - patients_who_recur')
 
-    (meanMap2, varMap, stdMap) = load_local_field_recurrence(patients_who_dont_recur, dataDirectory)
+    (meanMap2, varMap, stdMap) = make_average_field(patients_who_dont_recur, dataDirectory)
     plot_heat_map(meanMap2, -1, 1, 'mean map - patients_who_dont_recur')
     plot_heat_map(varMap, 0, 1, 'variance map - patients_who_dont_recur')
     plot_heat_map(stdMap, 0, 1, 'standard deviation map - patients_who_dont_recur')
