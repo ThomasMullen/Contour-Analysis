@@ -227,20 +227,21 @@ def method_of_refining_data():
                                                                    discriminator_fieldname="maxval")  # 0-99.6 grabs 4 at large std dev # 99.73 std
     selected_patients, _, _ = partition_patient_data_with_outliers(selected_patients, 5, 100,
                                                                    discriminator_fieldname="DSC")  # 0-99.6 grabs 4 at large std dev # 99.73 std
-    selected_patients, _, upper = partition_patient_data_with_outliers(selected_patients, 5, 95,
+    selected_patients, _, upper = partition_patient_data_with_outliers(enhancedDF, 2.5, 96,
                                                                        discriminator_fieldname="volumeContourDifference")  # 0-99.6 grabs 4 at large std dev # 99.73 std
+    patients_who_recur, patients_who_dont_recur = separate_by_recurrence(selected_patients)
     print(patients_who_recur['volumeContourDifference'].describe())
     print(patients_who_dont_recur['volumeContourDifference'].describe())
-    plot_histogram_with_two_data_sets(patients_who_recur['volumeContourDifference'], 'r', VolBins,
-                                      patients_who_dont_recur['volumeContourDifference'], 'g', VolBins,
+    plot_histogram_with_two_data_sets(patients_who_recur['volumeContourDifference'], 'r', 25,
+                                      patients_who_dont_recur['volumeContourDifference'], 'g', 25,-30,60,
                                       name="Volume difference between "
                                            "contour and auto-contour, "
-                                           "$\Delta V$", legendPos="upper "
+                                           "$\Delta V [cm^{3}]$", legendPos="upper "
                                                                    "right")
     print(patients_who_recur['DSC'].describe())
     print(patients_who_dont_recur['DSC'].describe())
-    plot_histogram_with_two_data_sets(patients_who_recur['DSC'], 'r', DSCbins, patients_who_dont_recur['DSC'], 'g',
-                                      DSCbins,
+    plot_histogram_with_two_data_sets(patients_who_recur['DSC'], 'r', 25, patients_who_dont_recur['DSC'], 'g',
+                                      25,0.001,1,
                                       name="Dice coefficient", legendPos="upper left")
     #
     #

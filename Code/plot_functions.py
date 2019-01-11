@@ -14,14 +14,14 @@ def plot_histogram(data, colour, bin, name="Single Value"):
     plt.show()
 
 
-def plot_histogram_with_two_data_sets(data1, colour1, bin1, data2, colour2, bin2, name="Single Value",
+def plot_histogram_with_two_data_sets(data1, colour1, bin1, data2, colour2, bin2,min_range,max_range, name="Single Value",
                                       legendPos="upper right"):
     plt.hist(data1, bins=bin1, alpha=0.5, label='Recurrence', color=colour1, normed=True)
     plt.hist(data2, bins=bin2, alpha=0.5, label='No Recurrence', color=colour2, normed=True)
     plt.xlabel(name)
     plt.ylabel('Frequency')
     plt.legend(loc=legendPos)
-    plt.xlim(-20, 60)
+    plt.xlim(min_range, max_range)
     plt.show()
 
 
