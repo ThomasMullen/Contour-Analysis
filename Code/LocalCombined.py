@@ -26,7 +26,7 @@ sns.set()
 # corrupt16frac = {'200701370','200700427','200610929','200606193','200600383','200511824'}
 
 
-def load_local_field_recurrence(global_df, dataDir = r'../Data/OnlyProstateResults/AllFields', corruptMaps = []):
+def make_average_field(global_df, dataDir=r'../Data/OnlyProstateResults/AllFields', corruptMaps=[]):
     df = pd.DataFrame(global_df["patientList"])
     dfFiles = df.assign(file_path=lambda df: df["patientList"].map(lambda x: r'%s/%s.csv' % (dataDir, x)))
     masterDF = pd.DataFrame.empty
@@ -46,6 +46,34 @@ def load_local_field_recurrence(global_df, dataDir = r'../Data/OnlyProstateResul
     return (meanRecurrence, varRecurrence, stdRecurrence)
 
 
+def take_element_of_array(patient_type_df, element_x, element_y, dataDir=r'../Data/OnlyProstateResults/AllFields'):
+    """
+    This is used to determine the distribution of a specific voxel
+    :param patient_type_df:
+    :param dataDir:
+    :return:
+    """
+    df = pd.DataFrame(patient_type_df["patientList"])
+    dfFiles = df.assign(file_path=lambda df: df["patientList"].map(lambda x: r'%s/%s.csv' % (dataDir, x)))
+
+    ith_element = []
+
+    for f in dfFiles.file_path:
+        map = pd.read_csv(f, header=None).as_matrix()
+        ith_element.append(map[element_x, element_y])
+        # ith_element.append(map.iloc([element_x, element_y]))
+    return ith_element
+
+
+def plot_recurrence_voxel(global_df):
+    patients_who_recur, patients_who_dont_recur = separate_by_recurrence(global_df)
+    rec_voxel = take_element_of_array(patients_who_recur, 15, 80, dataDir=r'../Data/OnlyProstateResults/AllFields')
+    no_rec_voxel = take_element_of_array(patients_who_dont_recur, 15, 80,
+                                         dataDir=r'../Data/OnlyProstateResults/AllFields')
+    plot_histogram(rec_voxel, 'red', 25, name="Recurrence Radial difference 60x120")
+    plot_histogram(no_rec_voxel, 'red', 25, name="no Recurrence Radial difference 60x120")
+
+
 def show_local_fields(global_df, dataDir=r'../Data/OnlyProstateResults/AllFields'):
     '''
     :param global_df: Data frame that contains patient list number
@@ -61,7 +89,8 @@ def show_local_fields(global_df, dataDir=r'../Data/OnlyProstateResults/AllFields
         plot_heat_map(pd.read_csv(f, header=None), -3, 3, dfFiles.iloc[x].patientList)
         x = x + 1
 
-def stack_local_fields(global_df, recurrence_label,  dataDir = r'../Data/OnlyProstateResults/AllFields'):
+
+def stack_local_fields(global_df, recurrence_label, dataDir=r'../Data/OnlyProstateResults/AllFields'):
     """
     :param global_df: either recurring non-recurring global data field
     :param recurrence_label:  =0 for non-recurring or =1 for recurring
@@ -202,8 +231,7 @@ def test_pymining():
                                                                    discriminator_fieldname="DSC")  # 0-99.6 grabs 4 at large std dev # 99.73 std
     print_volume_difference_details(selected_patients)
     selected_patients, _, upper = partition_patient_data_with_outliers(selected_patients, 2.5, 97.5,
-                                                                   discriminator_fieldname="volumeContourDifference")  # 0-99.6 grabs 4 at large std dev # 99.73 std
-
+                                                                       discriminator_fieldname="volumeContourDifference")  # 0-99.6 grabs 4 at large std dev # 99.73 std
 
     (globalp, tthresh, max_t_value_map) = pyminingLocalField(enhancedDF)
     plot_sample_mean_and_sd_maps(selected_patients)
@@ -218,8 +246,8 @@ def method_of_refining_data():
     enhancedDF = radial_mean_sd_for_patients(dataDirectory, rawPatientData.allPatients)
     patients_who_recur, patients_who_dont_recur = separate_by_recurrence(enhancedDF)
 
-    DSCbins = [0,0.45,0.65,0.75,0.85,0.95,1]
-    VolBins = [-55,-40,-30,-20,-10,0,10,20,30,40,55,200]
+    DSCbins = [0, 0.45, 0.65, 0.75, 0.85, 0.95, 1]
+    VolBins = [-55, -40, -30, -20, -10, 0, 10, 20, 30, 40, 55, 200]
 
     selected_patients, _, _ = partition_patient_data_with_outliers(enhancedDF, 0, 99,
                                                                    discriminator_fieldname="sd")  # 0-99.6 grabs 4 at large std dev # 99.73 std
@@ -227,22 +255,25 @@ def method_of_refining_data():
                                                                    discriminator_fieldname="maxval")  # 0-99.6 grabs 4 at large std dev # 99.73 std
     selected_patients, _, _ = partition_patient_data_with_outliers(selected_patients, 5, 100,
                                                                    discriminator_fieldname="DSC")  # 0-99.6 grabs 4 at large std dev # 99.73 std
-    selected_patients, _, upper = partition_patient_data_with_outliers(enhancedDF, 2.5, 96,
+    selected_patients, _, upper = partition_patient_data_with_outliers(enhancedDF, 4, 96,
                                                                        discriminator_fieldname="volumeContourDifference")  # 0-99.6 grabs 4 at large std dev # 99.73 std
     patients_who_recur, patients_who_dont_recur = separate_by_recurrence(selected_patients)
     print(patients_who_recur['volumeContourDifference'].describe())
     print(patients_who_dont_recur['volumeContourDifference'].describe())
-    plot_histogram_with_two_data_sets(patients_who_recur['volumeContourDifference'], 'r', 25,
-                                      patients_who_dont_recur['volumeContourDifference'], 'g', 25,-30,60,
-                                      name="Volume difference between "
-                                           "contour and auto-contour, "
-                                           "$\Delta V [cm^{3}]$", legendPos="upper "
-                                                                   "right")
-    print(patients_who_recur['DSC'].describe())
-    print(patients_who_dont_recur['DSC'].describe())
-    plot_histogram_with_two_data_sets(patients_who_recur['DSC'], 'r', 25, patients_who_dont_recur['DSC'], 'g',
-                                      25,0.001,1,
-                                      name="Dice coefficient", legendPos="upper left")
+
+    plot_recurrence_voxel(selected_patients)
+
+    # plot_histogram_with_two_data_sets(patients_who_recur['volumeContourDifference'], 'r', 25,
+    #                                   patients_who_dont_recur['volumeContourDifference'], 'g', 25,-30,60,
+    #                                   name="Volume difference between "
+    #                                        "contour and auto-contour, "
+    #                                        "$\Delta V [cm^{3}]$", legendPos="upper "
+    #                                                                "right")
+    # print(patients_who_recur['DSC'].describe())
+    # print(patients_who_dont_recur['DSC'].describe())
+    # plot_histogram_with_two_data_sets(patients_who_recur['DSC'], 'r', 25, patients_who_dont_recur['DSC'], 'g',
+    #                                   25,0.001,1,
+    #                                   name="Dice coefficient", legendPos="upper left")
     #
     #
     # # =============================================================================
