@@ -19,7 +19,6 @@ SaveDirect = "/Users/Tom/Documents/University/ProstateCode/LocalAnalysis/Final/"
 # corLocal = {'200801658', '200606193', '200610929', '200701370'}
 
 def calculate_mean_sd_max_of__patient_map(patientMap):
-    # TODO return the maximum modular distance
     '''
     This function calculates the mean, sd and maximum values for each patient map. This is important for identifying
     local anomolies
@@ -32,7 +31,9 @@ def calculate_mean_sd_max_of__patient_map(patientMap):
         sxx = sxx + (radDiff - mapMean) ** 2
     sdValue = np.sqrt(sxx / (patientMap.size - 1))
     mapMax = patientMap.max()
-
+    mapMin = patientMap.min()
+    if np.abs(mapMin) > np.abs(mapMax):
+        mapMax = mapMin
     return mapMean, sdValue, mapMax
 
 

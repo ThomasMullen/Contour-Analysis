@@ -203,13 +203,13 @@ def test_pymining():
     selected_patients, _, _ = partition_patient_data_with_outliers(enhancedDF, 0, 99,
                                                                    discriminator_fieldname="sd")  # 0-99.6 grabs 4 at large std dev # 99.73 std
     print_volume_difference_details(selected_patients)
-    selected_patients, _, _ = partition_patient_data_with_outliers(selected_patients, 0, 98.5,
+    selected_patients, _, _ = partition_patient_data_with_outliers(enhancedDF, 0, 98.5,
                                                                    discriminator_fieldname="maxval")  # 0-99.6 grabs 4 at large std dev # 99.73 std
     print_volume_difference_details(selected_patients)
-    selected_patients, _, _ = partition_patient_data_with_outliers(selected_patients, 5, 100,
+    selected_patients, _, _ = partition_patient_data_with_outliers(enhancedDF, 5, 100,
                                                                    discriminator_fieldname="DSC")  # 0-99.6 grabs 4 at large std dev # 99.73 std
     print_volume_difference_details(selected_patients)
-    selected_patients, _, upper = partition_patient_data_with_outliers(selected_patients, 2.5, 97.5,
+    selected_patients, _, upper = partition_patient_data_with_outliers(enhancedDF, 2.5, 97.5,
                                                                    discriminator_fieldname="volumeContourDifference")  # 0-99.6 grabs 4 at large std dev # 99.73 std
 
 
@@ -220,150 +220,3 @@ def test_pymining():
 if __name__ == '__main__':
     # method_of_refining_data()
     test_pymining()
-
-# def method_of_refining_data():
-#     dataDirectory = r"../Data/OnlyProstateResults/AllFields"
-#     outputDirectory = r"../outputResults"
-#     # (meanVals, sdVals) = extractPatientSDVals(dataDirectory, allPatients.allPatients)
-#     rawPatientData = load_global_patients()
-#     enhancedDF = radial_mean_sd_for_patients(dataDirectory, rawPatientData.allPatients)
-#     patients_who_recur, patients_who_dont_recur = separate_by_recurrence(enhancedDF)
-#
-#     DSCbins = 75  # [0,0.5,0.6,0.7,0.8,0.9,1]
-#     VolBins = 75  # [-40,-16,-10,-2.5,2.5,10,16,40]
-#     # =============================================================================
-#     #     Cut based on standard deviation of each map, eliminates global anomalies on maps
-#     # =============================================================================
-#
-#     # sd plot before cuts
-#     plot_histogram_with_two_data_sets(patients_who_recur['sd'], 'red', 75, patients_who_dont_recur['sd'], 'green', 75,
-#                                       "Standard Deviation of radial difference, $\sigma_{\Delta R}$")
-#     # scatter plot of volume contour to auto-contour
-#     plot_scatter(enhancedDF, 'r', 'upper left')
-#
-#     # Apply SD cut
-#     selected_patients, lower_patients_outliers, upper_patients_outliers = partition_patient_data_with_outliers(
-#         enhancedDF, 0, 99)  # 0-99.6 grabs 4 at large std dev # 99.73 std
-#     # lower_patients_outliers.to_csv('%s/lower_patients_outliers_localMaps.csv' % outputDirectory)
-#     # upper_patients_outliers.to_csv('%s/upper_patients_outliers_localMaps.csv' % outputDirectory)
-#
-#     # Separate By Recurrence
-#     patients_who_recur, patients_who_dont_recur = separate_by_recurrence(selected_patients)
-#
-#     # Plot Histograms
-#     plot_histogram_with_two_data_sets(patients_who_recur['volumeContourDifference'], 'r', VolBins,
-#                                       patients_who_dont_recur['volumeContourDifference'], 'g', VolBins,
-#                                       name="Volume difference between "
-#                                            "contour and auto-contour, "
-#                                            "$\Delta V$", legendPos="upper "
-#                                                                    "right")
-#     plot_histogram_with_two_data_sets(patients_who_recur['DSC'], 'r', DSCbins, patients_who_dont_recur['DSC'], 'g',
-#                                       DSCbins,
-#                                       name="Dice coefficient", legendPos="upper left")
-#
-#     # sd plot after cuts
-#     plot_histogram_with_two_data_sets(patients_who_recur['sd'], 'red', 75, patients_who_dont_recur['sd'], 'green', 75,
-#                                       "Standard Deviation of radial difference, $\sigma_{\Delta R}$")
-#
-#     # =============================================================================
-#     #     Cut based on the maximum value of each map, eliminates local map anomalies
-#     # =============================================================================
-#
-#     # max value of map histogram before cuts
-#     plot_histogram_with_two_data_sets(patients_who_recur['maxval'], 'red', 75, patients_who_dont_recur['maxval'],
-#                                       'green', 75,
-#                                       "Maximum value of radial difference, $max(\Delta R)$")
-#
-#     # Apply Max Value Cut
-#     selected_patients, lower_patients_outliers, upper_patients_outliers = partition_patient_data_with_outliers(
-#         selected_patients, 0, 98.5, discriminator_fieldname="maxval")  # 0-99.6 grabs 4 at large std dev # 99.73 std
-#     # lower_patients_outliers.to_csv('%s/lower_patients_outliers_maxval.csv' % outputDirectory)
-#     # upper_patients_outliers.to_csv('%s/upper_patients_outliers_maxval.csv' % outputDirectory)
-#
-#     # Separate by Recurrence
-#     patients_who_recur, patients_who_dont_recur = separate_by_recurrence(selected_patients)
-#
-#     # Plot Histograms
-#     plot_histogram_with_two_data_sets(patients_who_recur['volumeContourDifference'], 'r', VolBins,
-#                                       patients_who_dont_recur['volumeContourDifference'], 'g', VolBins,
-#                                       legendPos="upper right", name="Volume difference between contour and "
-#                                                                     "auto-contour, $\Delta V$")
-#     plot_histogram_with_two_data_sets(patients_who_recur['DSC'], 'r', DSCbins, patients_who_dont_recur['DSC'], 'g',
-#                                       DSCbins, name="Dice coefficient", legendPos="upper left")
-#
-#     # max value map after cuts
-#     plot_histogram_with_two_data_sets(patients_who_recur['maxval'], 'red', 75, patients_who_dont_recur['maxval'],
-#                                       'green', 75,
-#                                       "Maximum value of radial difference, $max(\Delta R)$")
-#
-#     # =============================================================================
-#     #     Remove patients based on DSC and Vdiff globally
-#     # =============================================================================
-#
-#     # DSC before cuts
-#     plot_histogram_with_two_data_sets(patients_who_recur['DSC'], 'red', DSCbins, patients_who_dont_recur['DSC'],
-#                                       'green', DSCbins,
-#                                       name="Dice coefficient", legendPos="upper left")
-#
-#     # DSC cut & local maps
-#     selected_patients, lower_patients_outliers, upper_patients_outliers = partition_patient_data_with_outliers(
-#         selected_patients, 5, 100, discriminator_fieldname="DSC")  # 0-99.6 grabs 4 at large std dev # 99.73 std
-#     # lower_patients_outliers.to_csv('%s/lower_patients_outliers_DSC.csv' % outputDirectory)
-#     # upper_patients_outliers.to_csv('%s/upper_patients_outliers_DSC.csv' % outputDirectory)
-#
-#     # Separate by Recurrence
-#     patients_who_recur, patients_who_dont_recur = separate_by_recurrence(selected_patients)
-#
-#     # Plot Histograms
-#     plot_histogram_with_two_data_sets(patients_who_recur['volumeContourDifference'], 'r', VolBins,
-#                                       patients_who_dont_recur['volumeContourDifference'], 'g', VolBins,
-#                                       name="Volume difference between contour and auto-contour, $\Delta V$",
-#                                       legendPos="upper right")
-#
-#     # DSC after cuts
-#     plot_histogram_with_two_data_sets(patients_who_recur['DSC'], 'red', DSCbins, patients_who_dont_recur['DSC'],
-#                                       'green', DSCbins,
-#                                       name="Dice coefficient", legendPos="upper left")
-#
-#     # Vdiff before cuts
-#     plot_histogram_with_two_data_sets(patients_who_recur['volumeContourDifference'], 'red', VolBins,
-#                                       patients_who_dont_recur['volumeContourDifference'], 'green', VolBins,
-#                                       name="Volume difference between contour and auto-contour, $\Delta V$",
-#                                       legendPos="upper right")
-#
-#     # Vdiff, DSC & local maps cut
-#     selected_patients, lower_patients_outliers, upper_patients_outliers = partition_patient_data_with_outliers(
-#         selected_patients, 5, 95,
-#         discriminator_fieldname="volumeContourDifference")  # 0-99.6 grabs 4 at large std dev # 99.73 std
-#     lower_patients_outliers.to_csv('%s/lower_patients_outliers_Vdiff.csv' % outputDirectory)
-#     upper_patients_outliers.to_csv('%s/upper_patients_outliers_Vdiff.csv' % outputDirectory)
-#     patients_who_recur, patients_who_dont_recur = separate_by_recurrence(selected_patients)
-#
-#     # Vdiff after cuts
-#     plot_histogram_with_two_data_sets(patients_who_recur['volumeContourDifference'], 'red', VolBins,
-#                                       patients_who_dont_recur['volumeContourDifference'], 'green', VolBins,
-#                                       name="Volume difference between contour and auto-contour, $\Delta V$",
-#                                       legendPos="upper right")
-#     # scatter plot of volume contour to auto-contour
-#     plot_scatter(selected_patients, 'r', 'upper left')
-#
-#     # =============================================================================
-#     # Maps with data removed
-#     # =============================================================================
-#
-#     # Maps with corrupt patients fully cut out
-#     (meanMap1, varMap, stdMap) = make_average_field(patients_who_recur, dataDirectory)
-#     plot_heat_map(meanMap1, -1, 1, 'mean map - patients_who_recur')
-#     plot_heat_map(varMap, 0, 1, 'variance map - patients_who_recur')
-#     plot_heat_map(stdMap, 0, 1, 'standard deviation map - patients_who_recur')
-#
-#     (meanMap2, varMap, stdMap) = make_average_field(patients_who_dont_recur, dataDirectory)
-#     plot_heat_map(meanMap2, -1, 1, 'mean map - patients_who_dont_recur')
-#     plot_heat_map(varMap, 0, 1, 'variance map - patients_who_dont_recur')
-#     plot_heat_map(stdMap, 0, 1, 'standard deviation map - patients_who_dont_recur')
-#
-#     plot_heat_map(meanMap1 - meanMap2, -0.1, 0.1, 'mean map - patients_who_dont_recur')
-#
-#     # printing local data fields
-#     #    show_local_fields(patients_who_dont_recur,dataDirectory)
-#     return
