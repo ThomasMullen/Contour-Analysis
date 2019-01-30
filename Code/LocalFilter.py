@@ -9,43 +9,23 @@ Created on Thu Dec 13 16:25:18 2018
 import numpy as np
 import pandas as pd
 import seaborn as sns;
-import matplotlib.pyplot as plt
-from AllPatients import AllPatients, separate_by_recurrence
 
 sns.set()
-
-# =============================================================================
-# Load patients list data for all fractions
-# =============================================================================
+from AllPatients import AllPatients, separate_by_recurrence
 
 SaveDirect = "/Users/Tom/Documents/University/ProstateCode/LocalAnalysis/Final/"
 
 
-# =============================================================================
-# Group the patients by fractions, and recurrence
-# =============================================================================
-def patientRecurrenceFracs():
-    (PatientsWhoRecur, PatientsWhoDontRecur) = load_global_patients().recurrenceGroups()
+# corLocal = {'200801658', '200606193', '200610929', '200701370'}
 
-    # Group patients with fractions
-    PatientRecurrencew19Frac = PatientsWhoRecur.groupby('Fractions').get_group(19)
-    PatientRecurrencew16Frac = PatientsWhoRecur.groupby('Fractions').get_group(16)
-    PatientNonRecurrencew20Frac = PatientsWhoDontRecur.groupby('Fractions').get_group(20)
-    PatientNonRecurrencew19Frac = PatientsWhoDontRecur.groupby('Fractions').get_group(19)
-    PatientNonRecurrencew16Frac = PatientsWhoDontRecur.groupby('Fractions').get_group(16)
-
-
-# =============================================================================
-# # Read in the patients map and store in correct container
-# =============================================================================
-# Patient map containers
-patientMapRecurrenceContainer = []
-patientMapNonRecurrenceContainer = []
-
-corLocal = {'200801658', '200606193', '200610929', '200701370'}
-
-
-def calcPatientMapSD(patientMap):
+def calculate_mean_sd_max_of__patient_map(patientMap):
+    # TODO return the maximum modular distance
+    '''
+    This function calculates the mean, sd and maximum values for each patient map. This is important for identifying
+    local anomolies
+    :param patientMap: Is the radial difference map of the patient
+    :return: returns the patients mean, sd, and max value
+    '''
     sxx = 0
     mapMean = (sum(patientMap.flatten())) / patientMap.size
     for radDiff in patientMap.flatten():
@@ -53,7 +33,7 @@ def calcPatientMapSD(patientMap):
     sdValue = np.sqrt(sxx / (patientMap.size - 1))
     mapMax = patientMap.max()
 
-    return (mapMean, sdValue, mapMax)
+    return mapMean, sdValue, mapMax
 
 
 '''
@@ -63,7 +43,8 @@ Specify the corrupt patients to be filtered out of analysis
 
 def load_global_patients():
     """
-    Loads all data frames, removes atlas and corrupt patients and patients that have PC >= T3
+    Concats all global df. Loads all data frames, removes atlas and corrupt patients and patients that have PC >= T3.
+    Corrupt patients were identified by loading the maps of the upper/lower bounds of the selection cuts.
     :return: All global data of all patients in DSC cuts single df
     """
     # List the patient ID's of those who are contained in our ATLAS and have corrupted local maps & prothesis
@@ -87,10 +68,10 @@ def load_global_patients():
     return all_patients
 
 
-def patients_mean_sd_maxvalue(dataDir, patientId):
+def patients_mean_sd_max_value(dataDir, patientId):
     file = r"%s/%s.csv" % (dataDir, patientId)
-    matrix = pd.read_csv(file, header=None).values
-    result = calcPatientMapSD(matrix)
+    radial_map = pd.read_csv(file, header=None).values
+    result = calculate_mean_sd_max_of__patient_map(radial_map)
     return result
 
 
@@ -100,8 +81,14 @@ Finds the Mean and the SD of the radial difference at each solid angle for each 
 
 
 def radial_mean_sd_for_patients(dataDir, allPatientsDF):
+    '''
+    Adds 3 additional parameters to the global dataset: the patients mean map value, the patient sd map value and the patients maximum value
+    :param dataDir: The folder that contains the local radial fields
+    :param allPatientsDF: The global patient dataset table
+    :return: Returns three additional parameters
+    '''
     df = allPatientsDF.assign(
-        mean_sd_maxV=lambda df: df["patientList"].map(lambda x: patients_mean_sd_maxvalue(dataDir, x))) \
+        mean_sd_maxV=lambda df: df["patientList"].map(lambda x: patients_mean_sd_max_value(dataDir, x))) \
         .assign(mean=lambda df: df["mean_sd_maxV"].map(lambda x: x[0])) \
         .assign(sd=lambda df: df["mean_sd_maxV"].map(lambda x: x[1])) \
         .assign(maxval=lambda df: df["mean_sd_maxV"].map(lambda x: x[2]))
@@ -109,6 +96,17 @@ def radial_mean_sd_for_patients(dataDir, allPatientsDF):
 
 
 def partition_patient_data_with_outliers(data, lower_bound, upper_bound, discriminator_fieldname="sd"):
+    '''
+    Divides the data set using an upper and lower bound percentile. parameter used to partition the dataset can be any
+    quantitive fieldname form the global dataset table e.g. map standard deviation, map mean, map max, volume difference,
+    dsc. Note, default is set as the map standard deviation.
+    :param data: The global dataset contain all the patients
+    :param lower_bound: lower percentile cut
+    :param upper_bound: upper percentile cut
+    :param discriminator_fieldname: parameter used to partition the dataset
+    :return: returns the global dataset for patient within the bounds, the upp-bound patients and the lower-bound
+    patients, respectively.
+    '''
     lower_cut_off = np.percentile(data[discriminator_fieldname], lower_bound)
     upper_cut_off = np.percentile(data[discriminator_fieldname], upper_bound)
     print("%s, %s" % (lower_cut_off, upper_cut_off))
@@ -122,7 +120,9 @@ def partition_patient_data_with_outliers(data, lower_bound, upper_bound, discrim
 
 
 def partition_patient_data_with_range(data, lower_bound, upper_bound, discriminator_fieldname):
-    ''' A function to return DSC cuts dataframe of all patients within DSC cuts certain range '''
+    ''' A function to return DSC cuts dataframe of all patients within DSC cuts certain range. Very similiar to the
+    function partition_patient_data_with_outliers but it does not include the extreme bound patients
+    '''
     lower_cut_off = data.loc[data[discriminator_fieldname] < lower_bound]
     upper_cut_off = data.loc[data[discriminator_fieldname] > upper_bound]
     selected_patients = data[data[discriminator_fieldname].between(lower_cut_off, upper_cut_off)]
@@ -130,6 +130,14 @@ def partition_patient_data_with_range(data, lower_bound, upper_bound, discrimina
 
 
 def return_patient_sample_range(data, size, lower_bound, upper_bound):
+    '''
+    same as partition_patient_data_with_outliers but returns a sample of patients within to the two bounds
+    :param data:
+    :param size: sample sise of selection for patients within range
+    :param lower_bound:
+    :param upper_bound:
+    :return:
+    '''
     selected_patients, lower_patients_outliers, upper_patients_outliers = partition_patient_data_with_outliers(data,
                                                                                                                lower_bound,
                                                                                                                upper_bound)
