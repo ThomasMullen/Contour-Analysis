@@ -6,6 +6,14 @@ sns.set()
 
 
 def plot_histogram(data, colour, bin, name="Single Value"):
+    '''
+    Plots a histogram of 1d data
+    :param data: field name from the global dataset
+    :param colour: string of histogram colour
+    :param bin: number of bins
+    :param name: x axis label
+    :return: returns histrgram plot of 1 parameter
+    '''
     result = plt.hist(data, bins=bin, alpha=0.5, label='map sd value', color=colour)
     plt.xlabel(name)
     plt.ylabel('Frequency')
@@ -67,7 +75,7 @@ def plot_heat_map(data, lower_limit, upper_limit, title=" "):
 
 def plot_heat_map_np(data, title=" "):
     """
-    defines the ticks on the 2d histogram axis
+    defines the ticks on the 2d histogram axis uses numpy matrix not df
     :param: data is the field to be plotted
     :param: title is the title given to the heat map default is empty
     :returns: $\phi$ array with values and DSC cuts $\theta$ array with values
