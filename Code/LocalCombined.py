@@ -51,6 +51,39 @@ def make_average_field(global_df, dataDir=r'../Data/OnlyProstateResults/AllField
     return mean_field, variance_field, std_field
 
 
+def print_volume_difference_details(patientsDF):
+    '''
+    :param patientsDF: is a dataframe that contains the patients global variables
+    :return: prints volume difference statistics for collectiver patient, then patients with recurrence and patients /
+    without
+    '''
+    print(patientsDF["volumeContourDifference"].describe())
+    patients_who_recur, patients_who_dont_recur = separate_by_recurrence(patientsDF)
+    print(patients_who_recur["volumeContourDifference"].describe())
+    print(patients_who_dont_recur["volumeContourDifference"].describe())
+
+
+def plot_sample_mean_and_sd_maps(selected_patients):
+    dataDirectory = r"../Data/OnlyProstateResults/AllFields"
+    patients_who_recur, patients_who_dont_recur = separate_by_recurrence(selected_patients)
+    # (meanMap1, varMap, stdMap) = load_local_field_recurrence(selected_patients, dataDirectory)
+
+    (meanMap1, varMap1, stdMap1) = make_average_field(patients_who_recur, dataDirectory)
+    plot_heat_map(meanMap1, -1, 1, 'mean map - patients_who_recur')
+    plot_heat_map(varMap1, 0, 1, 'variance map - patients_who_recur')
+    plot_heat_map(stdMap1, 0, 1, 'standard deviation map - patients_who_recur')
+
+    (meanMap2, varMap2, stdMap2) = make_average_field(patients_who_dont_recur, dataDirectory)
+    plot_heat_map(meanMap2, -1, 1, 'mean map - patients_who_dont_recur')
+    plot_heat_map(varMap2, 0, 1, 'variance map - patients_who_dont_recur')
+    plot_heat_map(stdMap2, 0, 1, 'standard deviation map - patients_who_dont_recur')
+
+    plot_heat_map(meanMap1 - meanMap2, -0.3, 0.3, 'Difference in mean map')
+    # Var[X-Y] = Var[X]+Var[Y]
+    # Standard deviation is the square root of the variance
+    plot_heat_map(np.sqrt(varMap1 + varMap2), 0, 1.5, 'Difference in std map')
+
+
 def show_local_fields(global_df, dataDir=r'../Data/OnlyProstateResults/AllFields'):
     '''
     This loads the patients radial maps from the global data frame and labels them by their ID number. Should only
@@ -134,76 +167,59 @@ def plot_tTest_data(globalp, tthresh, max_tvalue_map):
     # plt.show()
 
     # Return upper p-value map
-    upper_p_value_map = upper_tail_p_values(max_tvalue_map, tthresh)
+    # upper_p_value_map = upper_tail_p_values(max_tvalue_map, tthresh)
+
     # Return lower p-value map
-    lower_p_value_map = upper_tail_p_values(max_tvalue_map, tthresh)
+    # lower_p_value_map = lower_tail_p_values(max_tvalue_map, tthresh)
     # Plot Local P-values
-    p_value_contour_plot(upper_p_value_map)
-    p_value_contour_plot(lower_p_value_map)
-
-
-def plot_sample_mean_and_sd_maps(selected_patients):
-    dataDirectory = r"../Data/OnlyProstateResults/AllFields"
-    patients_who_recur, patients_who_dont_recur = separate_by_recurrence(selected_patients)
-    # (meanMap1, varMap, stdMap) = load_local_field_recurrence(selected_patients, dataDirectory)
-
-    (meanMap1, varMap1, stdMap1) = make_average_field(patients_who_recur, dataDirectory)
-    plot_heat_map(meanMap1, -1, 1, 'mean map - patients_who_recur')
-    plot_heat_map(varMap1, 0, 1, 'variance map - patients_who_recur')
-    plot_heat_map(stdMap1, 0, 1, 'standard deviation map - patients_who_recur')
-
-    (meanMap2, varMap2, stdMap2) = make_average_field(patients_who_dont_recur, dataDirectory)
-    plot_heat_map(meanMap2, -1, 1, 'mean map - patients_who_dont_recur')
-    plot_heat_map(varMap2, 0, 1, 'variance map - patients_who_dont_recur')
-    plot_heat_map(stdMap2, 0, 1, 'standard deviation map - patients_who_dont_recur')
-
-    plot_heat_map(meanMap1 - meanMap2, -0.3, 0.3, 'Difference in mean map')
-    # Var[X-Y] = Var[X]+Var[Y]
-    # Standard deviation is the square root of the variance
-    plot_heat_map(np.sqrt(varMap1 + varMap2), 0, 1.5, 'Difference in std map')
+    p_value_contour_plot(max_tvalue_map, tthresh)
+    # p_value_contour_plot(lower_p_value_map)
 
 
 def upper_tail_p_values(t_to_p_value, tthresh):
     variableThreshold = 100
     # TODO to consider the two tails  need to flip the equality sign before 50
-    # Set map values
-    t_to_p_value[t_to_p_value < t_to_p_value.mean()] = np.NaN
-    # lowTMap[lowTMap > lowTMap.mean()] = 0
-    # while p-value above DSC cuts certain threshold is < 0.05
-    # while (sum(i > np.percentile(tthresh, variableThreshold) for i in tthresh)/7200) < 0.05:
+    # t_to_p_value[t_to_p_value < t_to_p_value.mean()] = np.NaN
     while variableThreshold > 0:
-        # Set values less than this threshold to the p value
-        pValue = sum(i > np.percentile(tthresh, variableThreshold) for i in tthresh) / 7200
-        t_to_p_value[t_to_p_value > np.percentile(tthresh, variableThreshold)] = pValue
+
+        if variableThreshold >= 50:
+            # Set values less than this threshold to the p value
+            pValue = sum(i > np.percentile(tthresh, variableThreshold) for i in tthresh) / 7200
+            t_to_p_value[t_to_p_value > np.percentile(tthresh, variableThreshold)] = pValue
+
+        else:
+            pValue = sum(i < np.percentile(tthresh, variableThreshold) for i in tthresh) / 7200
+            t_to_p_value[t_to_p_value < np.percentile(tthresh, variableThreshold)] = pValue
+
         variableThreshold = variableThreshold - 1
 
     return t_to_p_value
 
 
-def lower_tail_p_values(t_to_p_value, tthresh):
-    '''
-    This function calculates the p values for the lower t-statistic values
-    :param t_to_p_value: This initialy is that t-statistic map
-    :param tthresh: t-statistic distribution for all voxels
-    :return: returns a map of lower tail p-values
-    '''
-    variableThreshold = 0
-    # Set map values
-    t_to_p_value[t_to_p_value > t_to_p_value.mean()] = np.NaN
-    while variableThreshold < 100:
-        # Set values less than this threshold to the p value
-        pValue = sum(i < np.percentile(tthresh, variableThreshold) for i in tthresh) / 7200
-        t_to_p_value[t_to_p_value < np.percentile(tthresh, variableThreshold)] = pValue
-        variableThreshold = variableThreshold + 1
-
-    return t_to_p_value
+# def lower_tail_p_values(t_to_p_value, tthresh):
+#     '''
+#     This function calculates the p values for the lower t-statistic values
+#     :param t_to_p_value: This initialy is that t-statistic map
+#     :param tthresh: t-statistic distribution for all voxels
+#     :return: returns a map of lower tail p-values
+#     '''
+#     variableThreshold = 0
+#     # Set map values
+#     t_to_p_value[t_to_p_value > t_to_p_value.mean()] = np.NaN
+#     while variableThreshold < 100:
+#         # Set values less than this threshold to the p value
+#         pValue = sum(i < np.percentile(tthresh, variableThreshold) for i in tthresh) / 7200
+#         t_to_p_value[t_to_p_value < np.percentile(tthresh, variableThreshold)] = pValue
+#         variableThreshold = variableThreshold + 1
+#
+#     return t_to_p_value
 
 
 # TODO combine lower_tail_p_value and upper funcitons together
 
-def p_value_contour_plot(p_map_values):
+def p_value_contour_plot(t_to_p_value, tthresh):
     clrs = ['magenta', 'orange', 'lime', 'red']
-    CS = plt.contour(p_map_values, levels=[0.002, 0.005, 0.01, 0.05], colors=clrs)
+    CS = plt.contour(upper_tail_p_values(t_to_p_value, tthresh), levels=[0.002, 0.005, 0.01, 0.05], colors=clrs)
     ax = plt.gca()
     ax.set_facecolor('white')
     # custom label names
@@ -213,18 +229,6 @@ def p_value_contour_plot(p_map_values):
         fmt[l] = s
     plt.clabel(CS, fontsize=10, fmt=fmt)
     plt.show()
-
-
-def print_volume_difference_details(patientsDF):
-    '''
-    :param patientsDF: is a dataframe that contains the patients global variables
-    :return: prints volume difference statistics for collectiver patient, then patients with recurrence and patients /
-    without
-    '''
-    print(patientsDF["volumeContourDifference"].describe())
-    patients_who_recur, patients_who_dont_recur = separate_by_recurrence(patientsDF)
-    print(patients_who_recur["volumeContourDifference"].describe())
-    print(patients_who_dont_recur["volumeContourDifference"].describe())
 
 
 def test_pymining():
