@@ -149,30 +149,30 @@ def plot_sample_mean_and_sd_maps(selected_patients):
     plot_heat_map(np.sqrt(varMap1 + varMap2), 0, 1.5, 'Difference in std map')
 
 
-def pValueMap(tMaxMap, tthresh):
+def pValueMap(t_to_p_value, tthresh):
     variableThreshold = 100
     # TODO to consider the two tails  need to flip the equality sign before 50
     # Set map values
-    tMaxMap[tMaxMap < tMaxMap.mean()] = np.NaN
+    t_to_p_value[t_to_p_value < t_to_p_value.mean()] = np.NaN
     # lowTMap[lowTMap > lowTMap.mean()] = 0
     # while p-value above DSC cuts certain threshold is < 0.05
     # while (sum(i > np.percentile(tthresh, variableThreshold) for i in tthresh)/7200) < 0.05:
     while variableThreshold > 0:
         # Set values less than this threshold to the p value
         pValue = sum(i > np.percentile(tthresh, variableThreshold) for i in tthresh) / 7200
-        tMaxMap[tMaxMap > np.percentile(tthresh, variableThreshold)] = pValue
+        t_to_p_value[t_to_p_value > np.percentile(tthresh, variableThreshold)] = pValue
         variableThreshold = variableThreshold - 1
 
-    return tMaxMap
+    return t_to_p_value
 
 
 def p_value_contour_plot(max_tvalue_map, tthresh):
-    clrs = ['r', 'g', 'b']
-    CS = plt.contour(pValueMap(max_tvalue_map, tthresh), levels=[0.01, 0.05, 0.1], colors=clrs)
+    clrs = ['magenta', 'orange', 'lime', 'red']
+    CS = plt.contour(pValueMap(max_tvalue_map, tthresh), levels=[0.002, 0.005, 0.01, 0.05], colors=clrs)
     ax = plt.gca()
     ax.set_facecolor('white')
     # custom label names
-    strs = ['p=0.01', 'p=0.05', 'p=0.1']
+    strs = ['p=0.002', 'p=0.005', 'p=0.01', 'p = 0.05']
     fmt = {}
     for l, s in zip(CS.levels, strs):
         fmt[l] = s
@@ -204,17 +204,17 @@ def test_pymining():
     selected_patients, _, _ = partition_patient_data_with_outliers(enhancedDF, 0, 99,
                                                                    discriminator_fieldname="sd")
     print_volume_difference_details(selected_patients)
-    selected_patients, _, _ = partition_patient_data_with_outliers(selected_patients, 0, 98.5,
-                                                                   discriminator_fieldname="maxval")
-    print_volume_difference_details(selected_patients)
-    selected_patients, _, _ = partition_patient_data_with_outliers(selected_patients, 5, 100,
-                                                                   discriminator_fieldname="DSC")
-    print_volume_difference_details(selected_patients)
-    selected_patients, _, upper = partition_patient_data_with_outliers(selected_patients, 2, 96,
-                                                                   discriminator_fieldname="volumeContourDifference")
+    # selected_patients, _, _ = partition_patient_data_with_outliers(selected_patients, 0, 98.5,
+    #                                                                discriminator_fieldname="maxval")
+    # print_volume_difference_details(selected_patients)
+    # selected_patients, _, _ = partition_patient_data_with_outliers(selected_patients, 5, 100,
+    #                                                                discriminator_fieldname="DSC")
+    # print_volume_difference_details(selected_patients)
+    # selected_patients, _, upper = partition_patient_data_with_outliers(selected_patients, 4, 96,
+    #                                                                discriminator_fieldname="volumeContourDifference")
 
 
-    (globalp, tthresh, max_t_value_map) = pyminingLocalField(enhancedDF)
+    (globalp, tthresh, max_t_value_map) = pyminingLocalField(selected_patients)
     plot_sample_mean_and_sd_maps(selected_patients)
     plot_tTest_data(globalp, tthresh, max_t_value_map)
 

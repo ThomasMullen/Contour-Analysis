@@ -51,8 +51,12 @@ def load_global_patients():
 
     '''we have identified these corrupted from previous contour. we need to check '''
     expected_corrupt_to_check = {200705181, 200707193, 200710358, 200809579, 200705630, 200708754, 200801291, 200903234, \
-                                 200601326, 200601919, 200914491, 201102083, 201112791}
-
+                                 200601326, 200601919, 200914491, 201102083, 201112791,200710358, 200705181, 200807021, \
+                                 200502036, 200606193, 200303191, \
+                                     200708782, 200503218, 200511135, 200301067, 200501574, 200502944, \
+                                     201001322, 201007576, 201009663, 200502133, 200502319, 200502439, 200502794, \
+                                     200503516, 200508940, 200511480, 199301039, 200405868, 200504358, 200701300, \
+                                     200502136, 200609194, 200704603}
     patients_ID_to_exclude = atlas.union(expected_corrupt_to_check)
     all_patients = AllPatients(r"../Data/OnlyProstateResults/Global",
                                ['AllData19Frac', 'AllData16Frac_old', 'AllData16Frac', 'AllData19Frac_old'])
