@@ -151,7 +151,7 @@ def plot_sample_mean_and_sd_maps(selected_patients):
 
 def pValueMap(tMaxMap, tthresh):
     variableThreshold = 100
-
+    # TODO to consider the two tails  need to flip the equality sign before 50
     # Set map values
     tMaxMap[tMaxMap < tMaxMap.mean()] = np.NaN
     # lowTMap[lowTMap > lowTMap.mean()] = 0
@@ -193,6 +193,7 @@ def print_volume_difference_details(patientsDF):
 
 
 def test_pymining():
+    # TODO: for cuts independently create a list of extreme upper and lower patients and remove from enhanced df
     dataDirectory = r"../Data/OnlyProstateResults/AllFields"
     outputDirectory = r"../outputResults"
     # (meanVals, sdVals) = extractPatientSDVals(dataDirectory, allPatients.allPatients)
@@ -201,16 +202,16 @@ def test_pymining():
 
     print_volume_difference_details(enhancedDF)
     selected_patients, _, _ = partition_patient_data_with_outliers(enhancedDF, 0, 99,
-                                                                   discriminator_fieldname="sd")  # 0-99.6 grabs 4 at large std dev # 99.73 std
+                                                                   discriminator_fieldname="sd")
     print_volume_difference_details(selected_patients)
-    selected_patients, _, _ = partition_patient_data_with_outliers(enhancedDF, 0, 98.5,
-                                                                   discriminator_fieldname="maxval")  # 0-99.6 grabs 4 at large std dev # 99.73 std
+    selected_patients, _, _ = partition_patient_data_with_outliers(selected_patients, 0, 98.5,
+                                                                   discriminator_fieldname="maxval")
     print_volume_difference_details(selected_patients)
-    selected_patients, _, _ = partition_patient_data_with_outliers(enhancedDF, 5, 100,
-                                                                   discriminator_fieldname="DSC")  # 0-99.6 grabs 4 at large std dev # 99.73 std
+    selected_patients, _, _ = partition_patient_data_with_outliers(selected_patients, 5, 100,
+                                                                   discriminator_fieldname="DSC")
     print_volume_difference_details(selected_patients)
-    selected_patients, _, upper = partition_patient_data_with_outliers(enhancedDF, 2.5, 97.5,
-                                                                   discriminator_fieldname="volumeContourDifference")  # 0-99.6 grabs 4 at large std dev # 99.73 std
+    selected_patients, _, upper = partition_patient_data_with_outliers(selected_patients, 2, 96,
+                                                                   discriminator_fieldname="volumeContourDifference")
 
 
     (globalp, tthresh, max_t_value_map) = pyminingLocalField(enhancedDF)
