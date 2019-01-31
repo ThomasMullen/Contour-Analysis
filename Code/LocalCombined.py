@@ -112,6 +112,15 @@ def pyminingLocalField(selected_patients):
 
 
 def plot_tTest_data(globalp, tthresh, max_tvalue_map):
+    '''
+    prints the calculates global p-value. Produces a histogram of the t-distribution. Produces a map of the t-statistics
+    and the upper and lower tail p-values. The upper p_values ignores t-values which are below the mean t-value and
+    visa versa for the lower p-values.
+    :param globalp: the global p value
+    :param tthresh: the array of the threshold t-values from permutation test
+    :param max_tvalue_map: 2d arrayd of maximum t-statistics
+    :return: returns plots of t-stats and p contours.
+    '''
     # Print Global p value
     print('Global p: %.6f' % globalp)
 
@@ -124,8 +133,13 @@ def plot_tTest_data(globalp, tthresh, max_tvalue_map):
     # tThresh.set(ylabel='Theta, $\dot{\Theta}$', xlabel='Azimutal, $\phi$')
     # plt.show()
 
+    # Return upper p-value map
+    upper_p_value_map = upper_tail_p_values(max_tvalue_map, tthresh)
+    # Return lower p-value map
+    lower_p_value_map = upper_tail_p_values(max_tvalue_map, tthresh)
     # Plot Local P-values
-    p_value_contour_plot(max_tvalue_map, tthresh)
+    p_value_contour_plot(upper_p_value_map)
+    p_value_contour_plot(lower_p_value_map)
 
 
 def plot_sample_mean_and_sd_maps(selected_patients):
@@ -149,7 +163,7 @@ def plot_sample_mean_and_sd_maps(selected_patients):
     plot_heat_map(np.sqrt(varMap1 + varMap2), 0, 1.5, 'Difference in std map')
 
 
-def pValueMap(t_to_p_value, tthresh):
+def upper_tail_p_values(t_to_p_value, tthresh):
     variableThreshold = 100
     # TODO to consider the two tails  need to flip the equality sign before 50
     # Set map values
@@ -166,9 +180,30 @@ def pValueMap(t_to_p_value, tthresh):
     return t_to_p_value
 
 
-def p_value_contour_plot(max_tvalue_map, tthresh):
+def lower_tail_p_values(t_to_p_value, tthresh):
+    '''
+    This function calculates the p values for the lower t-statistic values
+    :param t_to_p_value: This initialy is that t-statistic map
+    :param tthresh: t-statistic distribution for all voxels
+    :return: returns a map of lower tail p-values
+    '''
+    variableThreshold = 0
+    # Set map values
+    t_to_p_value[t_to_p_value > t_to_p_value.mean()] = np.NaN
+    while variableThreshold < 100:
+        # Set values less than this threshold to the p value
+        pValue = sum(i < np.percentile(tthresh, variableThreshold) for i in tthresh) / 7200
+        t_to_p_value[t_to_p_value < np.percentile(tthresh, variableThreshold)] = pValue
+        variableThreshold = variableThreshold + 1
+
+    return t_to_p_value
+
+
+# TODO combine lower_tail_p_value and upper funcitons together
+
+def p_value_contour_plot(p_map_values):
     clrs = ['magenta', 'orange', 'lime', 'red']
-    CS = plt.contour(pValueMap(max_tvalue_map, tthresh), levels=[0.002, 0.005, 0.01, 0.05], colors=clrs)
+    CS = plt.contour(p_map_values, levels=[0.002, 0.005, 0.01, 0.05], colors=clrs)
     ax = plt.gca()
     ax.set_facecolor('white')
     # custom label names
@@ -213,10 +248,10 @@ def test_pymining():
     # selected_patients, _, upper = partition_patient_data_with_outliers(selected_patients, 4, 96,
     #                                                                discriminator_fieldname="volumeContourDifference")
 
-
     (globalp, tthresh, max_t_value_map) = pyminingLocalField(selected_patients)
-    plot_sample_mean_and_sd_maps(selected_patients)
+    # plot_sample_mean_and_sd_maps(selected_patients)
     plot_tTest_data(globalp, tthresh, max_t_value_map)
+
 
 if __name__ == '__main__':
     # method_of_refining_data()
