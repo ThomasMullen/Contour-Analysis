@@ -186,12 +186,12 @@ def pValueMap(t_to_p_map, tthresh):
 
 
 def p_value_contour_plot(max_tvalue_map, tthresh):
-    clrs = ['r', 'g', 'b']
-    CS = plt.contour(pValueMap(max_tvalue_map, tthresh), levels=[0.01, 0.05, 0.1], colors=clrs)
+    clrs = ['magenta', 'orange', 'lime','red']
+    CS = plt.contour(pValueMap(max_tvalue_map, tthresh), levels=[0.002, 0.005, 0.01, 0.05], colors=clrs)
     ax = plt.gca()
     ax.set_facecolor('white')
     # custom label names
-    strs = ['p=0.01', 'p=0.05', 'p=0.1']
+    strs = ['p=0.002', 'p=0.005', 'p=0.01', 'p=0.05']
     fmt = {}
     for l, s in zip(CS.levels, strs):
         fmt[l] = s
