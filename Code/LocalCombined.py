@@ -125,7 +125,10 @@ def plot_tTest_data(globalp, tthresh, max_tvalue_map):
     # plt.show()
 
     # Plot Local P-values
-    p_value_contour_plot(max_tvalue_map, tthresh)
+    p_map_upper, p_map_lower = pValueMap(max_tvalue_map, tthresh)
+    p_value_contour_plot(p_map_upper)
+    p_value_contour_plot(p_map_lower)
+
 
 
 def plot_sample_mean_and_sd_maps(selected_patients):
@@ -158,36 +161,46 @@ def pValueMap(t_to_p_map, tthresh):
     :return: A 2D array of p-values
     '''
 
-    #t_to_p_map[t_to_p_map < t_to_p_map.mean()] = np.NaN
-
     # Start at the 100th percentile, and iterate down to the 0th percentile in increments of 1
     # Upon each iteration, obtain the tthresh-value at each percentile
-    # Sum the number of points in tthresh above the tthresh-value, to obtain a non-normalised p-value
+    # Find the number of points in tthresh above the tthresh-value, to obtain a non-normalised p-value
     # Normalise the p-value by dividing by the number of map elements, i.e. the size of t_to_p_map
-    # Do for both tails of the tthresh distribution
 
+    # Create two (deep) copies of the same map
+    t_to_p_map_upper = t_to_p_map.copy()
+    t_to_p_map_lower = t_to_p_map.copy()
+
+    ''' Calculate the p-values for the upper tail '''
+    t_to_p_map_upper[t_to_p_map_upper < t_to_p_map_upper.mean()] = 0 # Set the lower tail to np.NaN
     variableThreshold = 100
 
     while variableThreshold > 0:
-        if variableThreshold >= 50:
-            # Upper tail p-values calculation
-            pValue = sum(i > np.percentile(tthresh, variableThreshold) for i in tthresh)
-            pValue = pValue / 7200 # Normalise
-            t_to_p_map[t_to_p_map > np.percentile(tthresh, variableThreshold)] = pValue
-            variableThreshold = variableThreshold - 1
-        else:
-            # Lower tail p-value calculation
-            pValue = sum(i < np.percentile(tthresh, variableThreshold) for i in tthresh)
-            pValue = pValue / 7200
-            t_to_p_map[t_to_p_map < np.percentile(tthresh, variableThreshold)] = pValue
-            variableThreshold = variableThreshold - 1
+        # Upper tail p-values calculation
+        pValue = sum(i > np.percentile(tthresh, variableThreshold) for i in tthresh)
+        pValue = pValue / 7200 # Normalise
+        t_to_p_map_upper[t_to_p_map_upper > np.percentile(tthresh, variableThreshold)] = pValue
+        variableThreshold = variableThreshold - 1 # Iterate top down
 
-    return t_to_p_map
+    ''' Calculate the p-values for the lower tail '''
+    t_to_p_map_lower[t_to_p_map_lower > t_to_p_map_lower.mean()] = 0 # Set the upper tail to np.NaN
+    variableThreshold = 0
+
+    while variableThreshold < 100:
+        # Upper tail p-values calculation
+        pValue = sum(i < np.percentile(tthresh, variableThreshold) for i in tthresh)
+        pValue = pValue / 7200  # Normalise
+        # As there are negative t-values in t_to_p_map, switch the sign of the tthresh-value
+        t_to_p_map_lower[t_to_p_map_lower < np.percentile(tthresh, variableThreshold)] = pValue
+        variableThreshold = variableThreshold - 1 # Iterate bottom up
 
 
-def p_value_contour_plot(max_tvalue_map, tthresh):
+    # Return both maps
+    return t_to_p_map_upper, t_to_p_map_lower
+
+
+def p_value_contour_plot(p_map):
     clrs = ['magenta', 'orange', 'lime','red']
-    CS = plt.contour(pValueMap(max_tvalue_map, tthresh), levels=[0.002, 0.005, 0.01, 0.05], colors=clrs)
+    CS = plt.contour(p_map, levels=[0.002, 0.005, 0.01, 0.05], colors=clrs)
     ax = plt.gca()
     ax.set_facecolor('white')
     # custom label names
@@ -228,13 +241,14 @@ def test_pymining():
     selected_patients, _, _ = partition_patient_data_with_outliers(selected_patients, 5, 100,
                                                                    discriminator_fieldname="DSC")  # 0-99.6 grabs 4 at large std dev # 99.73 std
     print_volume_difference_details(selected_patients)
-    selected_patients, _, upper = partition_patient_data_with_outliers(selected_patients, 2, 96,
+    selected_patients, _, upper = partition_patient_data_with_outliers(selected_patients, 4, 96,
                                                                    discriminator_fieldname="volumeContourDifference")  # 0-99.6 grabs 4 at large std dev # 99.73 std
 
 
     (globalp, tthresh, max_t_value_map) = pyminingLocalField(selected_patients)
     plot_sample_mean_and_sd_maps(selected_patients)
     plot_tTest_data(globalp, tthresh, max_t_value_map)
+
 
 if __name__ == '__main__':
     # method_of_refining_data()
