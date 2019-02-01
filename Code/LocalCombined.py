@@ -149,21 +149,40 @@ def plot_sample_mean_and_sd_maps(selected_patients):
     plot_heat_map(np.sqrt(varMap1 + varMap2), 0, 1.5, 'Difference in std map')
 
 
-def pValueMap(tMaxMap, tthresh):
+def pValueMap(t_to_p_map, tthresh):
+    '''
+    A function which will create a map of p-values from a map of t-values and thresholds
+
+    :param t_to_p_map: A 2D array of t-values
+    :param tthresh: A 1D array of t-values used to threshold, obtained from permutation test
+    :return: A 2D array of p-values
+    '''
+
+    #t_to_p_map[t_to_p_map < t_to_p_map.mean()] = np.NaN
+
+    # Start at the 100th percentile, and iterate down to the 0th percentile in increments of 1
+    # Upon each iteration, obtain the tthresh-value at each percentile
+    # Sum the number of points in tthresh above the tthresh-value, to obtain a non-normalised p-value
+    # Normalise the p-value by dividing by the number of map elements, i.e. the size of t_to_p_map
+    # Do for both tails of the tthresh distribution
+
     variableThreshold = 100
 
-    # Set map values
-    tMaxMap[tMaxMap < tMaxMap.mean()] = np.NaN
-    # lowTMap[lowTMap > lowTMap.mean()] = 0
-    # while p-value above DSC cuts certain threshold is < 0.05
-    # while (sum(i > np.percentile(tthresh, variableThreshold) for i in tthresh)/7200) < 0.05:
     while variableThreshold > 0:
-        # Set values less than this threshold to the p value
-        pValue = sum(i > np.percentile(tthresh, variableThreshold) for i in tthresh) / 7200
-        tMaxMap[tMaxMap > np.percentile(tthresh, variableThreshold)] = pValue
-        variableThreshold = variableThreshold - 1
+        if variableThreshold >= 50:
+            # Upper tail p-values calculation
+            pValue = sum(i > np.percentile(tthresh, variableThreshold) for i in tthresh)
+            pValue = pValue / 7200 # Normalise
+            t_to_p_map[t_to_p_map > np.percentile(tthresh, variableThreshold)] = pValue
+            variableThreshold = variableThreshold - 1
+        else:
+            # Lower tail p-value calculation
+            pValue = sum(i < np.percentile(tthresh, variableThreshold) for i in tthresh)
+            pValue = pValue / 7200
+            t_to_p_map[t_to_p_map < np.percentile(tthresh, variableThreshold)] = pValue
+            variableThreshold = variableThreshold - 1
 
-    return tMaxMap
+    return t_to_p_map
 
 
 def p_value_contour_plot(max_tvalue_map, tthresh):
@@ -203,17 +222,17 @@ def test_pymining():
     selected_patients, _, _ = partition_patient_data_with_outliers(enhancedDF, 0, 99,
                                                                    discriminator_fieldname="sd")  # 0-99.6 grabs 4 at large std dev # 99.73 std
     print_volume_difference_details(selected_patients)
-    selected_patients, _, _ = partition_patient_data_with_outliers(enhancedDF, 0, 98.5,
+    selected_patients, _, _ = partition_patient_data_with_outliers(selected_patients, 0, 98.5,
                                                                    discriminator_fieldname="maxval")  # 0-99.6 grabs 4 at large std dev # 99.73 std
     print_volume_difference_details(selected_patients)
-    selected_patients, _, _ = partition_patient_data_with_outliers(enhancedDF, 5, 100,
+    selected_patients, _, _ = partition_patient_data_with_outliers(selected_patients, 5, 100,
                                                                    discriminator_fieldname="DSC")  # 0-99.6 grabs 4 at large std dev # 99.73 std
     print_volume_difference_details(selected_patients)
-    selected_patients, _, upper = partition_patient_data_with_outliers(enhancedDF, 2.5, 97.5,
+    selected_patients, _, upper = partition_patient_data_with_outliers(selected_patients, 2, 96,
                                                                    discriminator_fieldname="volumeContourDifference")  # 0-99.6 grabs 4 at large std dev # 99.73 std
 
 
-    (globalp, tthresh, max_t_value_map) = pyminingLocalField(enhancedDF)
+    (globalp, tthresh, max_t_value_map) = pyminingLocalField(selected_patients)
     plot_sample_mean_and_sd_maps(selected_patients)
     plot_tTest_data(globalp, tthresh, max_t_value_map)
 
