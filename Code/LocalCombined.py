@@ -105,10 +105,10 @@ def pyminingLocalField(selected_patients):
     labels = np.concatenate((rec_label_array, nonrec_label_array))
 
     # Now use pymining to get DSC cuts global p value. It should be similar to that from scipy
-    globalp, tthresh = pm.permutationTest(totalPatients, labels, 100)
-    max_t_value_map = pm.imagesTTest(totalPatients, labels)[0]
+    global_neg_pvalue, global_pos_pvalue, neg_tthresh, pos_tthresh = pm.permutationTest(totalPatients, labels, 100)
+    t_value_map = pm.imagesTTest(totalPatients, labels) # no longer.[0] element
 
-    return globalp, tthresh, max_t_value_map
+    return global_neg_pvalue, global_pos_pvalue, neg_tthresh, pos_tthresh, t_value_map
 
 
 def plot_tTest_data(globalp, tthresh, max_tvalue_map):
@@ -127,8 +127,6 @@ def plot_tTest_data(globalp, tthresh, max_tvalue_map):
     # Plot Local P-values
     p_map_upper, p_map_lower = pValueMap(max_tvalue_map, tthresh)
     p_value_contour_plot(p_map_upper)
-    p_value_contour_plot(p_map_lower)
-
 
 
 def plot_sample_mean_and_sd_maps(selected_patients):
@@ -168,7 +166,6 @@ def pValueMap(t_to_p_map, tthresh):
 
     # Create two (deep) copies of the same map
     t_to_p_map_upper = t_to_p_map.copy()
-    t_to_p_map_lower = t_to_p_map.copy()
 
     ''' Calculate the p-values for the upper tail '''
     t_to_p_map_upper[t_to_p_map_upper < t_to_p_map_upper.mean()] = 0 # Set the lower tail to np.NaN
@@ -182,20 +179,20 @@ def pValueMap(t_to_p_map, tthresh):
         variableThreshold = variableThreshold - 1 # Iterate top down
 
     ''' Calculate the p-values for the lower tail '''
-    t_to_p_map_lower[t_to_p_map_lower > t_to_p_map_lower.mean()] = 0 # Set the upper tail to np.NaN
+    # t_to_p_map_lower[t_to_p_map_lower > t_to_p_map_lower.mean()] = 0 # Set the upper tail to np.NaN
     variableThreshold = 0
 
-    while variableThreshold < 100:
-        # Upper tail p-values calculation
-        pValue = sum(i < np.percentile(tthresh, variableThreshold) for i in tthresh)
-        pValue = pValue / 7200  # Normalise
-        # As there are negative t-values in t_to_p_map, switch the sign of the tthresh-value
-        t_to_p_map_lower[t_to_p_map_lower < np.percentile(tthresh, variableThreshold)] = pValue
-        variableThreshold = variableThreshold - 1 # Iterate bottom up
+    # while variableThreshold < 100:
+    #     # Upper tail p-values calculation
+    #     pValue = sum(i < np.percentile(tthresh, variableThreshold) for i in tthresh)
+    #     pValue = pValue / 7200  # Normalise
+    #     # As there are negative t-values in t_to_p_map, switch the sign of the tthresh-value
+    #     t_to_p_map_lower[t_to_p_map_lower < np.percentile(tthresh, variableThreshold)] = pValue
+    #     variableThreshold = variableThreshold - 1 # Iterate bottom up
 
 
     # Return both maps
-    return t_to_p_map_upper, t_to_p_map_lower
+    return t_to_p_map_upper
 
 
 def p_value_contour_plot(p_map):
@@ -244,11 +241,10 @@ def test_pymining():
     selected_patients, _, upper = partition_patient_data_with_outliers(selected_patients, 4, 96,
                                                                    discriminator_fieldname="volumeContourDifference")  # 0-99.6 grabs 4 at large std dev # 99.73 std
 
-
-    (globalp, tthresh, max_t_value_map) = pyminingLocalField(selected_patients)
-    plot_sample_mean_and_sd_maps(selected_patients)
-    plot_tTest_data(globalp, tthresh, max_t_value_map)
-
+    (global_neg_pvalue, global_pos_pvalue, neg_tthresh, pos_tthresh, t_value_map) = pyminingLocalField(selected_patients)
+    # plot_sample_mean_and_sd_maps(selected_patients)
+    plot_tTest_data(global_neg_pvalue, neg_tthresh, t_value_map)
+    plot_tTest_data(global_pos_pvalue, pos_tthresh, t_value_map)
 
 if __name__ == '__main__':
     # method_of_refining_data()
