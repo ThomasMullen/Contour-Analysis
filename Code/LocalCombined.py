@@ -51,6 +51,27 @@ def make_average_field(global_df, dataDir=r'../Data/OnlyProstateResults/AllField
     return mean_field, variance_field, std_field
 
 
+def plot_sample_mean_and_sd_maps(selected_patients):
+    dataDirectory = r"../Data/OnlyProstateResults/AllFields"
+    patients_who_recur, patients_who_dont_recur = separate_by_recurrence(selected_patients)
+    # (meanMap1, varMap, stdMap) = load_local_field_recurrence(selected_patients, dataDirectory)
+
+    (meanMap1, varMap1, stdMap1) = make_average_field(patients_who_recur, dataDirectory)
+    plot_heat_map(meanMap1, -1, 1, 'mean map - patients_who_recur')
+    plot_heat_map(varMap1, 0, 1, 'variance map - patients_who_recur')
+    plot_heat_map(stdMap1, 0, 1, 'standard deviation map - patients_who_recur')
+
+    (meanMap2, varMap2, stdMap2) = make_average_field(patients_who_dont_recur, dataDirectory)
+    plot_heat_map(meanMap2, -1, 1, 'mean map - patients_who_dont_recur')
+    plot_heat_map(varMap2, 0, 1, 'variance map - patients_who_dont_recur')
+    plot_heat_map(stdMap2, 0, 1, 'standard deviation map - patients_who_dont_recur')
+
+    plot_heat_map(meanMap1 - meanMap2, -0.3, 0.3, 'Difference in mean map')
+    # Var[X-Y] = Var[X]+Var[Y]
+    # Standard deviation is the square root of the variance
+    plot_heat_map(np.sqrt(varMap1 + varMap2), 0, 1.5, 'Difference in std map')
+
+
 def show_local_fields(global_df, dataDir=r'../Data/OnlyProstateResults/AllFields'):
     '''
     This loads the patients radial maps from the global data frame and labels them by their ID number. Should only
@@ -105,57 +126,68 @@ def pyminingLocalField(selected_patients):
     labels = np.concatenate((rec_label_array, nonrec_label_array))
 
     # Now use pymining to get DSC cuts global p value. It should be similar to that from scipy
-    global_neg_pvalue, global_pos_pvalue, neg_tthresh, pos_tthresh = pm.permutationTest(totalPatients, labels, 100)
-    t_value_map = pm.imagesTTest(totalPatients, labels) # no longer.[0] element
+    global_neg_pvalue, global_pos_pvalue, neg_tthresh, pos_tthresh = pm.permutationTest(totalPatients, labels, 1000)
+    t_value_map = pm.imagesTTest(totalPatients, labels)  # no longer.[0] element
 
     return global_neg_pvalue, global_pos_pvalue, neg_tthresh, pos_tthresh, t_value_map
 
 
-def plot_tTest_data(globalp, tthresh, max_tvalue_map):
+def plot_tTest_data(neg_globalp, pos_globalp, negative_tthresh, positive_tthresh, t_value_map):
     # Print Global p value
-    print('Global p: %.6f' % globalp)
+    # print('Global negative p: %.6f Global positive p: %.6f' % neg_globalp, pos_globalp)
 
     # Plot Threshold histogram
-    plot_histogram(tthresh, 'red', 20, "T-value")
+    plot_histogram(negative_tthresh, 'red', 20, "Negative T-value")
+    plot_histogram(positive_tthresh, 'red', 20, "Positive T-value")
 
     # Plot Threshhold Map
-    plot_heat_map_np(max_tvalue_map, 'maximum t-value map')
+    plot_heat_map_np(t_value_map, 'maximum t-value map')
     # tThresh = sns.heatmap(max_tvalue_map, center=0, cmap='RdBu')
     # tThresh.set(ylabel='Theta, $\dot{\Theta}$', xlabel='Azimutal, $\phi$')
     # plt.show()
 
     # Plot Local P-values
-    p_map_upper, p_map_lower = pValueMap(max_tvalue_map, tthresh)
+    p_map_upper = pValueMap_pos_t(t_value_map, positive_tthresh)
+    p_map_lower = pValueMap_neg_t(t_value_map, negative_tthresh)
     p_value_contour_plot(p_map_upper)
+    p_value_contour_plot(p_map_lower)
 
 
-def plot_sample_mean_and_sd_maps(selected_patients):
-    dataDirectory = r"../Data/OnlyProstateResults/AllFields"
-    patients_who_recur, patients_who_dont_recur = separate_by_recurrence(selected_patients)
-    # (meanMap1, varMap, stdMap) = load_local_field_recurrence(selected_patients, dataDirectory)
+def pValueMap_pos_t(t_to_p_map, t_thresh):
+    '''
+    A function which will create a map of p-values from a map of t-values and thresholds
 
-    (meanMap1, varMap1, stdMap1) = make_average_field(patients_who_recur, dataDirectory)
-    plot_heat_map(meanMap1, -1, 1, 'mean map - patients_who_recur')
-    plot_heat_map(varMap1, 0, 1, 'variance map - patients_who_recur')
-    plot_heat_map(stdMap1, 0, 1, 'standard deviation map - patients_who_recur')
+    Start at the 100th percentile, and iterate down to the 0th percentile in increments of 1
+    Upon each iteration, obtain the tthresh-value at each percentile
+    Find the number of points in tthresh above the tthresh-value, to obtain a non-normalised p-value
+    Normalise the p-value by dividing by the number of map elements, i.e. the size of t_to_p_map
 
-    (meanMap2, varMap2, stdMap2) = make_average_field(patients_who_dont_recur, dataDirectory)
-    plot_heat_map(meanMap2, -1, 1, 'mean map - patients_who_dont_recur')
-    plot_heat_map(varMap2, 0, 1, 'variance map - patients_who_dont_recur')
-    plot_heat_map(stdMap2, 0, 1, 'standard deviation map - patients_who_dont_recur')
+    :param t_to_p_map: A 2D array of t-values
+    :param t_thresh: A 1D array of t-values used to threshold, obtained from permutation test
+    :return: A 2D array of p-values
+    '''
 
-    plot_heat_map(meanMap1 - meanMap2, -0.3, 0.3, 'Difference in mean map')
-    # Var[X-Y] = Var[X]+Var[Y]
-    # Standard deviation is the square root of the variance
-    plot_heat_map(np.sqrt(varMap1 + varMap2), 0, 1.5, 'Difference in std map')
+    p_map = t_to_p_map.copy()
+    ''' Calculate the p-values for the upper tail '''
+    p_map[p_map < p_map.mean()] = np.NaN  # Set the lower tail to np.NaN
+    variableThreshold = 100
+
+    while variableThreshold > 0:
+        # Upper tail p-values calculation
+        pValue = sum(i > np.percentile(t_thresh, variableThreshold) for i in t_thresh)
+        pValue = pValue / 7200  # Normalise
+        p_map[p_map > np.percentile(t_thresh, variableThreshold)] = pValue
+        variableThreshold = variableThreshold - 1  # Iterate top down
+
+    return p_map
 
 
-def pValueMap(t_to_p_map, tthresh):
+def pValueMap_neg_t(t_to_p_map, t_thresh):
     '''
     A function which will create a map of p-values from a map of t-values and thresholds
 
     :param t_to_p_map: A 2D array of t-values
-    :param tthresh: A 1D array of t-values used to threshold, obtained from permutation test
+    :param t_thresh: A 1D array of t-values used to threshold, obtained from permutation test
     :return: A 2D array of p-values
     '''
 
@@ -164,39 +196,23 @@ def pValueMap(t_to_p_map, tthresh):
     # Find the number of points in tthresh above the tthresh-value, to obtain a non-normalised p-value
     # Normalise the p-value by dividing by the number of map elements, i.e. the size of t_to_p_map
 
-    # Create two (deep) copies of the same map
-    t_to_p_map_upper = t_to_p_map.copy()
-
     ''' Calculate the p-values for the upper tail '''
-    t_to_p_map_upper[t_to_p_map_upper < t_to_p_map_upper.mean()] = 0 # Set the lower tail to np.NaN
-    variableThreshold = 100
-
-    while variableThreshold > 0:
-        # Upper tail p-values calculation
-        pValue = sum(i > np.percentile(tthresh, variableThreshold) for i in tthresh)
-        pValue = pValue / 7200 # Normalise
-        t_to_p_map_upper[t_to_p_map_upper > np.percentile(tthresh, variableThreshold)] = pValue
-        variableThreshold = variableThreshold - 1 # Iterate top down
-
-    ''' Calculate the p-values for the lower tail '''
-    # t_to_p_map_lower[t_to_p_map_lower > t_to_p_map_lower.mean()] = 0 # Set the upper tail to np.NaN
+    t_to_p_map[t_to_p_map > t_to_p_map.mean()] = np.NaN  # Set the lower tail to np.NaN
     variableThreshold = 0
 
-    # while variableThreshold < 100:
-    #     # Upper tail p-values calculation
-    #     pValue = sum(i < np.percentile(tthresh, variableThreshold) for i in tthresh)
-    #     pValue = pValue / 7200  # Normalise
-    #     # As there are negative t-values in t_to_p_map, switch the sign of the tthresh-value
-    #     t_to_p_map_lower[t_to_p_map_lower < np.percentile(tthresh, variableThreshold)] = pValue
-    #     variableThreshold = variableThreshold - 1 # Iterate bottom up
+    while variableThreshold < 100:
+        # Upper tail p-values calculation
+        pValue = sum(i < np.percentile(t_thresh, variableThreshold) for i in t_thresh)
+        pValue = pValue / 7200  # Normalise
+        t_to_p_map[t_to_p_map < np.percentile(t_thresh, variableThreshold)] = pValue
+        variableThreshold = variableThreshold + 1  # Iterate top down
 
-
-    # Return both maps
-    return t_to_p_map_upper
+    return t_to_p_map
 
 
 def p_value_contour_plot(p_map):
-    clrs = ['magenta', 'orange', 'lime','red']
+    clrs = ['magenta', 'orange', 'lime', 'red']
+    fig = plt.figure()
     CS = plt.contour(p_map, levels=[0.002, 0.005, 0.01, 0.05], colors=clrs)
     ax = plt.gca()
     ax.set_facecolor('white')
@@ -207,6 +223,7 @@ def p_value_contour_plot(p_map):
         fmt[l] = s
     plt.clabel(CS, fontsize=10, fmt=fmt)
     plt.show()
+    fig.clear()
 
 
 def print_volume_difference_details(patientsDF):
@@ -239,12 +256,13 @@ def test_pymining():
                                                                    discriminator_fieldname="DSC")  # 0-99.6 grabs 4 at large std dev # 99.73 std
     print_volume_difference_details(selected_patients)
     selected_patients, _, upper = partition_patient_data_with_outliers(selected_patients, 4, 96,
-                                                                   discriminator_fieldname="volumeContourDifference")  # 0-99.6 grabs 4 at large std dev # 99.73 std
+                                                                       discriminator_fieldname="volumeContourDifference")  # 0-99.6 grabs 4 at large std dev # 99.73 std
 
-    (global_neg_pvalue, global_pos_pvalue, neg_tthresh, pos_tthresh, t_value_map) = pyminingLocalField(selected_patients)
+    (global_neg_pvalue, global_pos_pvalue, neg_tthresh, pos_tthresh, t_value_map) = pyminingLocalField(
+        selected_patients)
     # plot_sample_mean_and_sd_maps(selected_patients)
-    plot_tTest_data(global_neg_pvalue, neg_tthresh, t_value_map)
-    plot_tTest_data(global_pos_pvalue, pos_tthresh, t_value_map)
+    plot_tTest_data(global_neg_pvalue, global_pos_pvalue, neg_tthresh, pos_tthresh, t_value_map)
+
 
 if __name__ == '__main__':
     # method_of_refining_data()
