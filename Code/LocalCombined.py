@@ -5,68 +5,71 @@ Created on Thu Dec 13 16:25:18 2018
 
 @author: Tom & AJ
 """
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import seaborn as sns
-import os
 import pymining as pm
-import matplotlib.pyplot as plt
-from scipy.stats import ttest_ind
+import seaborn as sns
 
+from AllPatients import separate_by_recurrence
+from LocalFilter import load_global_patients, radial_mean_sd_for_patients, partition_patient_data_with_outliers
+from plot_functions import plot_heat_map, plot_histogram_with_two_data_sets, plot_scatter, plot_histogram, \
+    plot_heat_map_np, save_heat_map, \
+    create_polar_axis
 
-from AllPatients import recurrenceGroups
-from LocalFilter import load_global_patients, radial_mean_sd_for_patients, partition_patient_data_with_outliers, \
-    plot_heat_map, plotHist2, return_patient_sample_range, plot_scatter
 sns.set()
 
+
 # List the patient ID's of those who are contained in our ATLAS and have corrupted local maps & prothesis
-#atlas = {'200806930','201010804', '201304169', '201100014', '201205737','201106120', '201204091', '200803943', '200901231', '200805565', '201101453', '200910818', '200811563','201014420'}
-#corrupt = {'196708754','200801658','201201119','200911702','200701370','200700427','200610929','200606193','200600383','200511824'}
-#corrupt16frac = {'200701370','200700427','200610929','200606193','200600383','200511824'}
+# atlas = {'200806930','201010804', '201304169', '201100014', '201205737','201106120', '201204091', '200803943', '200901231', '200805565', '201101453', '200910818', '200811563','201014420'}
+# corrupt = {'196708754','200801658','201201119','200911702','200701370','200700427','200610929','200606193','200600383','200511824'}
+# corrupt16frac = {'200701370','200700427','200610929','200606193','200600383','200511824'}
 
 
-def load_local_field_recurrence(global_df, dataDir = r'../Data/OnlyProstateResults/AllFields', corruptMaps = []):
+def make_average_field(global_df, dataDir=r'../Data/OnlyProstateResults/AllFields'):
+    '''
+    Produces average radial difference per voxel for all patients within the global dataframe
+    :param global_df: global data frame with patients which will contribute to the ave and variance map
+    :param dataDir: local field directory
+    :return: map of average, variance, std
+    '''
     df = pd.DataFrame(global_df["patientList"])
     dfFiles = df.assign(file_path=lambda df: df["patientList"].map(lambda x: r'%s/%s.csv' % (dataDir, x)))
-
     masterDF = pd.DataFrame.empty
     fieldMaps = []
-    # 140=200710358,55=200705181 corrupt patient ID an xi
     x = 0
     for f in dfFiles.file_path:
-        if x not in corruptMaps:
-            fieldMaps.append(pd.read_csv(f, header=None))
-        else:
-            print(f)
+        fieldMaps.append(pd.read_csv(f, header=None))
         x = x + 1
 
     masterDF = pd.concat(fieldMaps)
     by_row_indexRec = masterDF.groupby(masterDF.index)
-    meanRecurrence = by_row_indexRec.mean()
-    varRecurrence = by_row_indexRec.var()
-    stdRecurrence = by_row_indexRec.std()
+    mean_field = by_row_indexRec.mean()
+    variance_field = by_row_indexRec.var()
+    std_field = by_row_indexRec.std()
 
-    return (meanRecurrence, varRecurrence, stdRecurrence)
+    return mean_field, variance_field, std_field
 
 
-
-def show_local_fields(global_df, dataDir = r'../Data/OnlyProstateResults/AllFields'):
-    """ A function to print the each patients radial field for inspection """
-
+def show_local_fields(global_df, dataDir=r'../Data/OnlyProstateResults/AllFields'):
+    '''
+    This loads the patients radial maps from the global data frame and labels them by their ID number. Should only
+    by used for small global dataframes i.e. finding outliers from extreme bounds
+    :param global_df: Data frame that contains patient list number
+    :param dataDir: Directory which contains local field map
+    :return: a radial plot of map title with patient ID
+    '''
     df = pd.DataFrame(global_df["patientList"])
     dfFiles = df.assign(file_path=lambda df: df["patientList"].map(lambda x: r'%s/%s.csv' % (dataDir, x)))
-
-    fieldMaps = []
-
-    x=0
+    x = 0
+    print(dfFiles.patientList)
     for f in dfFiles.file_path:
-        fieldMaps.append(pd.read_csv(f, header=None))
-        plot_heat_map(fieldMaps[x],-1,1,x)
+        print(dfFiles.iloc[x].patientList)
+        plot_heat_map(pd.read_csv(f, header=None), -3, 3, dfFiles.iloc[x].patientList)
         x = x + 1
 
 
-
-def stack_local_fields(global_df, recurrence_label,  dataDir = r'../Data/OnlyProstateResults/AllFields'):
+def stack_local_fields(global_df, recurrence_label, dataDir=r'../Data/OnlyProstateResults/AllFields'):
     """
     :param global_df: either recurring non-recurring global data field
     :param recurrence_label:  =0 for non-recurring or =1 for recurring
@@ -91,39 +94,103 @@ def stack_local_fields(global_df, recurrence_label,  dataDir = r'../Data/OnlyPro
     return fieldMaps, label_array
 
 
-
 def pyminingLocalField(selected_patients):
-    patients_who_recur, patients_who_dont_recur = recurrenceGroups(selected_patients)
+    # Tag patients with recurrence:1 and non-recurrence:0
+    patients_who_recur, patients_who_dont_recur = separate_by_recurrence(selected_patients)
     (rec_fieldMaps, rec_label_array) = stack_local_fields(patients_who_recur, 1)
     (nonrec_fieldMaps, nonrec_label_array) = stack_local_fields(patients_who_dont_recur, 0)
 
     # Concatenate the two
     totalPatients = np.concatenate((rec_fieldMaps, nonrec_fieldMaps), axis=-1)
-
-    # Label first 31 recurring as 1
     labels = np.concatenate((rec_label_array, nonrec_label_array))
 
-    # ## Use scipy ttest, we should get the same result later
-    # print(ttest_ind(patientMapRecurrenceContainer, patientMapNonRecurrenceContainer, equal_var=False, axis=-1))
+    # Now use pymining to get DSC cuts global p value. It should be similar to that from scipy
+    globalp, tthresh = pm.permutationTest(totalPatients, labels, 100)
+    max_t_value_map = pm.imagesTTest(totalPatients, labels)[0]
 
-    # ## Now use pymining to get a global p value. It should be similar to that from scipy
-    globalp, tthresh = pm.permutationTest(totalPatients, labels)
-    print(globalp)
+    return globalp, tthresh, max_t_value_map
+
+
+def plot_tTest_data(globalp, tthresh, max_tvalue_map):
+    # Print Global p value
+    print('Global p: %.6f' % globalp)
 
     # Plot Threshold histogram
-
-    # plt.hist(tthresh, 20, alpha=0.5, label='t-Test Threshold', normed=True, color='green')
-    # plt.xlabel('t value')
-    # plt.ylabel('Frequency')
-    # plt.legend(loc='upper left')
-    # # fig.savefig('/Users/Tom/Documents/University/ProstateCode/LocalAnalysis/T-testHist.png')
-    # plt.show()
+    plot_histogram(tthresh, 'red', 20, "T-value")
 
     # Plot Threshhold Map
-    tThresh = sns.heatmap(pm.imagesTTest(totalPatients, labels)[0], center=0)
-    tThresh.set(ylabel='Theta, $\dot{\Theta}$', xlabel='Azimutal, $\phi$')
+    plot_heat_map_np(max_tvalue_map, 'maximum t-value map')
+    # tThresh = sns.heatmap(max_tvalue_map, center=0, cmap='RdBu')
+    # tThresh.set(ylabel='Theta, $\dot{\Theta}$', xlabel='Azimutal, $\phi$')
+    # plt.show()
 
+    # Plot Local P-values
+    p_value_contour_plot(max_tvalue_map, tthresh)
+
+
+def plot_sample_mean_and_sd_maps(selected_patients):
+    dataDirectory = r"../Data/OnlyProstateResults/AllFields"
+    patients_who_recur, patients_who_dont_recur = separate_by_recurrence(selected_patients)
+    # (meanMap1, varMap, stdMap) = load_local_field_recurrence(selected_patients, dataDirectory)
+
+    (meanMap1, varMap1, stdMap1) = make_average_field(patients_who_recur, dataDirectory)
+    plot_heat_map(meanMap1, -1, 1, 'mean map - patients_who_recur')
+    plot_heat_map(varMap1, 0, 1, 'variance map - patients_who_recur')
+    plot_heat_map(stdMap1, 0, 1, 'standard deviation map - patients_who_recur')
+
+    (meanMap2, varMap2, stdMap2) = make_average_field(patients_who_dont_recur, dataDirectory)
+    plot_heat_map(meanMap2, -1, 1, 'mean map - patients_who_dont_recur')
+    plot_heat_map(varMap2, 0, 1, 'variance map - patients_who_dont_recur')
+    plot_heat_map(stdMap2, 0, 1, 'standard deviation map - patients_who_dont_recur')
+
+    plot_heat_map(meanMap1 - meanMap2, -0.3, 0.3, 'Difference in mean map')
+    # Var[X-Y] = Var[X]+Var[Y]
+    # Standard deviation is the square root of the variance
+    plot_heat_map(np.sqrt(varMap1 + varMap2), 0, 1.5, 'Difference in std map')
+
+
+def pValueMap(tMaxMap, tthresh):
+    variableThreshold = 100
+
+    # Set map values
+    tMaxMap[tMaxMap < tMaxMap.mean()] = np.NaN
+    # lowTMap[lowTMap > lowTMap.mean()] = 0
+    # while p-value above DSC cuts certain threshold is < 0.05
+    # while (sum(i > np.percentile(tthresh, variableThreshold) for i in tthresh)/7200) < 0.05:
+    while variableThreshold > 0:
+        # Set values less than this threshold to the p value
+        pValue = sum(i > np.percentile(tthresh, variableThreshold) for i in tthresh) / 7200
+        tMaxMap[tMaxMap > np.percentile(tthresh, variableThreshold)] = pValue
+        variableThreshold = variableThreshold - 1
+
+    return tMaxMap
+
+
+def p_value_contour_plot(max_tvalue_map, tthresh):
+    clrs = ['r', 'g', 'b']
+    CS = plt.contour(pValueMap(max_tvalue_map, tthresh), levels=[0.01, 0.05, 0.1], colors=clrs)
+    ax = plt.gca()
+    ax.set_facecolor('white')
+    # custom label names
+    strs = ['p=0.01', 'p=0.05', 'p=0.1']
+    fmt = {}
+    for l, s in zip(CS.levels, strs):
+        fmt[l] = s
+    plt.clabel(CS, fontsize=10, fmt=fmt)
     plt.show()
+
+
+def print_volume_difference_details(patientsDF):
+    '''
+    :param patientsDF: is a dataframe that contains the patients global variables
+    :return: prints volume difference statistics for collectiver patient, then patients with recurrence and patients /
+    without
+    '''
+    print(patientsDF["volumeContourDifference"].describe())
+    patients_who_recur, patients_who_dont_recur = separate_by_recurrence(patientsDF)
+    print(patients_who_recur["volumeContourDifference"].describe())
+    print(patients_who_dont_recur["volumeContourDifference"].describe())
+
 
 def test_pymining():
     dataDirectory = r"../Data/OnlyProstateResults/AllFields"
@@ -131,116 +198,25 @@ def test_pymining():
     # (meanVals, sdVals) = extractPatientSDVals(dataDirectory, allPatients.allPatients)
     rawPatientData = load_global_patients()
     enhancedDF = radial_mean_sd_for_patients(dataDirectory, rawPatientData.allPatients)
-    patients_who_recur, patients_who_dont_recur = recurrenceGroups(enhancedDF)
 
-    selected_patients, _, _ = partition_patient_data_with_outliers(enhancedDF, 0, 99) # 0-99.6 grabs 4 at large std dev # 99.73 std
-    selected_patients, _, _ = partition_patient_data_with_outliers(selected_patients, 0, 98.5, discriminator_fieldname="maxval") # 0-99.6 grabs 4 at large std dev # 99.73 std
-    selected_patients, _, _ = partition_patient_data_with_outliers(selected_patients, 5, 100, discriminator_fieldname="DSC") # 0-99.6 grabs 4 at large std dev # 99.73 std
-    selected_patients, _, _ = partition_patient_data_with_outliers(selected_patients, 5, 95, discriminator_fieldname="volumeContourDifference") # 0-99.6 grabs 4 at large std dev # 99.73 std
-
-    pyminingLocalField(selected_patients)
-
-
-def test_local_field():
-    dataDirectory = r"../Data/OnlyProstateResults/AllFields"
-    outputDirectory = r"../outputResults"
-    # (meanVals, sdVals) = extractPatientSDVals(dataDirectory, allPatients.allPatients)
-    rawPatientData = load_global_patients()
-    enhancedDF = radial_mean_sd_for_patients(dataDirectory, rawPatientData.allPatients)
-    patients_who_recur, patients_who_dont_recur = recurrenceGroups(enhancedDF)
-
-    DSCbins = 75 #[0,0.5,0.6,0.7,0.8,0.9,1]
-    VolBins = 75 #[-40,-16,-10,-2.5,2.5,10,16,40]
-    # =============================================================================
-    #     Cut based on standard deviation of each map, eliminates global anomalies on maps
-    # =============================================================================
-
-            # sd plot before cuts
-    plotHist2(patients_who_recur['sd'], 'red', 75,patients_who_dont_recur['sd'],'green',75, "Standard Deviation of radial difference, $\sigma_{\Delta R}$")
-            # scatter plot of volume contour to auto-contour
-    plot_scatter(enhancedDF,'r','upper left')
-
-    selected_patients, lower_patients_outliers, upper_patients_outliers = partition_patient_data_with_outliers(enhancedDF, 0, 99) # 0-99.6 grabs 4 at large std dev # 99.73 std
-    lower_patients_outliers.to_csv('%s/lower_patients_outliers_localMaps.csv' % outputDirectory)
-    upper_patients_outliers.to_csv('%s/upper_patients_outliers_localMaps.csv' % outputDirectory)
-    patients_who_recur, patients_who_dont_recur = recurrenceGroups(selected_patients)
-
-#    plotHist2(patients_who_recur['volumeContourDifference'], 'r', VolBins, patients_who_dont_recur['volumeContourDifference'], 'g', VolBins, name="Volume difference between contour and auto-contour, $\Delta V$",legendPos="upper right")
-#    plotHist2(patients_who_recur['DSC'], 'r', DSCbins, patients_who_dont_recur['DSC'], 'g', DSCbins, name="Dice coefficient",legendPos ="upper left")
-#
-        # sd plot after cuts
-    plotHist2(patients_who_recur['sd'], 'red', 75,patients_who_dont_recur['sd'],'green',75, "Standard Deviation of radial difference, $\sigma_{\Delta R}$")
-
-    # =============================================================================
-    #     Cut based on the maximum value of each map, eliminates local map anomalies
-    # =============================================================================
-        # max value of map histogram before cuts
-    plotHist2(patients_who_recur['maxval'], 'red', 75,patients_who_dont_recur['maxval'],'green',75, "Maximum value of radial difference, $max(\Delta R)$")
-
-    selected_patients, lower_patients_outliers, upper_patients_outliers = partition_patient_data_with_outliers(selected_patients, 0, 98.5, discriminator_fieldname="maxval") # 0-99.6 grabs 4 at large std dev # 99.73 std
-    lower_patients_outliers.to_csv('%s/lower_patients_outliers_maxval.csv' % outputDirectory)
-    upper_patients_outliers.to_csv('%s/upper_patients_outliers_maxval.csv' % outputDirectory)
-    patients_who_recur, patients_who_dont_recur = recurrenceGroups(selected_patients)
-#    plotHist2(patients_who_recur['volumeContourDifference'], 'r', VolBins, patients_who_dont_recur['volumeContourDifference'], 'g', VolBins, name="Volume difference between contour and auto-contour, $\Delta V$",legendPos="upper right")
-#    plotHist2(patients_who_recur['DSC'], 'r', DSCbins, patients_who_dont_recur['DSC'], 'g', DSCbins, name="Dice coefficient",legendPos ="upper left")
-
-        # max value map after cuts
-    plotHist2(patients_who_recur['maxval'], 'red', 75,patients_who_dont_recur['maxval'],'green',75, "Maximum value of radial difference, $max(\Delta R)$")
-
-    # =============================================================================
-    #     Remove patients based on DSC and Vdiff globally
-    # =============================================================================
-
-            # DSC before cuts
-    plotHist2(patients_who_recur['DSC'], 'red', DSCbins, patients_who_dont_recur['DSC'], 'green', DSCbins, name="Dice coefficient",legendPos ="upper left")
-
-    # DSC cut & local maps
-    selected_patients, lower_patients_outliers, upper_patients_outliers = partition_patient_data_with_outliers(selected_patients, 5, 100, discriminator_fieldname="DSC") # 0-99.6 grabs 4 at large std dev # 99.73 std
-    lower_patients_outliers.to_csv('%s/lower_patients_outliers_DSC.csv' % outputDirectory)
-    upper_patients_outliers.to_csv('%s/upper_patients_outliers_DSC.csv' % outputDirectory)
-    patients_who_recur, patients_who_dont_recur = recurrenceGroups(selected_patients)
-#    plotHist2(patients_who_recur['volumeContourDifference'], 'r', VolBins, patients_who_dont_recur['volumeContourDifference'], 'g', VolBins, name="Volume difference between contour and auto-contour, $\Delta V$",legendPos="upper right")
-
-        # DSC after cuts
-    plotHist2(patients_who_recur['DSC'], 'red', DSCbins, patients_who_dont_recur['DSC'], 'green', DSCbins, name="Dice coefficient",legendPos ="upper left")
+    print_volume_difference_details(enhancedDF)
+    selected_patients, _, _ = partition_patient_data_with_outliers(enhancedDF, 0, 99,
+                                                                   discriminator_fieldname="sd")  # 0-99.6 grabs 4 at large std dev # 99.73 std
+    print_volume_difference_details(selected_patients)
+    selected_patients, _, _ = partition_patient_data_with_outliers(enhancedDF, 0, 98.5,
+                                                                   discriminator_fieldname="maxval")  # 0-99.6 grabs 4 at large std dev # 99.73 std
+    print_volume_difference_details(selected_patients)
+    selected_patients, _, _ = partition_patient_data_with_outliers(enhancedDF, 5, 100,
+                                                                   discriminator_fieldname="DSC")  # 0-99.6 grabs 4 at large std dev # 99.73 std
+    print_volume_difference_details(selected_patients)
+    selected_patients, _, upper = partition_patient_data_with_outliers(enhancedDF, 2.5, 97.5,
+                                                                   discriminator_fieldname="volumeContourDifference")  # 0-99.6 grabs 4 at large std dev # 99.73 std
 
 
-      # Vdiff before cuts
-    plotHist2(patients_who_recur['volumeContourDifference'], 'red', VolBins, patients_who_dont_recur['volumeContourDifference'], 'green', VolBins, name="Volume difference between contour and auto-contour, $\Delta V$",legendPos="upper right")
-
-    # Vdiff, DSC & local maps cut
-    selected_patients, lower_patients_outliers, upper_patients_outliers = partition_patient_data_with_outliers(selected_patients, 5, 95, discriminator_fieldname="volumeContourDifference") # 0-99.6 grabs 4 at large std dev # 99.73 std
-    lower_patients_outliers.to_csv('%s/lower_patients_outliers_Vdiff.csv' % outputDirectory)
-    upper_patients_outliers.to_csv('%s/upper_patients_outliers_Vdiff.csv' % outputDirectory)
-    patients_who_recur, patients_who_dont_recur = recurrenceGroups(selected_patients)
-
-       # Vdiff after cuts
-    plotHist2(patients_who_recur['volumeContourDifference'], 'red', VolBins, patients_who_dont_recur['volumeContourDifference'], 'green', VolBins, name="Volume difference between contour and auto-contour, $\Delta V$",legendPos="upper right")
-        # scatter plot of volume contour to auto-contour
-    plot_scatter(selected_patients,'r','upper left')
-
-    # =============================================================================
-    # Maps with data removed
-    # =============================================================================
-
-    # Maps with corrupt patients fully cut out
-    (meanMap1, varMap, stdMap) = load_local_field_recurrence(patients_who_recur, dataDirectory)
-    plot_heat_map(meanMap1, -1, 1, 'mean map - patients_who_recur')
-    plot_heat_map(varMap, 0, 1, 'variance map - patients_who_recur')
-    plot_heat_map(stdMap, 0, 1, 'standard deviation map - patients_who_recur')
-
-    (meanMap2, varMap, stdMap) = load_local_field_recurrence(patients_who_dont_recur, dataDirectory)
-    plot_heat_map(meanMap2, -1, 1, 'mean map - patients_who_dont_recur')
-    plot_heat_map(varMap, 0, 1, 'variance map - patients_who_dont_recur')
-    plot_heat_map(stdMap, 0, 1, 'standard deviation map - patients_who_dont_recur')
-
-    plot_heat_map(meanMap1-meanMap2, -0.1, 0.1, 'mean map - patients_who_dont_recur')
-
-    # printing local data fields
-#    show_local_fields(patients_who_dont_recur,dataDirectory)
-    return selected_patients
-
+    (globalp, tthresh, max_t_value_map) = pyminingLocalField(enhancedDF)
+    plot_sample_mean_and_sd_maps(selected_patients)
+    plot_tTest_data(globalp, tthresh, max_t_value_map)
 
 if __name__ == '__main__':
-    # selected_patients = test_local_field()
+    # method_of_refining_data()
     test_pymining()

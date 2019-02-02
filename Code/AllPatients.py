@@ -1,22 +1,31 @@
 import pandas as pd
 from collections import namedtuple
 
+def separate_by_recurrence(all_patients):
+    """
+    :param all_patients: The global data of all patients
+    :return: group of DSC cuts global set with patients that have had DSC cuts
+    recurrence in prostate cancer and DSC cuts global set with no recurrence
 
-
-
-'''
-Group patients by recurrence 
-returns named tuple of PatientsWhoRecur, PatientsWhoDontRecur from the 
-'''
-
-def recurrenceGroups(allPatients):
-    # Group patients by recurrence
-    AllPatientsGrouped = allPatients.groupby('Recurrence')
-    PatientsWhoRecur = pd.concat([AllPatientsGrouped.get_group('1'), AllPatientsGrouped.get_group('YES')])
-    PatientsWhoDontRecur = pd.concat([AllPatientsGrouped.get_group('0'), AllPatientsGrouped.get_group('censor'),
-                                      AllPatientsGrouped.get_group('NO')])
+    """
+    PatientsWhoRecur = pd.concat(
+        [all_patients.groupby('Recurrence').get_group('1'), all_patients.groupby('Recurrence').get_group('YES'),
+         all_patients.groupby('Recurrence').get_group(1)])
+    PatientsWhoDontRecur = pd.concat(
+        [all_patients.groupby('Recurrence').get_group('0'), all_patients.groupby('Recurrence').get_group('censor'),
+         all_patients.groupby('Recurrence').get_group('NO'), all_patients.groupby('Recurrence').get_group(0)])
     return PatientsWhoRecur, PatientsWhoDontRecur
 
+
+def global_remove_stageT3(all_patients):
+    """
+    :param all_patients: The global data of all patients including late stages
+    :return: returns the global patient data with stages >T3 removed
+    """
+
+    late_staged_patients = ('T3b', 'T3b/T4', 'T4', 'T3B')
+    early_staged_patients = all_patients[~all_patients['Stage'].isin(late_staged_patients)]
+    return early_staged_patients
 
 class AllPatients:
     def __init__(self, dataDir, fileNames):
@@ -33,9 +42,10 @@ class AllPatients:
     returns named tuple of PatientsWhoRecur, PatientsWhoDontRecur from the 
     '''
     def recurrenceGroups(self):
-        return recurrenceGroups(self.allPatients)
+        return separate_by_recurrence(self.allPatients)
 
-
+    def remove_stageT3(self):
+        return global_remove_stageT3(self.allPatients)
 
 def testIt():
     testAp = AllPatients(r"../Data/OnlyProstateResults/Global", ['AllData19Frac', 'AllData16Frac_old', 'AllData16Frac', 'AllData19Frac_old'])

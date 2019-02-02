@@ -9,204 +9,155 @@ Created on Thu Dec 13 16:25:18 2018
 import numpy as np
 import pandas as pd
 import seaborn as sns;
-import matplotlib.pyplot as plt
-from AllPatients import AllPatients, recurrenceGroups
 
 sns.set()
-
-
-
-# =============================================================================
-# Load patients list data for all fractions
-# =============================================================================
+from AllPatients import AllPatients, separate_by_recurrence
 
 SaveDirect = "/Users/Tom/Documents/University/ProstateCode/LocalAnalysis/Final/"
 
-# =============================================================================
-# Group the patients by fractions, and recurrence
-# =============================================================================
-def patientRecurrenceFracs():
-    (PatientsWhoRecur, PatientsWhoDontRecur) = load_global_patients().recurrenceGroups()
 
-    # Group patients with fractions
-    PatientRecurrencew19Frac = PatientsWhoRecur.groupby('Fractions').get_group(19)
-    PatientRecurrencew16Frac = PatientsWhoRecur.groupby('Fractions').get_group(16)
-    PatientNonRecurrencew20Frac = PatientsWhoDontRecur.groupby('Fractions').get_group(20)
-    PatientNonRecurrencew19Frac = PatientsWhoDontRecur.groupby('Fractions').get_group(19)
-    PatientNonRecurrencew16Frac = PatientsWhoDontRecur.groupby('Fractions').get_group(16)
+# corLocal = {'200801658', '200606193', '200610929', '200701370'}
 
-# =============================================================================
-# # Read in the patients map and store in correct container
-# =============================================================================
-# Patient map containers
-patientMapRecurrenceContainer = []
-patientMapNonRecurrenceContainer = []
-
-corLocal = {'200801658', '200606193', '200610929', '200701370'}
-
-def calcPatientMapSD(patientMap):
+def calculate_mean_sd_max_of__patient_map(patientMap):
+    '''
+    This function calculates the mean, sd and maximum values for each patient map. This is important for identifying
+    local anomolies
+    :param patientMap: Is the radial difference map of the patient
+    :return: returns the patients mean, sd, and max value
+    '''
     sxx = 0
     mapMean = (sum(patientMap.flatten())) / patientMap.size
     for radDiff in patientMap.flatten():
         sxx = sxx + (radDiff - mapMean) ** 2
     sdValue = np.sqrt(sxx / (patientMap.size - 1))
     mapMax = patientMap.max()
-
-    return (mapMean, sdValue, mapMax)
+    mapMin = patientMap.min()
+    if np.abs(mapMin) > np.abs(mapMax):
+        mapMax = mapMin
+    return mapMean, sdValue, mapMax
 
 
 '''
 Specify the corrupt patients to be filtered out of analysis
-# ===================================================================
 '''
+
+
 def load_global_patients():
+    """
+    Concats all global df. Loads all data frames, removes atlas and corrupt patients and patients that have PC >= T3.
+    Corrupt patients were identified by loading the maps of the upper/lower bounds of the selection cuts.
+    :return: All global data of all patients in DSC cuts single df
+    """
     # List the patient ID's of those who are contained in our ATLAS and have corrupted local maps & prothesis
     atlas = {'200806930', '201010804', '201304169', '201100014', '201205737', '201106120', '201204091', '200803943',
              '200901231', '200805565', '201101453', '200910818', '200811563', '201014420'}
 
     '''we have identified these corrupted from previous contour. we need to check '''
-    expected_corrupt_to_check = {200710358,200705181}
-    #{'200701370', '200700427', '200610929', '200606193', '200600383', '200511824','196708754', '200801658', '201201119', '200911702', '200701370', '200700427','200610929', '200606193', '200600383', '200511824'}
-
+    expected_corrupt_to_check = {200710358, 200705181, 200807021, 200502036, 200606193, 200303191, \
+                                 200708782, 200503218, 200511135, 200301067, 200501574, 200502944, \
+                                 201001322, 201007576, 201009663, 200502133, 200502319, 200502439, 200502794, \
+                                 200503516, 200508940, 200511480, 199301039, 200405868, 200504358, 200701300, 200502136, \
+                                 200609194, 200704603}
+    # {'200701370', '200700427', '200610929', '200606193', '200600383', '200511824','196708754', '200801658',
+    # '201201119', '200911702', '200701370', '200700427','200610929', '200606193', '200600383', '200511824'}
 
     patients_ID_to_exclude = atlas.union(expected_corrupt_to_check)
-    allPatients = AllPatients(r"../Data/OnlyProstateResults/Global",
-                              ['AllData19Frac', 'AllData16Frac_old', 'AllData16Frac', 'AllData19Frac_old'])
-    allPatients.removePatients(patients_ID_to_exclude)
-    return allPatients
+    all_patients = AllPatients(r"../Data/OnlyProstateResults/Global",
+                               ['AllData19Frac', 'AllData16Frac_old', 'AllData16Frac', 'AllData19Frac_old'])
+    all_patients.removePatients(patients_ID_to_exclude)
+    all_patients.remove_stageT3()
+    return all_patients
 
-def calcPatientMapSD2(dataDir, patientId):
+
+def patients_mean_sd_max_value(dataDir, patientId):
     file = r"%s/%s.csv" % (dataDir, patientId)
-    matrix = pd.read_csv(file, header=None).as_matrix()
-    result =  calcPatientMapSD(matrix)
+    radial_map = pd.read_csv(file, header=None).values
+    result = calculate_mean_sd_max_of__patient_map(radial_map)
     return result
 
-def calcPatientMapSD2_mean(dataDir, patientId):
-    (m, s, maxval) =  calcPatientMapSD2(dataDir, patientId)
-    return m
-
-def calcPatientMapSD2_sd(dataDir, patientId):
-    (m, s, maxval) = calcPatientMapSD2(dataDir, patientId)
-    return s
-
-def calcPatientMapSD2_max(dataDir, patientId):
-    (m, s, maxval) = calcPatientMapSD2(dataDir, patientId)
-    return maxval
 
 '''
 Finds the Mean and the SD of the radial difference at each solid angle for each patient. And appends data to global patient df
 '''
+
+
 def radial_mean_sd_for_patients(dataDir, allPatientsDF):
-    df = allPatientsDF.assign(mean=lambda df: df["patientList"].map(lambda x: calcPatientMapSD2_mean(dataDir, x)))
-    df2 = df.assign(sd=lambda df: df["patientList"].map(lambda x: calcPatientMapSD2_sd(dataDir, x)))
-    df3 = df2.assign(maxval=lambda df2: df2["patientList"].map(lambda x: calcPatientMapSD2_max(dataDir, x)))
-    return df3
+    '''
+    Adds 3 additional parameters to the global dataset: the patients mean map value, the patient sd map value and the patients maximum value
+    :param dataDir: The folder that contains the local radial fields
+    :param allPatientsDF: The global patient dataset table
+    :return: Returns three additional parameters
+    '''
+    df = allPatientsDF.assign(
+        mean_sd_maxV=lambda df: df["patientList"].map(lambda x: patients_mean_sd_max_value(dataDir, x))) \
+        .assign(mean=lambda df: df["mean_sd_maxV"].map(lambda x: x[0])) \
+        .assign(sd=lambda df: df["mean_sd_maxV"].map(lambda x: x[1])) \
+        .assign(maxval=lambda df: df["mean_sd_maxV"].map(lambda x: x[2]))
+    return df
 
 
-# =============================================================================
-# Make arrays for theta and phi axes labels
-# =============================================================================
-
-def plotHist(data, colour, bin, name="Single Value"):
-    result = plt.hist(data, bins=bin, alpha=0.5, label='map sd value', color=colour)
-    plt.xlabel(name)
-    plt.ylabel('Frequency')
-    plt.legend(loc='upper left')
-    # plt.xlim((min(data), max(data)))
-    plt.show()
-
-def plotHist2(data1, colour1, bin1, data2, colour2, bin2, name="Single Value",legendPos="upper right"):
-    plt.hist(data1, bins=bin1, alpha=0.5, label='Recurrence', color=colour1,normed=True)
-    plt.hist(data2, bins=bin2, alpha=0.5, label='No Recurrence', color=colour2,normed=True)
-    plt.xlabel(name)
-    plt.ylabel('Frequency')
-    plt.legend(loc=legendPos)
-    #plt.xlim(xmin, xmax)
-    plt.show()
-
-'''
-plots a heat map of patients radial map: expect df of local field passed in.
-'''
-def plot_heat_map(data, lower_limit, upper_limit, title=" "):
-    phi = [];
-    theta = []
-    for i in range(0, 120):
-        phi.append('')
-    for i in range(0, 60):
-        theta.append('')
-    # Define ticks
-    phi[0] = 0;
-    phi[30] = 90;
-    phi[60] = 180;
-    phi[90] = 270;
-    phi[119] = 360;
-    theta[0] = -90;
-    theta[30] = 0;
-    theta[59] = 90
-    map = data.as_matrix()
-    heat_map = sns.heatmap(map, center=0, xticklabels=phi, yticklabels=theta, vmin=lower_limit, vmax=upper_limit, cmap='RdBu')
-    heat_map.set(ylabel='Theta, $\dot{\Theta}$', xlabel='Azimutal, $\phi$', title = title)
-    plt.show()
-
-def plot_scatter(data, colour, legendPos="upper right"):
-
-    # =============================================================================
-    # Plot a scatter graph for the volume of contour versus auto-contour
-    # =============================================================================
-
-    # Fitting a linear regression for comparison
-    fit = np.polyfit(data["volumeContour"],data["volumeContourAuto"],1)
-    fit_fn = np.poly1d(fit)
-
-    # Fitting the graph
-#    fig = plt.figure()
-    x = np.linspace(0, 160, 1000) #Plot straight line
-    y = x
-    plt.scatter(data["volumeContour"], data["volumeContourAuto"],c=colour,label='All patients')
-    plt.plot(x,y,linestyle = 'solid') # y = x line
-    #plt.plot(x,x,'yo', AllPatients["volumeContour"], fit_fn(AllPatients["volumeContour"]), '--k') # linear fit
-    #plt.xlim(0, 150)
-    #plt.ylim(0, 130)
-    plt.xlabel('Manual contour volume [cm$^3$]')
-    plt.ylabel('Automatic contour volume [cm$^3$]')
-    plt.legend(loc=legendPos);
-    plt.grid(True)
-    plt.show()
-
-def partition_patient_data_with_outliers(data, lower_bound, upper_bound, discriminator_fieldname ="sd"):
-
+def partition_patient_data_with_outliers(data, lower_bound, upper_bound, discriminator_fieldname="sd"):
+    '''
+    Divides the data set using an upper and lower bound percentile. parameter used to partition the dataset can be any
+    quantitive fieldname form the global dataset table e.g. map standard deviation, map mean, map max, volume difference,
+    dsc. Note, default is set as the map standard deviation.
+    :param data: The global dataset contain all the patients
+    :param lower_bound: lower percentile cut
+    :param upper_bound: upper percentile cut
+    :param discriminator_fieldname: parameter used to partition the dataset
+    :return: returns the global dataset for patient within the bounds, the upp-bound patients and the lower-bound
+    patients, respectively.
+    '''
     lower_cut_off = np.percentile(data[discriminator_fieldname], lower_bound)
     upper_cut_off = np.percentile(data[discriminator_fieldname], upper_bound)
     print("%s, %s" % (lower_cut_off, upper_cut_off))
     selected_patients = data[data[discriminator_fieldname].between(lower_cut_off, upper_cut_off)]
     lower_patients_outliers = data[data[discriminator_fieldname] < lower_cut_off]
     upper_patients_outliers = data[data[discriminator_fieldname] > upper_cut_off]
+
+    selected_patients.sort_values([discriminator_fieldname])
+
     return selected_patients, lower_patients_outliers, upper_patients_outliers
 
+
 def partition_patient_data_with_range(data, lower_bound, upper_bound, discriminator_fieldname):
-    ''' A function to return a dataframe of all patients within a certain range '''
+    ''' A function to return DSC cuts dataframe of all patients within DSC cuts certain range. Very similiar to the
+    function partition_patient_data_with_outliers but it does not include the extreme bound patients
+    '''
     lower_cut_off = data.loc[data[discriminator_fieldname] < lower_bound]
     upper_cut_off = data.loc[data[discriminator_fieldname] > upper_bound]
     selected_patients = data[data[discriminator_fieldname].between(lower_cut_off, upper_cut_off)]
     return selected_patients
 
+
 def return_patient_sample_range(data, size, lower_bound, upper_bound):
-    selected_patients, lower_patients_outliers, upper_patients_outliers = partition_patient_data_with_outliers(data, lower_bound, upper_bound)
+    '''
+    same as partition_patient_data_with_outliers but returns a sample of patients within to the two bounds
+    :param data:
+    :param size: sample sise of selection for patients within range
+    :param lower_bound:
+    :param upper_bound:
+    :return:
+    '''
+    selected_patients, lower_patients_outliers, upper_patients_outliers = partition_patient_data_with_outliers(data,
+                                                                                                               lower_bound,
+                                                                                                               upper_bound)
     return (selected_patients.sample(n=size), lower_patients_outliers, upper_patients_outliers)
+
 
 def test_filtered():
     dataDirectory = r"../Data/OnlyProstateResults/AllFields"
     outputDirectory = r"../outputResults"
     # (meanVals, sdVals) = extractPatientSDVals(dataDirectory, allPatients.allPatients)
-    rawPatientData = load_global_patients() # returns the data cleaned for atlas and corruption
+    rawPatientData = load_global_patients()  # returns the data cleaned for atlas and corruption
     enhancedDF = radial_mean_sd_for_patients(dataDirectory, rawPatientData.allPatients)
     selected_patients, lower_patients_outliers, upper_patients_outliers = partition_patient_data_with_outliers(
         enhancedDF, 10, 90)
     lower_patients_outliers.to_csv('%s/lower_patients_outliers.csv' % outputDirectory)
     upper_patients_outliers.to_csv('%s/upper_patients_outliers.csv' % outputDirectory)
 
-#     Output sample of patients within certain percentiles
-    sample1 = return_patient_sample_range(enhancedDF,5,10,20)
+    #     Output sample of patients within certain percentiles
+    sample1 = return_patient_sample_range(enhancedDF, 5, 10, 20)
     sample1[0].to_csv('%s/sample_set1.csv' % outputDirectory)
     sample2 = return_patient_sample_range(enhancedDF, 5, 30, 50)
     sample2[0].to_csv('%s/sample_set2.csv' % outputDirectory)
@@ -218,6 +169,8 @@ def test_filtered():
 
 def main():
     test_filtered()
+    # test_on_single_map()
+
 
 if __name__ == '__main__':
     main()
