@@ -8,6 +8,7 @@ someOtherfoler/
 
 *.DS_Store
 *.pyc
+*.idea
 
 Code/.DS_Store
 Data/.DS_Store
