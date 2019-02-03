@@ -13,8 +13,8 @@ import seaborn as sns
 
 from AllPatients import separate_by_recurrence
 from LocalFilter import load_global_patients, radial_mean_sd_for_patients, partition_patient_data_with_outliers
-from plot_functions import plot_heat_map, plot_histogram_with_two_data_sets, plot_scatter, plot_histogram, \
-    plot_heat_map_np, save_heat_map, \
+from plot_functions import plot_heat_map_np, plot_histogram, plot_scatter, plot_histogram, \
+    plot_heat_map, save_heat_map, \
     create_polar_axis
 
 sns.set()
@@ -126,7 +126,7 @@ def pyminingLocalField(selected_patients):
     labels = np.concatenate((rec_label_array, nonrec_label_array))
 
     # Now use pymining to get DSC cuts global p value. It should be similar to that from scipy
-    global_neg_pvalue, global_pos_pvalue, neg_tthresh, pos_tthresh = pm.permutationTest(totalPatients, labels, 1000)
+    global_neg_pvalue, global_pos_pvalue, neg_tthresh, pos_tthresh = pm.permutationTest(totalPatients, labels, 100)
     t_value_map = pm.imagesTTest(totalPatients, labels)  # no longer.[0] element
 
     return global_neg_pvalue, global_pos_pvalue, neg_tthresh, pos_tthresh, t_value_map
@@ -149,8 +149,8 @@ def plot_tTest_data(neg_globalp, pos_globalp, negative_tthresh, positive_tthresh
     # Plot Local P-values
     p_map_upper = pValueMap_pos_t(t_value_map, positive_tthresh)
     p_map_lower = pValueMap_neg_t(t_value_map, negative_tthresh)
+    
     p_value_contour_plot(p_map_upper)
-
     p_value_contour_plot(p_map_lower)
 
 
@@ -208,9 +208,9 @@ def pValueMap_neg_t(t_to_p_map, t_thresh):
     return t_to_p_map
 
 
-def p_value_contour_plot(max_tvalue_map, tthresh):
+def p_value_contour_plot(p_map_upper):
     clrs = ['r', 'g', 'b']
-    CS = plt.contour(pValueMap(max_tvalue_map, tthresh), levels=[0.01, 0.05, 0.1], colors=clrs)
+    CS = plt.contour(p_map_upper, levels=[0.01, 0.05, 0.1], colors=clrs)
     ax = plt.gca()
     ax.set_facecolor('white')
     # custom label names

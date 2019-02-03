@@ -16,47 +16,59 @@ except:
 
 def permutationTest(doseData, statuses, nperm=1000):
     """
-    Perform DSC cuts permutation test to get the global p-value and t-thresholds
+    Perform a permutation test to get the global p-value and t-thresholds
     Inputs:
         - doseData: the dose data, should be structured such that the number of patients in it is along the last axis
         - statuses: the outcome labels. 1 indicates an event, 0 indicates no event.
         - nperm: The number of permutations to calculate. Defaults to 1000 which is the minimum for reasonable accuracy
     Returns:
-        - globalP: the global significance of the test
-        - tThresh: the list of maxT from all the permutations, use it to set DSC cuts significance threshold.
+        - globalPNeg: the global significance of the test for negative t-values
+        - globalPPos: the global significance of the test for positive t-values
+        - tThreshNeg: the list of minT from all the permutations, use it to set a significance threshold.
+        - tThreshPos: the list of maxT from all the permutations, use it to set a significance threshold.
     """
     tthresh = []
     gtCount = 0
-    trueMaxT = np.max(imagesTTest(doseData, statuses))
+    ltCount = 0
+    trueT = imagesTTest(doseData, statuses)
+    trueMaxT = np.max(trueT)
+    trueMinT = np.min(trueT)
     if haveTQDM:
         for perm in tqdm(range(nperm)):
             tthresh.append(doPermutation(doseData, statuses))
-            if np.abs(tthresh[-1]) > np.abs(trueMaxT):
+            if tthresh[-1][1] > trueMaxT:
                 gtCount += 1.0
+            if tthresh[-1][0] < trueMinT:
+                ltCount += 1.0
     else:
         for perm in range(nperm):
             tthresh.append(doPermutation(doseData, statuses))
-            if np.abs(tthresh[-1]) > np.abs(trueMaxT):
+            if tthresh[-1][1] > trueMaxT:
                 gtCount += 1.0
-    
-    globalp = gtCount / float(nperm)
-    return (globalp, sorted(tthresh))
+            if tthresh[-1][0] < trueMinT:
+                ltCount += 1.0
+
+    globalpPos = gtCount / float(nperm)
+    globalpNeg = ltCount / float(nperm)
+    tthresh = np.array(tthresh)
+    return globalpNeg, globalpPos, sorted(tthresh[:, 0]), sorted(tthresh[:, 1])
     
 
 def doPermutation(doseData, statuses):
     """
-    Permute the statuses and return the maximum t value for this permutation
-    Inputs:
-        - doseData: the dose data, should be structured such that the number of patients in it is along the last axis
-        - statuses: the outcome labels. 1 indicates an event, 0 indicates no event. These will be permuted in this function to 
-                    assess the null hypothesis of no dose interaction
-    Returns:
-        - tMax: the maximum of the whole t-value map for this permutation
-    """
+        Permute the statuses and return the maximum t value for this permutation
+        Inputs:
+            - doseData: the dose data, should be structured such that the number of patients in it is along the last axis
+            - statuses: the outcome labels. 1 indicates an event, 0 indicates no event. These will be permuted in this function to
+                        assess the null hypothesis of no dose interaction
+        Returns:
+            - (tMin, tMax): the extreme values of the whole t-value map for this permutation
+        """
     pstatuses = np.random.permutation(statuses)
     permT = imagesTTest(doseData, pstatuses)
-    return np.max(permT)
 
+
+    return (np.min(permT), np.max(permT))
 
 def imagesTTest(doseData, statuses):
     """
