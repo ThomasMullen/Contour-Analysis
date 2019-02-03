@@ -1,0 +1,14 @@
+# Don't track content of these folders
+node_modules/
+someOtherfoler/
+
+
+# Compiled source #
+###################
+
+*.DS_Store
+*.pyc
+
+Code/.DS_Store
+Data/.DS_Store
+Data/OnlyProstateResults/.DS_Store
