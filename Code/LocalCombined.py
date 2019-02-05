@@ -208,17 +208,30 @@ def pValueMap_neg_t(t_to_p_map, t_thresh):
     return t_to_p_map
 
 
-def p_value_contour_plot(p_map_upper):
-    clrs = ['r', 'g', 'b']
-    CS = plt.contour(p_map_upper, levels=[0.01, 0.05, 0.1], colors=clrs)
+def p_value_contour_plot(t_map, t_thresh, percentile_array):
+    '''
+    Take in t-map, t-threshold distribution, and upper/lower tail. Will produce a map with significant contours 0.002,
+    0.005, 0.01, 0.05.
+    :param t_map: it a map of t-statistic
+    :param t_thresh: t threshold distribution
+    :param percentile_array: list of percentiles to be contoured
+    :return: t-map with p-value contours of a specific tail
+    '''
+
+    # get t at percentiles of t_thresh
+    critical_t_values = np.percentile(t_thresh, percentile_array)
+    # contour labels of p-values
+    #p_value_names = percentile_array/100
+    clrs = ['magenta', 'lime', 'orange', 'red']
+    CS = plt.contour(t_map[0], levels=critical_t_values, colors=clrs)
     ax = plt.gca()
-    ax.set_facecolor('white')
+
     # custom label names
-    strs = ['p=0.01', 'p=0.05', 'p=0.1']
-    fmt = {}
-    for l, s in zip(CS.levels, strs):
-        fmt[l] = s
-    plt.clabel(CS, fontsize=10, fmt=fmt)
+    # strs = ['p=0.002', 'p=0.005', 'p=0.01', 'p=0.05']
+    # fmt = {}
+    # for l, s in zip(CS.levels, strs):
+    #     fmt[l] = s
+    # plt.clabel(CS, fontsize=10, fmt=fmt)
     plt.show()
 
 
@@ -256,9 +269,13 @@ def test_pymining():
 
     (global_neg_pvalue, global_pos_pvalue, neg_tthresh, pos_tthresh, t_value_map) = pyminingLocalField(
         selected_patients)
+
+    p_value_contour_plot(t_value_map, neg_tthresh, [0.2, 0.5, 50, 99])
+    # p_value_contour_plot(t_value_map, pos_tthresh, [99.8, 99.5, 99, 95])
+
     # plot_sample_mean_and_sd_maps(selected_patients)
 
-    plot_tTest_data(global_neg_pvalue, global_pos_pvalue, neg_tthresh, pos_tthresh, t_value_map)
+    # plot_tTest_data(global_neg_pvalue, global_pos_pvalue, neg_tthresh, pos_tthresh, t_value_map[0])
 
 
 if __name__ == '__main__':
