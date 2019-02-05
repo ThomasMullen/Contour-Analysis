@@ -9,6 +9,7 @@ someOtherfoler/
 *.DS_Store
 *.pyc
 *.idea
+*.xml
 
 Code/.DS_Store
 Data/.DS_Store
