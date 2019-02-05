@@ -57,6 +57,11 @@ def plot_sample_mean_and_sd_maps(selected_patients):
     # (meanMap1, varMap, stdMap) = load_local_field_recurrence(selected_patients, dataDirectory)
 
     (meanMap1, varMap1, stdMap1) = make_average_field(patients_who_recur, dataDirectory)
+
+    meanMap1.to_csv("../outputResults/recurrence_mean_map.csv", header=None)
+    varMap1.to_csv("../outputResults/recurrence_var_map.csv", header=None)
+    stdMap1.to_csv("../outputResults/recurrence_std_map.csv", header=None)
+
     plot_heat_map(meanMap1, -1, 1, 'mean map - patients_who_recur')
     plot_heat_map(varMap1, 0, 1, 'variance map - patients_who_recur')
     plot_heat_map(stdMap1, 0, 1, 'standard deviation map - patients_who_recur')
@@ -66,10 +71,16 @@ def plot_sample_mean_and_sd_maps(selected_patients):
     plot_heat_map(varMap2, 0, 1, 'variance map - patients_who_dont_recur')
     plot_heat_map(stdMap2, 0, 1, 'standard deviation map - patients_who_dont_recur')
 
+    meanMap2.to_csv("../outputResults/no_recurrence_mean_map.csv", header=None)
+    varMap2.to_csv("../outputResults/no_recurrence_var_map.csv", header=None)
+    stdMap2.to_csv("../outputResults/no_recurrence_std_map.csv", header=None)
+
     plot_heat_map(meanMap1 - meanMap2, -0.3, 0.3, 'Difference in mean map')
     # Var[X-Y] = Var[X]+Var[Y]
     # Standard deviation is the square root of the variance
     plot_heat_map(np.sqrt(varMap1 + varMap2), 0, 1.5, 'Difference in std map')
+    (meanMap1 - meanMap2).to_csv("../outputResults/mean_map_difference.csv", header=None)
+    np.sqrt(varMap1 + varMap2).to_csv("../outputResults/map_std_difference_map.csv", header=None)
 
 
 def show_local_fields(global_df, dataDir=r'../Data/OnlyProstateResults/AllFields'):
@@ -126,7 +137,7 @@ def pyminingLocalField(selected_patients):
     labels = np.concatenate((rec_label_array, nonrec_label_array))
 
     # Now use pymining to get DSC cuts global p value. It should be similar to that from scipy
-    global_neg_pvalue, global_pos_pvalue, neg_tthresh, pos_tthresh = pm.permutationTest(totalPatients, labels, 100)
+    global_neg_pvalue, global_pos_pvalue, neg_tthresh, pos_tthresh = pm.permutationTest(totalPatients, labels, 1000)
     t_value_map = pm.imagesTTest(totalPatients, labels)  # no longer.[0] element
 
     return global_neg_pvalue, global_pos_pvalue, neg_tthresh, pos_tthresh, t_value_map
@@ -149,7 +160,7 @@ def plot_tTest_data(neg_globalp, pos_globalp, negative_tthresh, positive_tthresh
     # Plot Local P-values
     p_map_upper = pValueMap_pos_t(t_value_map, positive_tthresh)
     p_map_lower = pValueMap_neg_t(t_value_map, negative_tthresh)
-    
+
     p_value_contour_plot(p_map_upper)
     p_value_contour_plot(p_map_lower)
 
@@ -221,7 +232,7 @@ def p_value_contour_plot(t_map, t_thresh, percentile_array):
     # get t at percentiles of t_thresh
     critical_t_values = np.percentile(t_thresh, percentile_array)
     # contour labels of p-values
-    #p_value_names = percentile_array/100
+    # p_value_names = percentile_array/100
     clrs = ['magenta', 'lime', 'orange', 'red']
     CS = plt.contour(t_map[0], levels=critical_t_values, colors=clrs)
     ax = plt.gca()
@@ -267,15 +278,15 @@ def test_pymining():
     selected_patients, _, upper = partition_patient_data_with_outliers(enhancedDF, 2.5, 97.5,
                                                                        discriminator_fieldname="volumeContourDifference")  # 0-99.6 grabs 4 at large std dev # 99.73 std
 
-    (global_neg_pvalue, global_pos_pvalue, neg_tthresh, pos_tthresh, t_value_map) = pyminingLocalField(
-        selected_patients)
+    # (global_neg_pvalue, global_pos_pvalue, neg_tthresh, pos_tthresh, t_value_map) = pyminingLocalField(
+    #     selected_patients)
+    # pd.DataFrame(t_value_map[0]).to_csv("../outputResults/map_t_map.csv", header=None)
 
     # p_value_contour_plot(t_value_map, neg_tthresh, [0.2, 0.5, 50, 99])
     # plot_heat_map_np(t_value_map[0], 'maximum t-value map')
-    p_value_contour_plot(t_value_map, pos_tthresh, [10,])
+    # p_value_contour_plot(t_value_map, pos_tthresh, [10,])
 
-
-    # plot_sample_mean_and_sd_maps(selected_patients)
+    plot_sample_mean_and_sd_maps(selected_patients)
 
     # plot_tTest_data(global_neg_pvalue, global_pos_pvalue, neg_tthresh, pos_tthresh, t_value_map[0])
 
