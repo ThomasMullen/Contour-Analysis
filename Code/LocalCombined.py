@@ -232,7 +232,7 @@ def p_value_contour_plot(t_map, t_thresh, percentile_array):
     # for l, s in zip(CS.levels, strs):
     #     fmt[l] = s
     # plt.clabel(CS, fontsize=10, fmt=fmt)
-    plt.show()
+    # plt.show()
 
 
 def print_volume_difference_details(patientsDF):
@@ -270,8 +270,10 @@ def test_pymining():
     (global_neg_pvalue, global_pos_pvalue, neg_tthresh, pos_tthresh, t_value_map) = pyminingLocalField(
         selected_patients)
 
-    p_value_contour_plot(t_value_map, neg_tthresh, [0.2, 0.5, 50, 99])
-    # p_value_contour_plot(t_value_map, pos_tthresh, [99.8, 99.5, 99, 95])
+    # p_value_contour_plot(t_value_map, neg_tthresh, [0.2, 0.5, 50, 99])
+    # plot_heat_map_np(t_value_map[0], 'maximum t-value map')
+    p_value_contour_plot(t_value_map, pos_tthresh, [10,])
+
 
     # plot_sample_mean_and_sd_maps(selected_patients)
 
