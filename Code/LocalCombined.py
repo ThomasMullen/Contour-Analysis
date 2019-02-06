@@ -162,58 +162,39 @@ def plot_tTest_data(neg_globalp, pos_globalp, negative_tthresh, positive_tthresh
     p_value_contour_plot(p_map_lower)
 
 
-def pValueMap_pos_t(t_to_p_map, t_thresh):
+def pValueMap(t_to_p_map):
     '''
     A function which will create a map of p-values from a map of t-values and thresholds
-    Start at the 100th percentile, and iterate down to the 0th percentile in increments of 1
+    Start at the 0th percentile, and iterate up to the 100th percentile in increments of 1.
     Upon each iteration, obtain the tthresh-value at each percentile
     Find the number of points in tthresh above the tthresh-value, to obtain a non-normalised p-value
     Normalise the p-value by dividing by the number of map elements, i.e. the size of t_to_p_map
     :param t_to_p_map: A 2D array of t-values
-    :param t_thresh: A 1D array of t-values used to threshold, obtained from permutation test
     :return: A 2D array of p-values
     '''
 
+    # Make a deep copy of the t_to_p_map
     p_map = t_to_p_map.copy()
-    ''' Calculate the p-values for the upper tail '''
-    p_map[p_map < p_map.mean()] = np.NaN  # Set the lower tail to np.NaN
-    variableThreshold = 100
 
-    while variableThreshold > 0:
-        # Upper tail p-values calculation
-        pValue = sum(i > np.percentile(t_thresh, variableThreshold) for i in t_thresh)
-        pValue = pValue / 7200  # Normalise
-        p_map[p_map > np.percentile(t_thresh, variableThreshold)] = pValue
-        variableThreshold = variableThreshold - 1  # Iterate top down
-
-    return p_map
-
-
-def pValueMap_neg_t(t_to_p_map, t_thresh):
-    '''
-    A function which will create a map of p-values from a map of t-values and thresholds
-    :param t_to_p_map: A 2D array of t-values
-    :param t_thresh: A 1D array of t-values used to threshold, obtained from permutation test
-    :return: A 2D array of p-values
-    '''
-
-    # Start at the 100th percentile, and iterate down to the 0th percentile in increments of 1
-    # Upon each iteration, obtain the tthresh-value at each percentile
-    # Find the number of points in tthresh above the tthresh-value, to obtain a non-normalised p-value
-    # Normalise the p-value by dividing by the number of map elements, i.e. the size of t_to_p_map
-
-    ''' Calculate the p-values for the upper tail '''
-    t_to_p_map[t_to_p_map > t_to_p_map.mean()] = np.NaN  # Set the lower tail to np.NaN
+    # Define and set an iterator to initially zero, this will iterate through percentiles
+    # I.e. start from percentile 0
     variableThreshold = 0
 
+    # Loop over percentiles of the t-map, to convert the t_map->p_map
     while variableThreshold < 100:
-        # Upper tail p-values calculation
-        pValue = sum(i < np.percentile(t_thresh, variableThreshold) for i in t_thresh)
-        pValue = pValue / 7200  # Normalise
-        t_to_p_map[t_to_p_map < np.percentile(t_thresh, variableThreshold)] = pValue
-        variableThreshold = variableThreshold + 1  # Iterate top down
 
-    return t_to_p_map
+        # Count and sum the number of points less that the variable percentile of the t-map
+        pValue = sum(i < np.percentile(p_map.flatten(), variableThreshold) for i in p_map.flatten())
+        pValue = pValue / 7200  # Normalise the p-values by dividing by the number of map elements
+
+        if pValue > 0.5:
+            # This will ensure that both +ve, and -ve t's of greatest significance are the smallest p-values
+            pValue = 1-pValue
+
+        p_map[p_map > np.percentile(p_map.flatten(), variableThreshold)] = pValue
+        variableThreshold = variableThreshold + 1  # Iterate bottom up,  i.e. -ve -> +ve t
+
+    return p_map
 
 
 def p_value_contour_plot(t_map, t_thresh, percentile_array):
@@ -282,10 +263,12 @@ def test_pymining():
     # plot_heat_map_np(t_value_map[0], 'maximum t-value map')
     # p_value_contour_plot(t_value_map, pos_tthresh, [10,])
 
-    plot_sample_mean_and_sd_maps(selected_patients)
+    p_map = pValueMap(t_value_map[0])
+    plot_heat_map_np(p_map, "p_map")
+
+    # plot_sample_mean_and_sd_maps(selected_patients)
 
     # plot_tTest_data(global_neg_pvalue, global_pos_pvalue, neg_tthresh, pos_tthresh, t_value_map[0])
-
 
 if __name__ == '__main__':
     # method_of_refining_data()
