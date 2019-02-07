@@ -221,9 +221,10 @@ def p_value_contour_plot(t_map, t_thresh, percentile_array):
     critical_t_values = np.percentile(t_thresh, percentile_array)
     # contour labels of p-values
     # p_value_names = percentile_array/100
-    clrs = ['magenta', 'lime', 'orange', 'red']
-    CS = plt.contour(t_map[0], levels=critical_t_values, colors=clrs)
-    ax = plt.gca()
+    clrs = ['magenta', 'lime', 'orange'] #, 'red']
+    plt.contour(t_map, levels=critical_t_values, colors=clrs)
+    plt.gca()
+    plt.show()
 
     # custom label names
     # strs = ['p=0.002', 'p=0.005', 'p=0.01', 'p=0.05']
@@ -273,8 +274,13 @@ def test_pymining():
     # plot_heat_map_np(t_value_map[0], 'maximum t-value map')
     # p_value_contour_plot(t_value_map, pos_tthresh, [10,])
 
+    # Convert t-map to p-map
     p_map = pValueMap(t_value_map[0])
     plot_heat_map_np(p_map, "p_map")
+
+    # Plot p-contours using Andrew's method
+    p_value_contour_plot(t_value_map[0], pos_tthresh, [90, 95, 99])
+    p_value_contour_plot(t_value_map[0], neg_tthresh, [90, 95, 99])
 
     # plot_sample_mean_and_sd_maps(selected_patients)
 
