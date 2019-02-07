@@ -134,7 +134,7 @@ def pyminingLocalField(selected_patients):
 
 def plot_tTest_data(neg_globalp, pos_globalp, negative_tthresh, positive_tthresh, t_value_map):
     # Print Global p value
-    # print('Global negative p: %.6f Global positive p: %.6f' % neg_globalp, pos_globalp)
+    # print('Global negative p: %.6f Global positive p: %.6f' % (neg_globalp, pos_globalp))
 
     # Plot Threshold histogram
     plot_histogram(negative_tthresh, 'red', 20, "Negative T-value")
@@ -143,13 +143,13 @@ def plot_tTest_data(neg_globalp, pos_globalp, negative_tthresh, positive_tthresh
     # Plot Threshhold Map
     plot_heat_map_np(t_value_map, 'maximum t-value map')
     # tThresh = sns.heatmap(max_tvalue_map, center=0, cmap='RdBu')
-    # tThresh.set(ylabel='Theta, $\dot{\Theta}$', xlabel='Azimutal, $\phi$')
+    # tThresh.set(ylabel='Theta, $\dot{\Theta}$', xlabel='Azim
     # plt.show()
 
     # Plot Local P-values
     p_map_upper = pValueMap_pos_t(t_value_map, positive_tthresh)
     p_map_lower = pValueMap_neg_t(t_value_map, negative_tthresh)
-    
+
     p_value_contour_plot(p_map_upper)
     p_value_contour_plot(p_map_lower)
 
@@ -221,7 +221,7 @@ def p_value_contour_plot(t_map, t_thresh, percentile_array):
     # get t at percentiles of t_thresh
     critical_t_values = np.percentile(t_thresh, percentile_array)
     # contour labels of p-values
-    #p_value_names = percentile_array/100
+    # p_value_names = percentile_array/100
     clrs = ['magenta', 'lime', 'orange', 'red']
     CS = plt.contour(t_map[0], levels=critical_t_values, colors=clrs)
     ax = plt.gca()
@@ -270,12 +270,14 @@ def test_pymining():
     (global_neg_pvalue, global_pos_pvalue, neg_tthresh, pos_tthresh, t_value_map) = pyminingLocalField(
         selected_patients)
 
+
     # p_value_contour_plot(t_value_map, neg_tthresh, [0.2, 0.5, 50, 99])
     # plot_heat_map_np(t_value_map[0], 'maximum t-value map')
     p_value_contour_plot(t_value_map, pos_tthresh, [10,])
 
 
     # plot_sample_mean_and_sd_maps(selected_patients)
+
 
     # plot_tTest_data(global_neg_pvalue, global_pos_pvalue, neg_tthresh, pos_tthresh, t_value_map[0])
 
