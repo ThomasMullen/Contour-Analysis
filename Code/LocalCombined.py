@@ -154,13 +154,26 @@ def plot_tTest_data(neg_globalp, pos_globalp, negative_tthresh, positive_tthresh
     # tThresh.set(ylabel='Theta, $\dot{\Theta}$', xlabel='Azimutal, $\phi$')
     # plt.show()
 
-    # Plot Local P-values
-    p_map_upper = pValueMap_pos_t(t_value_map, positive_tthresh)
-    p_map_lower = pValueMap_neg_t(t_value_map, negative_tthresh)
+    # # Plot Local P-values
+    # p_map_upper = pValueMap(t_value_map, positive_tthresh)
+    # p_map_lower = pValueMap_neg_t(t_value_map, negative_tthresh)
 
-    p_value_contour_plot(p_map_upper)
-    p_value_contour_plot(p_map_lower)
+    # p_value_contour_plot(p_map_upper)
+    # p_value_contour_plot(p_map_lower)
 
+def t_map_with_thresholds(t_map):
+    '''
+    A function which will apply contours on the t-map, at values of the 5th and 95th percentiles of the
+    distribution of the t-map.
+    :param t_map: A 2D array of t-values
+    :return: A plot of the t-map with p-contours
+    '''
+
+    critical_t_values = np.percentile(t_map.flatten(), [5, 95])
+    # clrs = ['magenta', 'lime', 'orange', 'red']
+    plt.contour(t_map, levels=critical_t_values, colors='magenta')
+    plt.gca()
+    plt.show()
 
 def pValueMap(t_to_p_map):
     '''
@@ -186,7 +199,6 @@ def pValueMap(t_to_p_map):
         # Count and sum the number of points less that the variable percentile of the t-map
         pValue = sum(i < np.percentile(p_map.flatten(), variableThreshold) for i in p_map.flatten())
         pValue = pValue / 7200  # Normalise the p-values by dividing by the number of map elements
-
         p_map[p_map > np.percentile(p_map.flatten(), variableThreshold)] = pValue
         variableThreshold = variableThreshold + 1  # Iterate bottom up,  i.e. -ve -> +ve t
 
