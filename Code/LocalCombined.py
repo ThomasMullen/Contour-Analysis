@@ -187,13 +187,11 @@ def pValueMap(t_to_p_map):
         pValue = sum(i < np.percentile(p_map.flatten(), variableThreshold) for i in p_map.flatten())
         pValue = pValue / 7200  # Normalise the p-values by dividing by the number of map elements
 
-        if pValue > 0.5:
-            # This will ensure that both +ve, and -ve t's of greatest significance are the smallest p-values
-            pValue = 1-pValue
-
         p_map[p_map > np.percentile(p_map.flatten(), variableThreshold)] = pValue
         variableThreshold = variableThreshold + 1  # Iterate bottom up,  i.e. -ve -> +ve t
 
+    # Returns a p-map on the scale of 0:1. Values closest to 0 represent the greatest significance for -t
+    # and values closest to 1 represent the same for +t.
     return p_map
 
 
