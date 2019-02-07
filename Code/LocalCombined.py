@@ -135,7 +135,7 @@ def pyminingLocalField(selected_patients):
     labels = np.concatenate((rec_label_array, nonrec_label_array))
 
     # Now use pymining to get DSC cuts global p value. It should be similar to that from scipy
-    global_neg_pvalue, global_pos_pvalue, neg_tthresh, pos_tthresh = pm.permutationTest(totalPatients, labels, 1000)
+    global_neg_pvalue, global_pos_pvalue, neg_tthresh, pos_tthresh = pm.permutationTest(totalPatients, labels, 100)
     t_value_map = pm.imagesTTest(totalPatients, labels)  # no longer.[0] element
 
     return global_neg_pvalue, global_pos_pvalue, neg_tthresh, pos_tthresh, t_value_map
@@ -143,7 +143,7 @@ def pyminingLocalField(selected_patients):
 
 def plot_tTest_data(neg_globalp, pos_globalp, negative_tthresh, positive_tthresh, t_value_map):
     # Print Global p value
-    # print('Global negative p: %.6f Global positive p: %.6f' % (neg_globalp, pos_globalp))
+    print('Global negative p: %.6f Global positive p: %.6f' % (neg_globalp, pos_globalp))
 
     # Plot Threshold histogram
     plot_histogram(negative_tthresh, 'red', 20, "Negative T-value")
