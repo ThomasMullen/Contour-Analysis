@@ -254,36 +254,19 @@ def test_pymining():
     rawPatientData = load_global_patients()
     enhancedDF = radial_mean_sd_for_patients(dataDirectory, rawPatientData.allPatients)
 
-    # print_volume_difference_details(enhancedDF)
     selected_patients, lower, upper = partition_patient_data_with_outliers(enhancedDF, 0, 99,
                                                                    discriminator_fieldname="sd")  # 0-99.6 grabs 4 at large std dev # 99.73 std
-
-
-    # print_volume_difference_details(selected_patients)
     selected_patients, lower, upper = partition_patient_data_with_outliers(selected_patients, 0, 98.5,
                                                                    discriminator_fieldname="maxval")  # 0-99.6 grabs 4 at large std dev # 99.73 std
-    # print_volume_difference_details(selected_patients)
     selected_patients, lower, upper = partition_patient_data_with_outliers(selected_patients, 5, 100,
                                                                    discriminator_fieldname="DSC")  # 0-99.6 grabs 4 at large std dev # 99.73 std
-    # print_volume_difference_details(selected_patients)
     selected_patients, lower, upper = partition_patient_data_with_outliers(selected_patients, 4, 96,
                                                                        discriminator_fieldname="volumeContourDifference")  # 0-99.6 grabs 4 at large std dev # 99.73 std
 
-    # print_volume_difference_details(selected_patients)
     (global_neg_pvalue, global_pos_pvalue, neg_tthresh, pos_tthresh, t_value_map) = pyminingLocalField(selected_patients)
-    # plot_tTest_data(global_neg_pvalue, global_pos_pvalue, neg_tthresh, pos_tthresh, t_value_map[0])
-
-
-    # p_value_contour_plot(t_value_map, neg_tthresh, [0.2, 0.5, 50, 99])
-    # plot_heat_map_np(t_value_map[0], 'maximum t-value map')
-    # p_value_contour_plot(t_value_map, pos_tthresh, [10,])
-
-    # Convert t-map to p-map
-    # p_map = pValueMap(t_value_map[0])
+    print('Global negative p: %.6f Global positive p: %.6f' % (global_neg_pvalue, global_pos_pvalue))
+    plot_heat_map_np(t_value_map[0], 'maximum t-value map')
     t_map_with_thresholds(t_value_map[0])
-
-    # Plot p-contours using Andrew's method
-    # p_value_contour_plot(t_value_map[0], pos_tthresh, [90, 95, 99])
 
     # plot_sample_mean_and_sd_maps(selected_patients)
 
