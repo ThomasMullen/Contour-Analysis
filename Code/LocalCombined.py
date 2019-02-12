@@ -270,8 +270,6 @@ def test_pymining():
 
     # plot_sample_mean_and_sd_maps(selected_patients)
 
-def test_remove_corrupt():
-
 if __name__ == '__main__':
     # method_of_refining_data()
     test_pymining()
