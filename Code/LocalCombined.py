@@ -253,21 +253,37 @@ def print_volume_difference_details(patientsDF):
     print(patients_who_dont_recur["volumeContourDifference"].describe())
 
 
+def get_corrupt_patients(all_patients_df, data_directory):
+    # Create list of filepaths
+    file_list = [f for f in listdir(data_directory) if isfile(join(data_directory, f))]
+    # parse filename and extract id
+    patient_id = list(map(lambda x: re.split('[_ .]', x)[1], file_list))
+    # print(patient_id)
+    clean_patients_ct_scans = all_patients_df[~all_patients_df['patientList'].isin(patient_id)]
+    return clean_patients_ct_scans
+
+def semester_one_cuts(df):
+    selected_patients, _, _ = partition_patient_data_with_outliers(df, 0, 99,
+                                                                           discriminator_fieldname="sd")
+    selected_patients, _, _ = partition_patient_data_with_outliers(selected_patients, 0, 98.5,
+                                                                           discriminator_fieldname="maxval")
+    selected_patients, _, _ = partition_patient_data_with_outliers(selected_patients, 5, 100,
+                                                                           discriminator_fieldname="DSC")
+    selected_patients, _, _ = partition_patient_data_with_outliers(selected_patients, 4, 96,
+                                                                           discriminator_fieldname="volumeContourDifference")
+    return selected_patients
+
 def test_pymining():
     dataDirectory = r"../Data/OnlyProstateResults/AllFields"
     outputDirectory = r"../outputResults"
     rawPatientData = load_global_patients()
     enhancedDF = radial_mean_sd_for_patients(dataDirectory, rawPatientData.allPatients)
 
-    selected_patients, lower, upper = partition_patient_data_with_outliers(enhancedDF, 0, 99,
-                                                                           discriminator_fieldname="sd")  # 0-99.6 grabs 4 at large std dev # 99.73 std
-    selected_patients, lower, upper = partition_patient_data_with_outliers(selected_patients, 0, 98.5,
-                                                                           discriminator_fieldname="maxval")  # 0-99.6 grabs 4 at large std dev # 99.73 std
-    selected_patients, lower, upper = partition_patient_data_with_outliers(selected_patients, 5, 100,
-                                                                           discriminator_fieldname="DSC")  # 0-99.6 grabs 4 at large std dev # 99.73 std
-    selected_patients, lower, upper = partition_patient_data_with_outliers(selected_patients, 4, 96,
-                                                                           discriminator_fieldname="volumeContourDifference")  # 0-99.6 grabs 4 at large std dev # 99.73 std
+    # removes patients with corrupt scans
+    rogue_ct_scans_dir = r"../Corrupt_CT_Scans/16Fractions/"
+    selected_patients = get_corrupt_patients(enhancedDF, rogue_ct_scans_dir)
 
+    # t-statistics
     (global_neg_pvalue, global_pos_pvalue, neg_tthresh, pos_tthresh, t_value_map) = pyminingLocalField(
         selected_patients)
     print('Global negative p: %.6f Global positive p: %.6f' % (global_neg_pvalue, global_pos_pvalue))
@@ -276,24 +292,7 @@ def test_pymining():
 
     # plot_sample_mean_and_sd_maps(selected_patients)
 
-
-def parse(filename):
-    fragment = re.split('[_ .]', filename)
-    return fragment[1]
-
-def get_corrupt_patients():
-    data_directory = r"../16Fractions/"
-
-    onlyfiles = [f for f in listdir(data_directory) if isfile(join(data_directory, f))]
-    # test = list(map(parse, onlyfiles))
-    # print(test)
-
-    test = list(map(lambda x: re.split('[_ .]', x)[1], onlyfiles))
-    print(test)
-
-    return
-
 if __name__ == '__main__':
     # method_of_refining_data()
-    get_corrupt_patients()
-    # test_pymining()
+    # get_corrupt_patients()
+    test_pymining()
