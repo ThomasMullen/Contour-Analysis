@@ -11,7 +11,7 @@ import pandas as pd
 import pymining as pm
 import seaborn as sns
 
-from AllPatients import separate_by_recurrence
+from AllPatients import separate_by_recurrence, global_remove_stageT3
 from LocalFilter import load_global_patients, radial_mean_sd_for_patients, partition_patient_data_with_outliers
 from plot_functions import plot_heat_map_np, plot_histogram, plot_scatter, plot_histogram, \
     plot_heat_map, save_heat_map, \
@@ -135,7 +135,7 @@ def pyminingLocalField(selected_patients):
     labels = np.concatenate((rec_label_array, nonrec_label_array))
 
     # Now use pymining to get DSC cuts global p value. It should be similar to that from scipy
-    global_neg_pvalue, global_pos_pvalue, neg_tthresh, pos_tthresh = pm.permutationTest(totalPatients, labels, 100)
+    global_neg_pvalue, global_pos_pvalue, neg_tthresh, pos_tthresh = pm.permutationTest(totalPatients, labels, 1000)
     t_value_map = pm.imagesTTest(totalPatients, labels)  # no longer.[0] element
 
     return global_neg_pvalue, global_pos_pvalue, neg_tthresh, pos_tthresh, t_value_map
@@ -211,7 +211,7 @@ def pValueMap(t_to_p_map):
 def p_value_contour_plot(t_map, t_thresh, percentile_array):
     '''
     Take in t-map, t-threshold distribution, and upper/lower tail. Will produce a map with significant contours 0.002,
-    0.005, 0.01, 0.05.
+    0.005, 0.01, 0.05. This uses Andrews method.
     :param t_map: it a map of t-statistic
     :param t_thresh: t threshold distribution
     :param percentile_array: list of percentiles to be contoured
@@ -251,42 +251,41 @@ def print_volume_difference_details(patientsDF):
 def test_pymining():
     dataDirectory = r"../Data/OnlyProstateResults/AllFields"
     outputDirectory = r"../outputResults"
-    # (meanVals, sdVals) = extractPatientSDVals(dataDirectory, allPatients.allPatients)
     rawPatientData = load_global_patients()
     enhancedDF = radial_mean_sd_for_patients(dataDirectory, rawPatientData.allPatients)
 
-    print_volume_difference_details(enhancedDF)
-    selected_patients, _, _ = partition_patient_data_with_outliers(enhancedDF, 0, 99,
+    # print_volume_difference_details(enhancedDF)
+    selected_patients, lower, upper = partition_patient_data_with_outliers(enhancedDF, 0, 99,
                                                                    discriminator_fieldname="sd")  # 0-99.6 grabs 4 at large std dev # 99.73 std
-    print_volume_difference_details(selected_patients)
-    selected_patients, _, _ = partition_patient_data_with_outliers(selected_patients, 0, 98.5,
+
+
+    # print_volume_difference_details(selected_patients)
+    selected_patients, lower, upper = partition_patient_data_with_outliers(selected_patients, 0, 98.5,
                                                                    discriminator_fieldname="maxval")  # 0-99.6 grabs 4 at large std dev # 99.73 std
-    print_volume_difference_details(selected_patients)
-    selected_patients, _, _ = partition_patient_data_with_outliers(selected_patients, 5, 100,
+    # print_volume_difference_details(selected_patients)
+    selected_patients, lower, upper = partition_patient_data_with_outliers(selected_patients, 5, 100,
                                                                    discriminator_fieldname="DSC")  # 0-99.6 grabs 4 at large std dev # 99.73 std
-    print_volume_difference_details(selected_patients)
-    selected_patients, _, upper = partition_patient_data_with_outliers(selected_patients, 4, 96,
+    # print_volume_difference_details(selected_patients)
+    selected_patients, lower, upper = partition_patient_data_with_outliers(selected_patients, 4, 96,
                                                                        discriminator_fieldname="volumeContourDifference")  # 0-99.6 grabs 4 at large std dev # 99.73 std
 
+    # print_volume_difference_details(selected_patients)
     (global_neg_pvalue, global_pos_pvalue, neg_tthresh, pos_tthresh, t_value_map) = pyminingLocalField(selected_patients)
-    pd.DataFrame(t_value_map[0]).to_csv("../outputResults/t_value_map.csv", header=None, index=False)
+    # plot_tTest_data(global_neg_pvalue, global_pos_pvalue, neg_tthresh, pos_tthresh, t_value_map[0])
+
 
     # p_value_contour_plot(t_value_map, neg_tthresh, [0.2, 0.5, 50, 99])
     # plot_heat_map_np(t_value_map[0], 'maximum t-value map')
     # p_value_contour_plot(t_value_map, pos_tthresh, [10,])
 
     # Convert t-map to p-map
-    p_map = pValueMap(t_value_map[0])
-    plot_heat_map_np(p_map, "p_map")
+    # p_map = pValueMap(t_value_map[0])
+    t_map_with_thresholds(t_value_map[0])
 
     # Plot p-contours using Andrew's method
-    p_value_contour_plot(t_value_map[0], pos_tthresh, [90, 95, 99])
-    p_value_contour_plot(t_value_map[0], neg_tthresh, [90, 95, 99])
+    # p_value_contour_plot(t_value_map[0], pos_tthresh, [90, 95, 99])
 
     # plot_sample_mean_and_sd_maps(selected_patients)
-
-    # plot_tTest_data(global_neg_pvalue, global_pos_pvalue, neg_tthresh, pos_tthresh, t_value_map[0])
-
 
 if __name__ == '__main__':
     # method_of_refining_data()
