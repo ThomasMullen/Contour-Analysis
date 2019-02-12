@@ -11,6 +11,10 @@ import pandas as pd
 import pymining as pm
 import seaborn as sns
 
+from os import listdir
+from os.path import isfile, join
+import re
+
 from AllPatients import separate_by_recurrence, global_remove_stageT3
 from LocalFilter import load_global_patients, radial_mean_sd_for_patients, partition_patient_data_with_outliers
 from plot_functions import plot_heat_map_np, plot_histogram, plot_scatter, plot_histogram, \
@@ -162,6 +166,7 @@ def plot_tTest_data(neg_globalp, pos_globalp, negative_tthresh, positive_tthresh
     # p_value_contour_plot(p_map_upper)
     # p_value_contour_plot(p_map_lower)
 
+
 def t_map_with_thresholds(t_map):
     '''
     A function which will apply contours on the t-map, at values of the 5th and 95th percentiles of the
@@ -175,6 +180,7 @@ def t_map_with_thresholds(t_map):
     plt.contour(t_map, levels=critical_t_values, colors='magenta')
     plt.gca()
     plt.show()
+
 
 def pValueMap(t_to_p_map):
     '''
@@ -196,7 +202,6 @@ def pValueMap(t_to_p_map):
 
     # Loop over percentiles of the t-map, to convert the t_map->p_map
     while variableThreshold < 100:
-
         # Count and sum the number of points less that the variable percentile of the t-map
         pValue = sum(i < np.percentile(p_map.flatten(), variableThreshold) for i in p_map.flatten())
         pValue = pValue / 7200  # Normalise the p-values by dividing by the number of map elements
@@ -222,7 +227,7 @@ def p_value_contour_plot(t_map, t_thresh, percentile_array):
     critical_t_values = np.percentile(t_thresh, percentile_array)
     # contour labels of p-values
     # p_value_names = percentile_array/100
-    clrs = ['magenta', 'lime', 'orange'] #, 'red']
+    clrs = ['magenta', 'lime', 'orange']  # , 'red']
     plt.contour(t_map, levels=critical_t_values, colors=clrs)
     plt.gca()
     plt.show()
@@ -255,21 +260,36 @@ def test_pymining():
     enhancedDF = radial_mean_sd_for_patients(dataDirectory, rawPatientData.allPatients)
 
     selected_patients, lower, upper = partition_patient_data_with_outliers(enhancedDF, 0, 99,
-                                                                   discriminator_fieldname="sd")  # 0-99.6 grabs 4 at large std dev # 99.73 std
+                                                                           discriminator_fieldname="sd")  # 0-99.6 grabs 4 at large std dev # 99.73 std
     selected_patients, lower, upper = partition_patient_data_with_outliers(selected_patients, 0, 98.5,
-                                                                   discriminator_fieldname="maxval")  # 0-99.6 grabs 4 at large std dev # 99.73 std
+                                                                           discriminator_fieldname="maxval")  # 0-99.6 grabs 4 at large std dev # 99.73 std
     selected_patients, lower, upper = partition_patient_data_with_outliers(selected_patients, 5, 100,
-                                                                   discriminator_fieldname="DSC")  # 0-99.6 grabs 4 at large std dev # 99.73 std
+                                                                           discriminator_fieldname="DSC")  # 0-99.6 grabs 4 at large std dev # 99.73 std
     selected_patients, lower, upper = partition_patient_data_with_outliers(selected_patients, 4, 96,
-                                                                       discriminator_fieldname="volumeContourDifference")  # 0-99.6 grabs 4 at large std dev # 99.73 std
+                                                                           discriminator_fieldname="volumeContourDifference")  # 0-99.6 grabs 4 at large std dev # 99.73 std
 
-    (global_neg_pvalue, global_pos_pvalue, neg_tthresh, pos_tthresh, t_value_map) = pyminingLocalField(selected_patients)
+    (global_neg_pvalue, global_pos_pvalue, neg_tthresh, pos_tthresh, t_value_map) = pyminingLocalField(
+        selected_patients)
     print('Global negative p: %.6f Global positive p: %.6f' % (global_neg_pvalue, global_pos_pvalue))
     plot_heat_map_np(t_value_map[0], 'maximum t-value map')
     t_map_with_thresholds(t_value_map[0])
 
     # plot_sample_mean_and_sd_maps(selected_patients)
 
+
+def parse(filename):
+    fragment = re.split('[_ .]', filename)
+    return fragment[1]
+
+def get_corrupt_patients():
+    data_directory = r"../16Fractions/"
+
+    onlyfiles = [f for f in listdir(data_directory) if isfile(join(data_directory, f))]
+    test = list(map(parse, onlyfiles))
+    print(test)
+    return
+
 if __name__ == '__main__':
     # method_of_refining_data()
-    test_pymining()
+    get_corrupt_patients()
+    # test_pymining()
