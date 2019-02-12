@@ -285,8 +285,12 @@ def get_corrupt_patients():
     data_directory = r"../16Fractions/"
 
     onlyfiles = [f for f in listdir(data_directory) if isfile(join(data_directory, f))]
-    test = list(map(parse, onlyfiles))
+    # test = list(map(parse, onlyfiles))
+    # print(test)
+
+    test = list(map(lambda x: re.split('[_ .]', x)[1], onlyfiles))
     print(test)
+
     return
 
 if __name__ == '__main__':
