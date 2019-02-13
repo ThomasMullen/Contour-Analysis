@@ -85,7 +85,7 @@ def plot_sample_mean_and_sd_maps(selected_patients):
     np.sqrt(varMap1 + varMap2).to_csv("../outputResults/std_difference_map.csv", header=None, index=False)
 
 
-def show_local_fields(global_df, dataDir=r'../Data/OnlyProstateResults/AllFields'):
+def show_local_fields(global_df, dataDir=r'../Data/OnlyProstateResults/AllFields', file_name = 'untitled'):
     '''
     This loads the patients radial maps from the global data frame and labels them by their ID number. Should only
     by used for small global dataframes i.e. finding outliers from extreme bounds
@@ -97,9 +97,10 @@ def show_local_fields(global_df, dataDir=r'../Data/OnlyProstateResults/AllFields
     dfFiles = df.assign(file_path=lambda df: df["patientList"].map(lambda x: r'%s/%s.csv' % (dataDir, x)))
     x = 0
     print(dfFiles.patientList)
+    dfFiles.patientList.to_csv('../patient_outliers/'+file_name+'.csv')
     for f in dfFiles.file_path:
         print(dfFiles.iloc[x].patientList)
-        plot_heat_map(pd.read_csv(f, header=None), -3, 3, dfFiles.iloc[x].patientList)
+        plot_heat_map(pd.read_csv(f, header=None), -5, 5, dfFiles.iloc[x].patientList)
         x = x + 1
 
 
@@ -273,15 +274,54 @@ def semester_one_cuts(df):
                                                                            discriminator_fieldname="volumeContourDifference")
     return selected_patients
 
-def test_pymining():
+
+def test_cuts():
     dataDirectory = r"../Data/OnlyProstateResults/AllFields"
     outputDirectory = r"../outputResults"
     rawPatientData = load_global_patients()
     enhancedDF = radial_mean_sd_for_patients(dataDirectory, rawPatientData.allPatients)
+    plot_histogram(enhancedDF['sd'], 'red', 50, name="Standard Deviations of patients map")
+    plot_histogram(enhancedDF['maxval'], 'lime', 50, name="Maximum value of patients map")
+    plot_histogram(enhancedDF['DSC'], 'green', 50, name="Dice of patients map")
+    plot_histogram(enhancedDF['volumeContourDifference'], 'blue', 50, name="Volume difference of patients map")
 
+    # Look for poor triangulation of patient maps
+    # SD of patient map
+    _, _, upper_bound = partition_patient_data_with_outliers(enhancedDF, 0, 98, "sd")
+    show_local_fields(upper_bound, dataDirectory, 'upper_sd_bound_19frac')
+    clean_patients = enhancedDF[~enhancedDF['patientList'].isin(upper_bound['patientList'])]
+    plot_histogram(clean_patients['sd'], 'red', 50, name="Standard Deviations of patients map")
+
+    # Max value of Patient
+    _, _, upper_bound = partition_patient_data_with_outliers(enhancedDF, 0, 98, "maxval")
+    _, lower_bound, _ = partition_patient_data_with_outliers(enhancedDF, 2, 100, "maxval")
+    show_local_fields(upper_bound, dataDirectory, 'upper_max_R_bound_19frac')
+    show_local_fields(lower_bound, dataDirectory, 'lower_max_R_bound_19frac')
+    clean_patients = clean_patients[~clean_patients['patientList'].isin(upper_bound['patientList'])]
+    clean_patients = clean_patients[~clean_patients['patientList'].isin(lower_bound['patientList'])]
+
+    # Histogram of removed sd and max radial difference
+    plot_histogram(clean_patients['maxval'], 'lime', 50, "Maximum value of patients map")
+    return clean_patients
+
+
+def test_pymining():
+    # dataDirectory = r"../Data/OnlyProstateResults/AllFields"
+    # outputDirectory = r"../outputResults"
+    # rawPatientData = load_global_patients()
+    # enhancedDF = radial_mean_sd_for_patients(dataDirectory, rawPatientData.allPatients)
+
+    enhancedDF = test_cuts()
     # removes patients with corrupt scans
-    rogue_ct_scans_dir = r"../Corrupt_CT_Scans/16Fractions/"
-    selected_patients = get_corrupt_patients(enhancedDF, rogue_ct_scans_dir)
+    rogue_ct_scans_dir_16 = r"../Corrupt_CT_Scans/16Fractions/"
+    rogue_ct_scans_dir_19 = r"../Corrupt_CT_Scans/19Fractions/"
+    rouge_ct_scans_dir_16_old = r"../Corrupt_CT_Scans/16Fractions_old/"
+
+    # links all directory in one function
+    fileNames = ['16Fractions/', '16Fractions_old/', '19Fractions/']
+    file_list = [(r'../Corrupt_CT_Scans/%s' % (x)) for x in fileNames]
+
+    selected_patients = get_corrupt_patients(enhancedDF, rogue_ct_scans_dir_19)
 
     # t-statistics
     (global_neg_pvalue, global_pos_pvalue, neg_tthresh, pos_tthresh, t_value_map) = pyminingLocalField(
@@ -294,5 +334,5 @@ def test_pymining():
 
 if __name__ == '__main__':
     # method_of_refining_data()
-    # get_corrupt_patients()
+    # test_cuts()
     test_pymining()
