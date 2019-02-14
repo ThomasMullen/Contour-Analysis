@@ -9,9 +9,9 @@ def separate_by_recurrence(all_patients):
 
     """
     PatientsWhoRecur = pd.concat(
-        [all_patients.groupby('Recurrence').get_group(1)])
+        [all_patients.groupby('Recurrence').get_group(1), all_patients.groupby('Recurrence').get_group('YES')])
     PatientsWhoDontRecur = pd.concat(
-        [all_patients.groupby('Recurrence').get_group(0)])
+        [all_patients.groupby('Recurrence').get_group(0), all_patients.groupby('Recurrence').get_group('NO')])
     return PatientsWhoRecur, PatientsWhoDontRecur
 
 
