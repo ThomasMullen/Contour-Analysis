@@ -142,6 +142,13 @@ def return_patient_sample_range(data, size, lower_bound, upper_bound):
     return (selected_patients.sample(n=size), lower_patients_outliers, upper_patients_outliers)
 
 
+def select_atlas(seed=23403485, save_name='untitled', file_name='allData19Frac'):
+    total_dataset = pd.read_csv('../Data/OnlyProstateResults/Global/'+file_name+'.csv')
+    atlas_patients = total_dataset.sample(n=15, random_state=seed)
+    print(atlas_patients['patientList'])
+    atlas_patients['patientList'].to_csv('../' + save_name + '.csv')
+
+
 def test_filtered():
     dataDirectory = r"../Data/OnlyProstateResults/AllFields"
     outputDirectory = r"../outputResults"
