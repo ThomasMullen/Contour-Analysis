@@ -60,8 +60,8 @@ def load_global_patients():
     expected_corrupt_to_check = {}
     patients_ID_to_exclude = atlas.union(expected_corrupt_to_check)
     all_patients = AllPatients(r"../Data/OnlyProstateResults/Global",
-                               ['AllData19Frac', 'AllData16Frac', 'AllData16Frac_old'])
-    all_patients.removePatients(patients_ID_to_exclude)
+                               ['AllData19Frac'])
+    # all_patients.removePatients(patients_ID_to_exclude)
     all_patients.remove_stageT3()
     return all_patients
 
