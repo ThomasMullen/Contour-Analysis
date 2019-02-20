@@ -2,8 +2,7 @@ import numpy as np
 import seaborn as sns
 import pandas as pd
 import matplotlib.pyplot as plt
-from AllPatients import separate_by_recurrence
-from LocalCombined import make_average_field2
+
 
 sns.set()
 
@@ -23,38 +22,8 @@ def show_local_fields(global_df, dataDir=r'../Data/OnlyProstateResults/AllFields
     dfFiles.patientList.to_csv('../patient_outliers/' + file_name + '.csv')
     for f in dfFiles.file_path:
         print(dfFiles.iloc[x].patientList)
-        # plot_heat_map(pd.read_csv(f, header=None), -5, 5, dfFiles.iloc[x].patientList)
+        plot_heat_map(pd.read_csv(f, header=None), -5, 5, dfFiles.iloc[x].patientList)
         x = x + 1
-
-
-def plot_sample_mean_and_sd_maps(selected_patients):
-    dataDirectory = r"../Data/OnlyProstateResults/AllFields"
-    patients_who_recur, patients_who_dont_recur = separate_by_recurrence(selected_patients)
-    # (meanMap1, varMap, stdMap) = load_local_field_recurrence(selected_patients, dataDirectory)
-
-    (meanMap1, varMap1, stdMap1) = make_average_field(patients_who_recur, dataDirectory)
-
-    meanMap1.to_csv("../outputResults/recurrence_mean_map.csv", header=None, index=False)
-    stdMap1.to_csv("../outputResults/recurrence_std_map.csv", header=None, index=False)
-
-    plot_heat_map(meanMap1, -1, 1, 'mean map - patients_who_recur')
-    plot_heat_map(varMap1, 0, 1, 'variance map - patients_who_recur')
-    plot_heat_map(stdMap1, 0, 1, 'standard deviation map - patients_who_recur')
-
-    (meanMap2, varMap2, stdMap2) = make_average_field(patients_who_dont_recur, dataDirectory)
-    plot_heat_map(meanMap2, -1, 1, 'mean map - patients_who_dont_recur')
-    plot_heat_map(varMap2, 0, 1, 'variance map - patients_who_dont_recur')
-    plot_heat_map(stdMap2, 0, 1, 'standard deviation map - patients_who_dont_recur')
-
-    meanMap2.to_csv("../outputResults/no_recurrence_mean_map.csv", header=None, index=False)
-    stdMap2.to_csv("../outputResults/no_recurrence_std_map.csv", header=None, index=False)
-
-    plot_heat_map(meanMap1 - meanMap2, -0.3, 0.3, 'Difference in mean map')
-    # Var[X-Y] = Var[X]+Var[Y]
-    # Standard deviation is the square root of the variance
-    plot_heat_map(np.sqrt(varMap1 + varMap2), 0, 1.5, 'Difference in std map')
-    (meanMap1 - meanMap2).to_csv("../outputResults/mean_difference_map.csv", header=None, index=False)
-    np.sqrt(varMap1 + varMap2).to_csv("../outputResults/std_difference_map.csv", header=None, index=False)
 
 
 def plot_histogram(data, colour, bin, name="Single Value"):
@@ -192,7 +161,7 @@ def load_map(data_directory, name):
 
 def test_on_single_map():
     dataDirectory = r"../Data/OnlyProstateResults/AllFields"
-    map = load_map(dataDirectory, "200710358")
+    map = load_map(dataDirectory, "200606379")
     plot_heat_map(map, -2, 2, title=" ")
     # save_heat_map(map, -2, 2, 'testmap', "tester")
 
@@ -207,16 +176,16 @@ def plot_tTest_data(neg_globalp, pos_globalp, negative_tthresh, positive_tthresh
 
     # Plot Threshhold Map
     plot_heat_map_np(t_value_map, 'maximum t-value map')
-    # tThresh = sns.heatmap(max_tvalue_map, center=0, cmap='RdBu')
-    # tThresh.set(ylabel='Theta, $\dot{\Theta}$', xlabel='Azimutal, $\phi$')
-    # plt.show()
 
-    # # Plot Local P-values
-    # p_map_upper = pValueMap(t_value_map, positive_tthresh)
-    # p_map_lower = pValueMap_neg_t(t_value_map, negative_tthresh)
-
-    # p_value_contour_plot(p_map_upper)
-    # p_value_contour_plot(p_map_lower)
+def triangulation_qa():
+    # patient_ID = {'patientList': ['200908656_Auto_ACM', '200908656_Manual_ACM', '200908656_Auto_MCM', '200908656_Manual_MCM']}
+    # global_df = pd.DataFrame(patient_ID, columns=['patientList'])
+    # show_local_fields(global_df, dataDir=r'../Data/OnlyProstateResults/triangulation_QA', file_name='200908656_corrupt')
+    # dataDirectory = r"../Data/OnlyProstateResults/triangulation_QA"
+    # map = load_map(dataDirectory, "200908656_Manual_ACM")
+    # plot_heat_map(map, -2, 2, title=" ")
+    map = pd.read_csv(r'/Users/Tom/PycharmProjects/Contour-Analysis/Data/triangulation_QA/200908656_Manual_ACM.csv', header=None)
+    print(map)
 
 def main():
     test_on_single_map()

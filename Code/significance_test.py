@@ -6,9 +6,9 @@ This source file contains all our significance test functions
 import matplotlib.pyplot as plt
 import numpy as np
 import pymining as pm
+import pandas as pd
 from scipy import stats as ss
 from AllPatients import separate_by_recurrence
-from LocalCombined import stack_local_fields
 
 
 def pymining_t_test(selected_patients):
@@ -74,6 +74,31 @@ def pValueMap(t_to_p_map):
     return p_map
 
 
+def stack_local_fields(global_df, recurrence_label, dataDir=r'../Data/OnlyProstateResults/AllFields'):
+    """
+    :param global_df: either recurring non-recurring global data field
+    :param recurrence_label:  =0 for non-recurring or =1 for recurring
+    :param dataDir: Data directory containing local field data file
+    :return: 3d np array of local field stacked 120x60xnumber of recurrence/non-recurrence i.e [theta x phi x patient_index] and label
+    """
+    df = pd.DataFrame(global_df["patientList"])
+    dfFiles = df.assign(file_path=lambda df: df["patientList"].map(lambda x: r'%s/%s.csv' % (dataDir, x)))
+    numberOfPatients = len(dfFiles)
+    fieldMaps = np.zeros((60, 120, numberOfPatients))
+
+    if recurrence_label == 1:
+        label_array = np.ones(numberOfPatients)
+    else:
+        label_array = np.zeros(numberOfPatients)
+
+    i = 0
+    for f in dfFiles.file_path:
+        fieldMaps[:, :, i] = pd.read_csv(f, header=None).as_matrix()[:, :]
+        i += 1
+
+    return fieldMaps, label_array
+
+
 def p_value_contour_plot(t_map, t_thresh, percentile_array):
     """
     Take in t-map, t-threshold distribution, and upper/lower tail. Will produce a map with significant contours 0.002,
@@ -111,3 +136,8 @@ def wilcoxon_test_statistics(selected_patients):
     nonrec_fieldMaps, _ = stack_local_fields(patients_who_dont_recur, 0)
     stat_map, p_map = wilcoxon_test(rec_fieldMaps, nonrec_fieldMaps)
     return stat_map, p_map
+
+
+
+if __name__ == '__main__':
+    test()

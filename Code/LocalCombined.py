@@ -7,22 +7,18 @@ Created on Thu Dec 13 16:25:18 2018
 
 This is used to create temporary functions and run the main source of code
 """
-import numpy as np
-import pandas as pd
-import pymining as pm
-import seaborn as sns
-
+import re
 from os import listdir
 from os.path import isfile, join
-import re
 
-from AllPatients import separate_by_recurrence, global_remove_stageT3
-from LocalFilter import load_global_patients, radial_mean_sd_for_patients, partition_patient_data_with_outliers, \
-    select_atlas
-from plot_functions import plot_heat_map_np, plot_histogram, plot_scatter, plot_histogram, \
-    plot_heat_map, show_local_fields, plot_sample_mean_and_sd_maps\
-import significance_test
+import numpy as np
+import pandas as pd
+import seaborn as sns
 
+from AllPatients import separate_by_recurrence
+from LocalFilter import load_global_patients, radial_mean_sd_for_patients, partition_patient_data_with_outliers
+from plot_functions import plot_heat_map_np, plot_scatter, plot_histogram, plot_heat_map, show_local_fields, test_on_single_map, triangulation_qa
+from significance_test import wilcoxon_test_statistics, pymining_t_test, t_map_with_thresholds
 
 sns.set()
 
@@ -52,29 +48,35 @@ def make_average_field(global_df, dataDir=r'../Data/OnlyProstateResults/AllField
     return mean_field, variance_field, std_field
 
 
-def stack_local_fields(global_df, recurrence_label, dataDir=r'../Data/OnlyProstateResults/AllFields'):
-    """
-    :param global_df: either recurring non-recurring global data field
-    :param recurrence_label:  =0 for non-recurring or =1 for recurring
-    :param dataDir: Data directory containing local field data file
-    :return: 3d np array of local field stacked 120x60xnumber of recurrence/non-recurrence i.e [theta x phi x patient_index] and label
-    """
-    df = pd.DataFrame(global_df["patientList"])
-    dfFiles = df.assign(file_path=lambda df: df["patientList"].map(lambda x: r'%s/%s.csv' % (dataDir, x)))
-    numberOfPatients = len(dfFiles)
-    fieldMaps = np.zeros((60, 120, numberOfPatients))
+def plot_sample_mean_and_sd_maps(selected_patients):
+    dataDirectory = r"../Data/OnlyProstateResults/AllFields"
+    patients_who_recur, patients_who_dont_recur = separate_by_recurrence(selected_patients)
+    # (meanMap1, varMap, stdMap) = load_local_field_recurrence(selected_patients, dataDirectory)
 
-    if recurrence_label == 1:
-        label_array = np.ones(numberOfPatients)
-    else:
-        label_array = np.zeros(numberOfPatients)
+    (meanMap1, varMap1, stdMap1) = make_average_field(patients_who_recur, dataDirectory)
 
-    i = 0
-    for f in dfFiles.file_path:
-        fieldMaps[:, :, i] = pd.read_csv(f, header=None).as_matrix()[:, :]
-        i += 1
+    meanMap1.to_csv("../outputResults/recurrence_mean_map.csv", header=None, index=False)
+    stdMap1.to_csv("../outputResults/recurrence_std_map.csv", header=None, index=False)
 
-    return fieldMaps, label_array
+    plot_heat_map(meanMap1, -1, 1, 'mean map - patients_who_recur')
+    plot_heat_map(varMap1, 0, 1, 'variance map - patients_who_recur')
+    plot_heat_map(stdMap1, 0, 1, 'standard deviation map - patients_who_recur')
+
+    (meanMap2, varMap2, stdMap2) = make_average_field(patients_who_dont_recur, dataDirectory)
+    plot_heat_map(meanMap2, -1, 1, 'mean map - patients_who_dont_recur')
+    plot_heat_map(varMap2, 0, 1, 'variance map - patients_who_dont_recur')
+    plot_heat_map(stdMap2, 0, 1, 'standard deviation map - patients_who_dont_recur')
+
+    meanMap2.to_csv("../outputResults/no_recurrence_mean_map.csv", header=None, index=False)
+    stdMap2.to_csv("../outputResults/no_recurrence_std_map.csv", header=None, index=False)
+
+    plot_heat_map(meanMap1 - meanMap2, -0.3, 0.3, 'Difference in mean map')
+    # Var[X-Y] = Var[X]+Var[Y]
+    # Standard deviation is the square root of the variance
+    plot_heat_map(np.sqrt(varMap1 + varMap2), 0, 1.5, 'Difference in std map')
+    (meanMap1 - meanMap2).to_csv("../outputResults/mean_difference_map.csv", header=None, index=False)
+    np.sqrt(varMap1 + varMap2).to_csv("../outputResults/std_difference_map.csv", header=None, index=False)
+
 
 
 def print_volume_difference_details(patientsDF):
@@ -151,20 +153,22 @@ def test_function():
     selected_patients = get_corrupt_patients(enhancedDF, rouge_ct_scans_dir_comb)
 
     # t-statistics
-    (global_neg_pvalue, global_pos_pvalue, neg_tthresh, pos_tthresh, t_value_map) = significance_test.pymining_t_test(
+    (global_neg_pvalue, global_pos_pvalue, neg_tthresh, pos_tthresh, t_value_map) = pymining_t_test(
         enhancedDF)
     print('Global negative p: %.6f Global positive p: %.6f' % (global_neg_pvalue, global_pos_pvalue))
     plot_heat_map_np(t_value_map[0], 'maximum t-value map')
-    significance_test.t_map_with_thresholds(t_value_map[0])
+    t_map_with_thresholds(t_value_map[0])
     plot_histogram(t_value_map[0].flatten(),'magenta', 50, 't-distrubtion of map')
     plot_scatter(enhancedDF, 'lime')
 
     # wilcoxon statistics
-    w_stat, p_map = significance_test.wilcoxon_test_statistics(enhancedDF)
+    w_stat, p_map = wilcoxon_test_statistics(enhancedDF)
     plot_heat_map_np(w_stat, 'wilcoxon map')
     plot_heat_map_np(p_map, 'p map')
 
 if __name__ == '__main__':
     # method_of_refining_data()
     # test_cuts()
-    test_function()
+    # test_function()
+    # test_on_single_map()
+    triangulation_qa()
