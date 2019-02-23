@@ -20,7 +20,7 @@ SaveDirect = "/Users/Tom/Documents/University/ProstateCode/LocalAnalysis/Final/"
 
 def calculate_mean_sd_max_of__patient_map(patientMap):
     '''
-    This function calculates the mean, sd and maximum values for each patient map. This is important for identifying
+    This function calculates the mean, sd and maximum magnitude values for each patient map. This is important for identifying
     local anomolies
     :param patientMap: Is the radial difference map of the patient
     :return: returns the patients mean, sd, and max value
@@ -30,10 +30,9 @@ def calculate_mean_sd_max_of__patient_map(patientMap):
     for radDiff in patientMap.flatten():
         sxx = sxx + (radDiff - mapMean) ** 2
     sdValue = np.sqrt(sxx / (patientMap.size - 1))
+    # Take the magnitude of the map to identify maximum value magnitude
+    patientMap = np.sqrt(pow(patientMap, 2))
     mapMax = patientMap.max()
-    mapMin = patientMap.min()
-    if np.abs(mapMin) > np.abs(mapMax):
-        mapMax = mapMin
     return mapMean, sdValue, mapMax
 
 
@@ -61,7 +60,7 @@ def load_global_patients():
     patients_ID_to_exclude = atlas.union(expected_corrupt_to_check)
     all_patients = AllPatients(r"../Data/OnlyProstateResults/Global",
                                ['AllData19Frac'])
-    # all_patients.removePatients(patients_ID_to_exclude)
+    all_patients.removePatients(patients_ID_to_exclude)
     all_patients.remove_stageT3()
     return all_patients
 
