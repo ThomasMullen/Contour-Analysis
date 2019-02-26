@@ -17,7 +17,7 @@ import seaborn as sns
 from AllPatients import separate_by_recurrence
 from LocalFilter import load_global_patients, radial_mean_sd_for_patients, partition_patient_data_with_outliers
 from plot_functions import plot_heat_map_np, plot_scatter, plot_histogram, plot_heat_map, show_local_fields, test_on_single_map, triangulation_qa, plot_histogram_with_two_data_sets
-from significance_test import wilcoxon_test_statistics, pymining_t_test, t_map_with_thresholds
+from significance_test import wilcoxon_test_statistics, pymining_t_test, t_map_with_thresholds, t_map_with_superposed_contours
 
 sns.set()
 
@@ -299,8 +299,8 @@ def test_cuts(enhancedDF, dataDirectory):
 
 
 def test_function():
-    dataDirectory = r"../Data/OnlyProstateResults/AllFields"
-    outputDirectory = r"../outputResults"
+    dataDirectory = r"/Users/Alex Jenkins/PycharmProjects/Contour-Analysis/Data/OnlyProstateResults/16Fractions_Golden_Atlas/Local"
+    outputDirectory = r"/Users/Alex Jenkins/PycharmProjects/Contour-Analysis/outputResults/16Fractions_Golden_Atlas"
     rawPatientData = load_global_patients()
     enhancedDF = radial_mean_sd_for_patients(dataDirectory, rawPatientData.allPatients)
     print("Before any cuts")
@@ -311,9 +311,6 @@ def test_function():
     enhancedDF = test_cuts(enhancedDF, dataDirectory)
 
     # removes patients with corrupt scans
-    rogue_ct_scans_dir_16 = r"../Corrupt_CT_Scans/16Fractions/"
-    rogue_ct_scans_dir_19 = r"../Corrupt_CT_Scans/19Fractions/"
-    rouge_ct_scans_dir_16_old = r"../Corrupt_CT_Scans/16Fractions_old/"
     rouge_ct_scans_dir_comb = r"../Corrupt_CT_Scans/Combined_Fractions/"
 
     # links all directory in one function
@@ -321,14 +318,14 @@ def test_function():
     # file_list = [(r'../Corrupt_CT_Scans/%s' % x) for x in file_names]
 
     # Removes the selected corrupt ct scan patients from enhancedDF
-    selected_patients = get_corrupt_patients(enhancedDF, rouge_ct_scans_dir_comb)
+    # selected_patients = get_corrupt_patients(enhancedDF, rouge_ct_scans_dir_comb)
 
     # t-statistics
     (global_neg_pvalue, global_pos_pvalue, neg_tthresh, pos_tthresh, t_value_map) = pymining_t_test(
         enhancedDF)
     print('Global negative p: %.6f Global positive p: %.6f' % (global_neg_pvalue, global_pos_pvalue))
     plot_heat_map_np(t_value_map[0], 'maximum t-value map')
-    t_map_with_thresholds(t_value_map[0])
+    t_map_with_superposed_contours(t_value_map[0])
     plot_histogram(t_value_map[0].flatten(),'magenta', 50, 't-distrubtion of map')
     plot_scatter(enhancedDF, 'lime')
 
@@ -344,9 +341,10 @@ def test_function():
     plot_sample_mean_and_sd_maps(enhancedDF)
     pd.DataFrame(t_value_map[0]).to_csv("../outputResults/t_map.csv", header=None, index=False)
 
-# if __name__ == '__main__':
-#     # method_of_refining_data()
-#     # test_cuts()
-#     # test_function()
-#     # test_on_single_map()
-#     # triangulation_qa()
+
+if __name__ == '__main__':
+    # method_of_refining_data()
+    # test_cuts()
+    test_function()
+    # test_on_single_map()
+    # triangulation_qa()

@@ -48,8 +48,12 @@ def load_global_patients():
     :return: All global data of all patients in DSC cuts single df
     """
     # List the patient ID's of those who are contained in our ATLAS and have corrupted local maps & prothesis
-    atlas = {'200806930', '201010804', '201304169', '201100014', '201205737', '201106120', '201204091', '200803943',
-             '200901231', '200805565', '201101453', '200910818', '200811563', '201014420'}
+    atlas = {'200511319', '200603037', '200606282',
+             '200604499', '197100826', '200805129',
+             '200504430', '200701790', '200512187',
+             '200806697', '200512262', '200502368',
+             '200504914', '200502882', '200805103',
+             '201002333'}
 
     '''we have identified these corrupted from previous contour. we need to check '''
     # expected_corrupt_to_check = {200710358, 200705181, 200807021, 200502036, 200606193, 200303191, \ 200708782,
@@ -58,12 +62,11 @@ def load_global_patients():
     # \ 200609194, 200704603}
     expected_corrupt_to_check = {}
     patients_ID_to_exclude = atlas.union(expected_corrupt_to_check)
-    all_patients = AllPatients(r"../Data/OnlyProstateResults/Global",
-                               ['AllData19Frac'])
+    all_patients = AllPatients(r"../Data/OnlyProstateResults/16Fractions_Golden_Atlas",
+                               ['All_16frac_golden_atlas_data'])
     all_patients.removePatients(patients_ID_to_exclude)
-    all_patients.remove_stageT3()
+    # all_patients.remove_stageT3()
     return all_patients
-
 
 def patients_mean_sd_max_value(dataDir, patientId):
     file = r"%s/%s.csv" % (dataDir, patientId)

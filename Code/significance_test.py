@@ -7,15 +7,17 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pymining as pm
 import pandas as pd
+import seaborn as sns
 from scipy import stats as ss
 from AllPatients import separate_by_recurrence
+from plot_functions import create_polar_axis
 
 
 def pymining_t_test(selected_patients):
     # Tag patients with recurrence:1 and non-recurrence:0
     patients_who_recur, patients_who_dont_recur = separate_by_recurrence(selected_patients)
-    (rec_fieldMaps, rec_label_array) = stack_local_fields(patients_who_recur, 1)
-    (non_rec_field_maps, non_rec_label_array) = stack_local_fields(patients_who_dont_recur, 0)
+    (rec_fieldMaps, rec_label_array) = stack_local_fields(patients_who_recur, 1, r"/Users/Alex Jenkins/PycharmProjects/Contour-Analysis/Data/OnlyProstateResults/16Fractions_Golden_Atlas/Local")
+    (non_rec_field_maps, non_rec_label_array) = stack_local_fields(patients_who_dont_recur, 0, r"/Users/Alex Jenkins/PycharmProjects/Contour-Analysis/Data/OnlyProstateResults/16Fractions_Golden_Atlas/Local")
 
     # Concatenate the two
     totalPatients = np.concatenate((rec_fieldMaps, non_rec_field_maps), axis=-1)
@@ -118,26 +120,49 @@ def p_value_contour_plot(t_map, t_thresh, percentile_array):
     plt.gca()
     plt.show()
 
+def t_map_with_superposed_contours(t_map):
+    '''
+    This will plot the tmap contours superimposed on the t-map which is np.flip vertically
+    :param t_map: take in the numpy array t-map
+    :return: returns a plots of the contours of the tmap
+    '''
+    coutour_map = t_map.copy()
+    # clrs = ['magenta', 'lime', 'orange', 'red']
+    critical_t_values = np.percentile(coutour_map.flatten(), [5, 95])
+    plt.contour(coutour_map, levels=critical_t_values, colors='magenta')
+    plt.gca()
+    axes = create_polar_axis()
+    heat_map = sns.heatmap(t_map, center=0, xticklabels=axes[0], yticklabels=axes[1], cmap='RdBu')
+    # heat_map = sns.heatmap(np.flip(t_map, 0), center=0, xticklabels=axes[0], yticklabels=axes[1], cmap='RdBu')
+    heat_map.set(ylabel='Theta, $\dot{\Theta}$', xlabel='Azimutal, $\phi$', title='t-map')
+    plt.show()
+
 
 def wilcoxon_test(rec_field_maps, nonrec_field_maps):
+    '''
+    A function to conduct the wilcoxon signed rank test per voxel of the two recurrence outcomes
+    :param rec_field_maps: A stack of maps for the recurrence patients
+    :param nonrec_field_maps: A stack of maps for the no-recurrence patients
+    :return: Wilcoxon statistic and p-value map
+    '''
+
     stat = np.zeros((60, 120))
     p_value = np.zeros((60, 120))
     for x in range(60):
         for y in range(120):
-            stat[x][y], p_value[x][y] = ss.wilcoxon(rec_field_maps[x][y][:], nonrec_field_maps[x][y][:57])
-    print(stat)
+            stat[x][y], p_value[x][y] = ss.wilcoxon(rec_field_maps[x][y][:], nonrec_field_maps[x][y][:66])
+
+    return stat, p_value
 
 
 def wilcoxon_test_statistics(selected_patients):
     # TODO: randomise the no-recurrence patients
     # Tag patients with recurrence:1 and non-recurrence:0
     patients_who_recur, patients_who_dont_recur = separate_by_recurrence(selected_patients)
-    rec_fieldMaps, _ = stack_local_fields(patients_who_recur, 1)
-    nonrec_fieldMaps, _ = stack_local_fields(patients_who_dont_recur, 0)
+    rec_fieldMaps, _ = stack_local_fields(patients_who_recur, 1, dataDir=r'/Users/Alex Jenkins/PycharmProjects/Contour-Analysis/Data/OnlyProstateResults/16Fractions_Golden_Atlas/Local')
+    nonrec_fieldMaps, _ = stack_local_fields(patients_who_dont_recur, 0, dataDir=r'/Users/Alex Jenkins/PycharmProjects/Contour-Analysis/Data/OnlyProstateResults/16Fractions_Golden_Atlas/Local')
     stat_map, p_map = wilcoxon_test(rec_fieldMaps, nonrec_fieldMaps)
     return stat_map, p_map
-
-
 
 if __name__ == '__main__':
     test()

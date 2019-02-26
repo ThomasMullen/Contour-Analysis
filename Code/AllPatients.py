@@ -6,7 +6,6 @@ def separate_by_recurrence(all_patients):
     :param all_patients: The global data of all patients
     :return: group of DSC cuts global set with patients that have had DSC cuts
     recurrence in prostate cancer and DSC cuts global set with no recurrence
-
     """
     PatientsWhoRecur = pd.concat(
         [all_patients.groupby('Recurrence').get_group(1)])
@@ -20,7 +19,7 @@ def global_remove_stageT3(all_patients):
     :param all_patients: The global data of all patients including late stages
     :return: returns the global patient data with stages >T3 removed
     """
-
+    
     late_staged_patients = ('T3b', 'T3b/T4', 'T4', 'T3B', 'T39')
     early_staged_patients = all_patients[~all_patients['Stage'].isin(late_staged_patients)]
     return early_staged_patients
