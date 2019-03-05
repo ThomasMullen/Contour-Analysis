@@ -7,8 +7,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pymining as pm
 import pandas as pd
+import seaborn as sns
+
 from scipy import stats as ss
 from AllPatients import separate_by_recurrence
+from plot_functions import create_polar_axis
 
 
 def pymining_t_test(selected_patients):
@@ -40,6 +43,26 @@ def t_map_with_thresholds(t_map):
     # clrs = ['magenta', 'lime', 'orange', 'red']
     plt.contour(t_map, levels=critical_t_values, colors='magenta')
     plt.gca()
+    plt.show()
+
+
+def test_superimpose(t_map, pos_t_dist, neg_t_dist):
+    '''
+    This will plot the tmap contours superimposed on the t-map which is np.flip vertically
+    :param t_map: take in the numpy array t-map
+    :return: returns a plots of the contours of the tmap
+    '''
+    coutour_map = t_map.copy()
+    # clrs = ['magenta', 'lime', 'orange', 'red']
+    # critical_t_values = np.percentile(coutour_map.flatten(), [5, 95])
+    upper_tail = np.percentile(pos_t_dist, 95)
+    lower_tail = np.percentile(neg_t_dist, 5)
+    plt.contour(coutour_map, levels=[lower_tail, upper_tail], colors=['magenta', 'lime'])
+    plt.gca()
+    axes = create_polar_axis()
+    heat_map = sns.heatmap(t_map, center=0, xticklabels=axes[0], yticklabels=axes[1], cmap='RdBu')
+    # heat_map = sns.heatmap(np.flip(t_map, 0), center=0, xticklabels=axes[0], yticklabels=axes[1], cmap='RdBu')
+    heat_map.set(ylabel='Theta, $\dot{\Theta}$', xlabel='Azimutal, $\phi$', title='t-map')
     plt.show()
 
 
@@ -137,6 +160,9 @@ def wilcoxon_test_statistics(selected_patients):
     stat_map, p_map = wilcoxon_test(rec_fieldMaps, nonrec_fieldMaps)
     return stat_map, p_map
 
+
+def test():
+    return 0
 
 
 if __name__ == '__main__':

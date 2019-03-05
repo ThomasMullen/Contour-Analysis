@@ -49,8 +49,8 @@ def load_global_patients():
     :return: All global data of all patients in DSC cuts single df
     """
     # List the patient ID's of those who are contained in our ATLAS and have corrupted local maps & prothesis
-    atlas = {'200806930', '201010804', '201304169', '201100014', '201205737', '201106120', '201204091', '200803943',
-             '200901231', '200805565', '201101453', '200910818', '200811563', '201014420'}
+    atlas = {'201211759', '201006023', '200800425', '200510956', '200914524', '200912498', '201011433', '201212018',
+             '201204091', '200711546', '201208233', '201100014', '200913648', '201000110', '200908368'}
 
     '''we have identified these corrupted from previous contour. we need to check '''
     # expected_corrupt_to_check = {200710358, 200705181, 200807021, 200502036, 200606193, 200303191, \ 200708782,
@@ -59,10 +59,10 @@ def load_global_patients():
     # \ 200609194, 200704603}
     expected_corrupt_to_check = {}
     patients_ID_to_exclude = atlas.union(expected_corrupt_to_check)
-    all_patients = AllPatients(r"../Data/OnlyProstateResults/Global",
-                               ['AllData19Frac'])
+    all_patients = AllPatients(r"/Users/Tom/Downloads/Atlas_1",
+                               ['All_19Frac_Random_Atlas_1_data'])
     # all_patients.removePatients(patients_ID_to_exclude)
-    all_patients.remove_stageT3()
+    # all_patients.remove_stageT3()
     return all_patients
 
 
@@ -105,12 +105,12 @@ def partition_patient_data_with_outliers(data, lower_bound, upper_bound, discrim
     :return: returns the global dataset for patient within the bounds, the upp-bound patients and the lower-bound
     patients, respectively.
     '''
-    lower_cut_off = np.percentile(data[discriminator_fieldname], lower_bound)
-    upper_cut_off = np.percentile(data[discriminator_fieldname], upper_bound)
-    print("%s, %s" % (lower_cut_off, upper_cut_off))
-    selected_patients = data[data[discriminator_fieldname].between(lower_cut_off, upper_cut_off)]
-    lower_patients_outliers = data[data[discriminator_fieldname] < lower_cut_off]
-    upper_patients_outliers = data[data[discriminator_fieldname] > upper_cut_off]
+    # lower_cut_off = np.percentile(data[discriminator_fieldname], lower_bound)
+    # upper_cut_off = np.percentile(data[discriminator_fieldname], upper_bound)
+    # print("%s, %s" % (lower_cut_off, upper_cut_off))
+    selected_patients = data[data[discriminator_fieldname].between(lower_bound, upper_bound)]
+    lower_patients_outliers = data[data[discriminator_fieldname] < lower_bound]
+    upper_patients_outliers = data[data[discriminator_fieldname] > upper_bound]
 
     selected_patients.sort_values([discriminator_fieldname])
 
