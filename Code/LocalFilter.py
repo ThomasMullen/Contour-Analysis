@@ -59,8 +59,8 @@ def load_global_patients():
     # \ 200609194, 200704603}
     expected_corrupt_to_check = {}
     patients_ID_to_exclude = atlas.union(expected_corrupt_to_check)
-    all_patients = AllPatients(r"/Users/Tom/Downloads/Atlas_1",
-                               ['All_19Frac_Random_Atlas_1_data'])
+    all_patients = AllPatients(r"../Data/OnlyProstateResults/Global",
+                               ['All_patient_data'])
     # all_patients.removePatients(patients_ID_to_exclude)
     # all_patients.remove_stageT3()
     return all_patients
@@ -70,6 +70,7 @@ def patients_mean_sd_max_value(dataDir, patientId):
     file = r"%s/%s.csv" % (dataDir, patientId)
     radial_map = pd.read_csv(file, header=None).values
     result = calculate_mean_sd_max_of__patient_map(radial_map)
+    print(patientId)
     return result
 
 

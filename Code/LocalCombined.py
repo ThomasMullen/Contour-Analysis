@@ -140,7 +140,7 @@ def statistical_cuts(enhancedDF, dataDirectory=r"../Data/OnlyProstateResults/All
     return clean_patients
 
 
-def read_and_return_patient_stats(dataDirectory=r"../Data/OnlyProstateResults/AllFields", calculated_csv_name="test"):
+def read_and_return_patient_stats(calculated_csv_name="test", dataDirectory=r"../Data/OnlyProstateResults/AllFields"):
     '''
     Loads up and concatenates table then writes a single data frame with mean, st and max r value for each patient
     map added
@@ -166,21 +166,54 @@ def cuts_from_ct_scans(global_df):
 
 
 def test_analysis_function():
-    dataDirectory = r"/Users/Tom/Downloads/Atlas_1/Local"
-    enhancedDF = pd.read_csv(r'../Data/OnlyProstateResults/test.csv')
+    dataDirectory = r"../Data/OnlyProstateResults/AllFields"
+    enhancedDF = pd.read_csv(r'../Data/OnlyProstateResults/All_patient_data.csv')
 
     # Statistical cuts
-    enhancedDF = statistical_cuts(enhancedDF)
+    # enhancedDF = statistical_cuts(enhancedDF)
 
     # t-statistics
-    global_neg_p_value, global_pos_p_value, neg_t_thresh, pos_t_thresh, t_value_map = pymining_t_test(enhancedDF)
+    # global_neg_p_value, global_pos_p_value, neg_t_thresh, pos_t_thresh, t_value_map = pymining_t_test(enhancedDF)
+    # print('Global negative p: %.6f Global positive p: %.6f' % (global_neg_p_value, global_pos_p_value))
+    # # plot_heat_map_np(t_value_map[0], 'maximum t-value map')
+    # # t_map_with_thresholds(t_value_map[0])
+    # plot_histogram(t_value_map[0].flatten(), 'magenta', 50, 't-distrubtion of map')
+    # plot_scatter(enhancedDF, 'lime')
+    # test_superimpose(t_value_map[0], pos_t_thresh, neg_t_thresh)
 
+    global_neg_p_value, global_pos_p_value, neg_t_thresh, pos_t_thresh, t_value_map = pymining_t_test(enhancedDF)
     print('Global negative p: %.6f Global positive p: %.6f' % (global_neg_p_value, global_pos_p_value))
     # plot_heat_map_np(t_value_map[0], 'maximum t-value map')
     # t_map_with_thresholds(t_value_map[0])
     plot_histogram(t_value_map[0].flatten(), 'magenta', 50, 't-distrubtion of map')
     plot_scatter(enhancedDF, 'lime')
     test_superimpose(t_value_map[0], pos_t_thresh, neg_t_thresh)
+
+    global_neg_p_value, global_pos_p_value, neg_t_thresh, pos_t_thresh, t_value_map = pymining_t_test(separate_by_risk(enhancedDF)[0])
+    print('Global negative p: %.6f Global positive p: %.6f' % (global_neg_p_value, global_pos_p_value))
+    # plot_heat_map_np(t_value_map[0], 'maximum t-value map')
+    # t_map_with_thresholds(t_value_map[0])
+    plot_histogram(t_value_map[0].flatten(), 'magenta', 50, 't-distrubtion of map')
+    plot_scatter(separate_by_risk(enhancedDF)[0], 'lime')
+    test_superimpose(t_value_map[0], pos_t_thresh, neg_t_thresh)
+
+    global_neg_p_value, global_pos_p_value, neg_t_thresh, pos_t_thresh, t_value_map = pymining_t_test(separate_by_risk(enhancedDF)[1])
+    print('Global negative p: %.6f Global positive p: %.6f' % (global_neg_p_value, global_pos_p_value))
+    # plot_heat_map_np(t_value_map[0], 'maximum t-value map')
+    # t_map_with_thresholds(t_value_map[0])
+    plot_histogram(t_value_map[0].flatten(), 'magenta', 50, 't-distrubtion of map')
+    plot_scatter(separate_by_risk(enhancedDF)[1], 'lime')
+    test_superimpose(t_value_map[0], pos_t_thresh, neg_t_thresh)
+
+    global_neg_p_value, global_pos_p_value, neg_t_thresh, pos_t_thresh, t_value_map = pymining_t_test(separate_by_risk(enhancedDF)[2])
+    print('Global negative p: %.6f Global positive p: %.6f' % (global_neg_p_value, global_pos_p_value))
+    # plot_heat_map_np(t_value_map[0], 'maximum t-value map')
+    # t_map_with_thresholds(t_value_map[0])
+    plot_histogram(t_value_map[0].flatten(), 'magenta', 50, 't-distrubtion of map')
+    plot_scatter(separate_by_risk(enhancedDF)[2], 'lime')
+    test_superimpose(t_value_map[0], pos_t_thresh, neg_t_thresh)
+
+
 
     # wilcoxon statistics
     # w_stat, p_map = wilcoxon_test_statistics(enhancedDF)
@@ -191,6 +224,7 @@ def test_analysis_function():
 if __name__ == '__main__':
     # method_of_refining_data()
     # test_cuts()
+    # read_and_return_patient_stats("All_patient_data")
     test_analysis_function()
     # triangulation_qa()
     # test_on_single_map()

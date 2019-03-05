@@ -10,9 +10,9 @@ def separate_by_recurrence(all_patients):
 
     """
     PatientsWhoRecur = pd.concat(
-        [all_patients.groupby('Recurrence').get_group(1)])
+        [all_patients.groupby('recurrence').get_group(1)])
     PatientsWhoDontRecur = pd.concat(
-        [all_patients.groupby('Recurrence').get_group(0)])
+        [all_patients.groupby('recurrence').get_group(0)])
     return PatientsWhoRecur, PatientsWhoDontRecur
 
 
@@ -22,9 +22,9 @@ def separate_by_risk(all_patients):
     :param all_patients: The global data table containing each patient
     :return: groups set by risk
     """
-    low = all_patients.groupby('Risk').get_group('Low')
-    medium = all_patients.groupby('Risk').get_group('Intermediate')
-    high = all_patients.groupby('Risk').get_group('High')
+    low = all_patients.groupby('risk').get_group('Low')
+    medium = all_patients.groupby('risk').get_group('Intermediate')
+    high = all_patients.groupby('risk').get_group('High')
     return low, medium, high
 
 
@@ -65,15 +65,13 @@ def testIt():
     testAp = AllPatients(r"../Data/OnlyProstateResults/Global",
                          ['AllData19Frac', 'AllData16Frac_old', 'AllData16Frac', 'AllData19Frac_old'])
     # Atlas or Corrupt
-    atlas = {'200806930', '201010804', '201304169', '201100014', '201205737', '201106120', '201204091', '200803943',
-             '200901231', '200805565', '201101453', '200910818', '200811563', '201014420'}
-    corrupt19Frac = {200710358,
-                     200705181}  # '196708754','200801658','201201119','200911702','200701370','200700427','200610929','200606193','200600383','200511824'
+    atlas = {}
+    corrupt19Frac = {}  # '196708754','200801658','201201119','200911702','200701370','200700427','200610929','200606193','200600383','200511824'
     corrupt16Frac = {}  # '200701370','200700427','200610929','200606193','200600383','200511824'
 
-    testAp.removePatients(atlas)
-    testAp.removePatients(corrupt19Frac)
-    testAp.removePatients(corrupt16Frac)
+    # testAp.removePatients(atlas)
+    # testAp.removePatients(corrupt19Frac)
+    # testAp.removePatients(corrupt16Frac)
 
     cleanedData = testAp.allPatients
 
