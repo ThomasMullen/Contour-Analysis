@@ -142,6 +142,27 @@ def p_value_contour_plot(t_map, t_thresh, percentile_array):
     plt.show()
 
 
+def global_statistical_analysis(selected_patients):
+    '''
+    A function that will carry out the statistical analysis of the global data: The dice coefficient and volume
+    difference for patients with and without cancer recurrence.
+
+    :param selected_patients: A dataframe of all patients
+    '''
+
+    # Test the relationship between volume difference and recurrence
+    global_neg_p_value, global_pos_p_value, _, _ = pm.permutationTest(
+        selected_patients["volumeContourDifference"], selected_patients["recurrence"], 1000)
+
+    print('Vdiff: Global negative p: %.6f Global positive p: %.6f' % (global_neg_p_value, global_pos_p_value))
+
+    # Test the relationship between dice coefficient and recurrence
+    global_neg_p_value, global_pos_p_value, _, _ = pm.permutationTest(
+        selected_patients["DSC"], selected_patients["recurrence"], 1000)
+
+    print('Dice: Global negative p: %.6f Global positive p: %.6f' % (global_neg_p_value, global_pos_p_value))
+
+
 def wilcoxon_test(rec_field_maps, nonrec_field_maps):
     stat = np.zeros((60, 120))
     p_value = np.zeros((60, 120))

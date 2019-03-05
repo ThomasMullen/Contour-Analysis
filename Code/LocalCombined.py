@@ -19,7 +19,8 @@ from AllPatients import separate_by_recurrence, separate_by_risk
 from LocalFilter import load_global_patients, radial_mean_sd_for_patients, partition_patient_data_with_outliers
 from plot_functions import plot_heat_map_np, plot_scatter, plot_histogram, plot_heat_map, show_local_fields, \
     test_on_single_map, triangulation_qa
-from significance_test import wilcoxon_test_statistics, pymining_t_test, t_map_with_thresholds, test_superimpose
+from significance_test import wilcoxon_test_statistics, pymining_t_test, t_map_with_thresholds, test_superimpose, \
+    global_statistical_analysis
 
 sns.set()
 
@@ -181,6 +182,7 @@ def test_analysis_function():
     # plot_scatter(enhancedDF, 'lime')
     # test_superimpose(t_value_map[0], pos_t_thresh, neg_t_thresh)
 
+
     global_neg_p_value, global_pos_p_value, neg_t_thresh, pos_t_thresh, t_value_map = pymining_t_test(enhancedDF)
     print('Global negative p: %.6f Global positive p: %.6f' % (global_neg_p_value, global_pos_p_value))
     # plot_heat_map_np(t_value_map[0], 'maximum t-value map')
@@ -188,6 +190,7 @@ def test_analysis_function():
     plot_histogram(t_value_map[0].flatten(), 'magenta', 50, 't-distrubtion of map')
     plot_scatter(enhancedDF, 'lime')
     test_superimpose(t_value_map[0], pos_t_thresh, neg_t_thresh)
+    global_statistical_analysis(enhancedDF)
 
     global_neg_p_value, global_pos_p_value, neg_t_thresh, pos_t_thresh, t_value_map = pymining_t_test(separate_by_risk(enhancedDF)[0])
     print('Global negative p: %.6f Global positive p: %.6f' % (global_neg_p_value, global_pos_p_value))
@@ -196,6 +199,7 @@ def test_analysis_function():
     plot_histogram(t_value_map[0].flatten(), 'magenta', 50, 't-distrubtion of map')
     plot_scatter(separate_by_risk(enhancedDF)[0], 'lime')
     test_superimpose(t_value_map[0], pos_t_thresh, neg_t_thresh)
+    global_statistical_analysis(separate_by_risk(enhancedDF)[0])
 
     global_neg_p_value, global_pos_p_value, neg_t_thresh, pos_t_thresh, t_value_map = pymining_t_test(separate_by_risk(enhancedDF)[1])
     print('Global negative p: %.6f Global positive p: %.6f' % (global_neg_p_value, global_pos_p_value))
@@ -204,6 +208,7 @@ def test_analysis_function():
     plot_histogram(t_value_map[0].flatten(), 'magenta', 50, 't-distrubtion of map')
     plot_scatter(separate_by_risk(enhancedDF)[1], 'lime')
     test_superimpose(t_value_map[0], pos_t_thresh, neg_t_thresh)
+    global_statistical_analysis(separate_by_risk(enhancedDF)[1])
 
     global_neg_p_value, global_pos_p_value, neg_t_thresh, pos_t_thresh, t_value_map = pymining_t_test(separate_by_risk(enhancedDF)[2])
     print('Global negative p: %.6f Global positive p: %.6f' % (global_neg_p_value, global_pos_p_value))
@@ -212,6 +217,7 @@ def test_analysis_function():
     plot_histogram(t_value_map[0].flatten(), 'magenta', 50, 't-distrubtion of map')
     plot_scatter(separate_by_risk(enhancedDF)[2], 'lime')
     test_superimpose(t_value_map[0], pos_t_thresh, neg_t_thresh)
+    global_statistical_analysis(separate_by_risk(enhancedDF)[2])
 
 
 
