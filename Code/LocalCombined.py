@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-from AllPatients import separate_by_recurrence
+from AllPatients import separate_by_recurrence, separate_by_risk
 from LocalFilter import load_global_patients, radial_mean_sd_for_patients, partition_patient_data_with_outliers
 from plot_functions import plot_heat_map_np, plot_scatter, plot_histogram, plot_heat_map, show_local_fields, \
     test_on_single_map, triangulation_qa
@@ -191,5 +191,10 @@ if __name__ == '__main__':
     # method_of_refining_data()
     # test_cuts()
     test_analysis_function()
-    # test_on_single_map()
     # triangulation_qa()
+    # test_on_single_map()
+
+
+
+
+
