@@ -182,6 +182,15 @@ def test_analysis_function():
     # plot_scatter(enhancedDF, 'lime')
     # test_superimpose(t_value_map[0], pos_t_thresh, neg_t_thresh)
 
+    no_high_risk = pd.concat([enhancedDF.groupby('risk').get_group('Intermediate'), enhancedDF.groupby('risk').get_group('Low')])
+    global_neg_p_value, global_pos_p_value, neg_t_thresh, pos_t_thresh, t_value_map = pymining_t_test(no_high_risk)
+    print('Global negative p: %.6f Global positive p: %.6f' % (global_neg_p_value, global_pos_p_value))
+    # plot_heat_map_np(t_value_map[0], 'maximum t-value map')
+    # t_map_with_thresholds(t_value_map[0])
+    plot_histogram(t_value_map[0].flatten(), 'magenta', 50, 't-distrubtion of map')
+    plot_scatter(no_high_risk, 'lime')
+    test_superimpose(t_value_map[0], pos_t_thresh, neg_t_thresh)
+    global_statistical_analysis(no_high_risk)
 
     global_neg_p_value, global_pos_p_value, neg_t_thresh, pos_t_thresh, t_value_map = pymining_t_test(enhancedDF)
     print('Global negative p: %.6f Global positive p: %.6f' % (global_neg_p_value, global_pos_p_value))
