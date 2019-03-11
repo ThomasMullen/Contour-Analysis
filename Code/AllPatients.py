@@ -49,6 +49,7 @@ def remove_high_risk(all_patients):
 
     return all_patients[~all_patients['risk'].isin('High')]
 
+
 class AllPatients:
     def __init__(self, dataDir, fileNames):
         filePath = r'%s/%s.csv' % (dataDir, fileNames[0])
@@ -70,7 +71,7 @@ class AllPatients:
     def remove_stageT3(self):
         return global_remove_stageT3(self.allPatients)
 
-    def remove_risk(self:
+    def remove_risk(self):
         return remove_high_risk(self.allPatients)
 
 
