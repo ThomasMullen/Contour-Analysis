@@ -165,11 +165,7 @@ def cuts_from_ct_scans(global_df):
     return global_df
 
 
-def test_analysis_function():
-    dataDirectory = r"../Data/Deep_learning_results/normMaps"
-    enhancedDF = pd.read_csv(r'../Data/Deep_learning_results/All_patient_data.csv')
-    enhancedDF = cuts_from_ct_scans(enhancedDF)
-
+def test_analysis_function(enhancedDF):
     # Low and intermediate risk patients
     low_and_intermediate_risk_patients = enhancedDF[~enhancedDF['risk'].isin(['High'])]
     _, p_map_mwu = mann_whitney_test_statistic(low_and_intermediate_risk_patients, dataDirectory)
@@ -183,8 +179,11 @@ def test_analysis_function():
     global_statistical_analysis(high_risk_patients)
 
 
-def test_survival_analysis(patient_data_base, data_directory):
-    T = patient_data_base["recurrenceTime"]
+def test_survival_analysis(patient_data_base):
+    # Remove patient that have not time event
+    patient_data_base = patient_data_base[patient_data_base.recurrenceTime != '']
+
+    T = patient_data_base["timeToEvent"]
     E = patient_data_base["recurrence"]
 
     kmf = KaplanMeierFitter()
@@ -193,13 +192,22 @@ def test_survival_analysis(patient_data_base, data_directory):
     kmf.confidence_interval_
     kmf.median_
     kmf.plot()
+
+    dice_median = pd.patient_data_base["DSC"].median()
+    upper_group = patient_data_base[patient_data_base.DSC >= dice_median]
+    lower_group = patient_data_base[patient_data_base.DSC <= dice_median]
+
+    print(upper_group.head())
+    print(lower_group.head())
+
     return
 
 
 if __name__ == '__main__':
-    # method_of_refining_data()
-    # test_cuts()
-    # read_and_return_patient_stats("All_patient_data")
-    test_analysis_function()
+    dataDirectory = r"../Data/Deep_learning_results/normMaps"
+    enhancedDF = pd.read_csv(r'../Data/Deep_learning_results/All_patient_data_no_NA.csv')
+    enhancedDF = cuts_from_ct_scans(enhancedDF)
+    test_survival_analysis(enhancedDF)
+    # test_analysis_function(enhancedDF)
     # triangulation_qa()
     # test_on_single_map()
