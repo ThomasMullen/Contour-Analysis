@@ -19,8 +19,8 @@ from AllPatients import separate_by_recurrence, separate_by_risk
 from LocalFilter import load_global_patients, radial_mean_sd_for_patients, partition_patient_data_with_outliers
 from plot_functions import plot_heat_map_np, plot_scatter, plot_histogram, plot_heat_map, show_local_fields, \
     test_on_single_map, triangulation_qa
-from significance_test import wilcoxon_test_statistics, pymining_t_test, t_map_with_thresholds, test_superimpose, \
-    global_statistical_analysis, wilcoxon_map_with_thresholds
+from significance_test import wilcoxon_test_statistic, mann_whitney_test_statistic, pymining_t_test, t_map_with_thresholds, test_superimpose, \
+    global_statistical_analysis, map_with_thresholds
 
 sns.set()
 
@@ -169,36 +169,21 @@ def cuts_from_ct_scans(global_df):
 def test_analysis_function():
     dataDirectory = r"../Data/OnlyProstateResults/normMaps"
     enhancedDF = pd.read_csv(r'../Data/OnlyProstateResults/All_patient_data.csv')
-
-    # Statistical cuts
     enhancedDF = cuts_from_ct_scans(enhancedDF)
+
+    # Low and intermediate risk patients
     low_and_intermediate_risk_patients = enhancedDF[~enhancedDF['risk'].isin(['High'])]
-    global_neg_p_value, global_pos_p_value, neg_t_thresh, pos_t_thresh, t_value_map = pymining_t_test(low_and_intermediate_risk_patients)
-    print('Global negative p: %.6f Global positive p: %.6f' % (global_neg_p_value, global_pos_p_value))
-    plot_heat_map_np(t_value_map[0], 'maximum t-value map')
-    t_map_with_thresholds(t_value_map[0])
-    plot_histogram(t_value_map[0].flatten(), 'magenta', 50, 't-distrubtion of map')
-    plot_scatter(low_and_intermediate_risk_patients, 'lime')
-    test_superimpose(t_value_map[0], pos_t_thresh, neg_t_thresh)
-    # global_statistical_analysis(separate_by_risk(enhancedDF)[0])
+    # _, p_map_wilcox = wilcoxon_test_statistic(low_and_intermediate_risk_patients)
+    # map_with_thresholds(p_map_wilcox)
+    _, p_map_mwu = mann_whitney_test_statistic(low_and_intermediate_risk_patients)
+    map_with_thresholds(p_map_mwu)
 
-    global_neg_p_value, global_pos_p_value, neg_t_thresh, pos_t_thresh, t_value_map = pymining_t_test(separate_by_risk(enhancedDF)[2])
-    print('Global negative p: %.6f Global positive p: %.6f' % (global_neg_p_value, global_pos_p_value))
-    plot_heat_map_np(t_value_map[0], 'maximum t-value map')
-    t_map_with_thresholds(t_value_map[0])
-    plot_histogram(t_value_map[0].flatten(), 'magenta', 50, 't-distrubtion of wilcoxon_test_statisticsmap')
-    plot_scatter(separate_by_risk(enhancedDF)[2], 'lime')
-    test_superimpose(t_value_map[0], pos_t_thresh, neg_t_thresh)
-    # global_statistical_analysis(separate_by_risk(enhancedDF)[2])
-
-    # # # wilcoxon statistics
-    # low_and_intermediate_risk_patients = enhancedDF[~enhancedDF['risk'].isin(['High'])]
-    # w_stat, p_map = wilcoxon_test_statistics(separate_by_risk(enhancedDF)[2])
-    # wilcoxon_map_with_thresholds(p_map)
-
-    # w_stat, p_map = wilcoxon_test_statistics(separate_by_risk(enhancedDF)[2])
-    # plot_heat_map_np(w_stat, 'wilcoxon map')
-    # plot_heat_map_np(p_map, 'p map')
+    # High risk patients
+    high_risk_patients = separate_by_risk(enhancedDF)[2]
+    # _, p_map_wilcox = wilcoxon_test_statistic(high_risk_patients)
+    # map_with_thresholds(p_map_wilcox)
+    _, p_map_mwu = mann_whitney_test_statistic(high_risk_patients)
+    map_with_thresholds(p_map_mwu)
 
 
 if __name__ == '__main__':
