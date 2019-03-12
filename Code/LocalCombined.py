@@ -140,7 +140,7 @@ def statistical_cuts(patient_database, data_directory=r"../Data/OnlyProstateResu
     return clean_patients
 
 
-def read_and_return_patient_stats(calculated_csv_name="test", dataDirectory=r"../Data/OnlyProstateResults/AllFields"):
+def read_and_return_patient_stats(calculated_csv_name="All_patient_data_no_NA", dataDirectory=r"../Data/Deep_learning_results/deltaRMaps"):
     '''
     Loads up and concatenates table then writes a single data frame with mean, st and max r value for each patient
     map added
@@ -150,7 +150,7 @@ def read_and_return_patient_stats(calculated_csv_name="test", dataDirectory=r"..
     '''
     rawPatientData = load_global_patients()
     enhancedDF = radial_mean_sd_for_patients(dataDirectory, rawPatientData.allPatients)
-    enhancedDF.to_csv('../Data/OnlyProstateResults/' + calculated_csv_name + '.csv')
+    enhancedDF.to_csv('../Data/Deep_learning_results/' + calculated_csv_name + '.csv')
 
 
 def cuts_from_ct_scans(global_df):
@@ -168,20 +168,20 @@ def cuts_from_ct_scans(global_df):
 def test_analysis_function(enhancedDF):
     # Low and intermediate risk patients
     low_and_intermediate_risk_patients = enhancedDF[~enhancedDF['risk'].isin(['High'])]
-    _, p_map_mwu = mann_whitney_test_statistic(low_and_intermediate_risk_patients, dataDirectory)
+    _, p_map_mwu = mann_whitney_test_statistic(low_and_intermediate_risk_patients)
     map_with_thresholds(p_map_mwu)
     global_statistical_analysis(low_and_intermediate_risk_patients)
 
     # High risk patients
     high_risk_patients = separate_by_risk(enhancedDF)[2]
-    _, p_map_mwu = mann_whitney_test_statistic(high_risk_patients, dataDirectory)
+    _, p_map_mwu = mann_whitney_test_statistic(high_risk_patients)
     map_with_thresholds(p_map_mwu)
     global_statistical_analysis(high_risk_patients)
 
 
 def test_survival_analysis(patient_data_base):
     # Remove patient that have not time event
-    patient_data_base = patient_data_base[patient_data_base.recurrenceTime != '']
+    # patient_data_base = patient_data_base[patient_data_base.recurrenceTime != '']
 
     T = patient_data_base["timeToEvent"]
     E = patient_data_base["recurrence"]
@@ -192,21 +192,35 @@ def test_survival_analysis(patient_data_base):
     kmf.confidence_interval_
     kmf.median_
     kmf.plot()
+    #
+    dice_median = patient_data_base["DSC"].median()
 
-    dice_median = pd.patient_data_base["DSC"].median()
-    upper_group = patient_data_base[patient_data_base.DSC >= dice_median]
-    lower_group = patient_data_base[patient_data_base.DSC <= dice_median]
+    dsc = patient_data_base['DSC']
+    ix = (dsc <= dice_median)
 
-    print(upper_group.head())
-    print(lower_group.head())
+    kmf.fit(T[~ix], E[~ix], label='Lower Half Dice Patients')
+    kmf.fit(T[ix], E[ix], label='Upper Half Dice Patients')
+    kmf.plot()
 
+    # upper_group = patient_data_base[patient_data_base.DSC >= dice_median]
+    # lower_group = patient_data_base[patient_data_base.DSC <= dice_median]
+    # T1 = upper_group["timeToEvent"]
+    # E1 = upper_group["recurrence"]
+    # T2 = lower_group["timeToEvent"]
+    # E2 = lower_group["recurrence"]
+    #
+    # kmf = KaplanMeierFitter()
+    # kmf.fit(T1, E1, label='Upper Half Dice Patients')
+    # ax = kmf.plot()
+    # kmf.fit(T2, E2, label='Lower Half Dice Patients')
+    # kmf.plot(ax=ax)
     return
 
-
 if __name__ == '__main__':
-    dataDirectory = r"../Data/Deep_learning_results/normMaps"
-    enhancedDF = pd.read_csv(r'../Data/Deep_learning_results/All_patient_data_no_NA.csv')
-    enhancedDF = cuts_from_ct_scans(enhancedDF)
+    # read_and_return_patient_stats()
+    dataDirectory = r"../Data/Deep_learning_results/deltaRMaps"
+    enhancedDF = pd.read_csv(r'../Data/Deep_learning_results/All_patient_data_no_time_event_NA.csv')
+    # enhancedDF = cuts_from_ct_scans(enhancedDF)
     test_survival_analysis(enhancedDF)
     # test_analysis_function(enhancedDF)
     # triangulation_qa()

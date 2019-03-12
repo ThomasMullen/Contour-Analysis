@@ -53,7 +53,7 @@ def load_global_patients():
 
     expected_corrupt_to_check = {}
     patients_ID_to_exclude = corrupt.union(expected_corrupt_to_check)
-    all_patients = AllPatients(r"../Data/OnlyProstateResults/Global",
+    all_patients = AllPatients(r"../Data",
                                ['All_patient_data'])
     all_patients.removePatients(patients_ID_to_exclude)
     # all_patients.remove_stageT3()
@@ -80,6 +80,7 @@ def radial_mean_sd_for_patients(dataDir, allPatientsDF):
     :param allPatientsDF: The global patient dataset table
     :return: Returns three additional parameters
     '''
+    # allPatientsDF.patientList = allPatientsDF.patientList.astype(int)
     df = allPatientsDF.assign(
         mean_sd_maxV=lambda df: df["patientList"].map(lambda x: patients_mean_sd_max_value(dataDir, x))) \
         .assign(mean=lambda df: df["mean_sd_maxV"].map(lambda x: x[0])) \

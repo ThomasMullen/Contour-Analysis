@@ -115,7 +115,7 @@ def pValueMap(t_to_p_map):
     return p_map
 
 
-def stack_local_fields(global_df, recurrence_label, dataDir=r'../Data/OnlyProstateResults/AllFields'):
+def stack_local_fields(global_df, recurrence_label, dataDir=r'../Data/Deep_learning_results/deltaRMaps'):
     """
     :param global_df: either recurring non-recurring global data field
     :param recurrence_label:  =0 for non-recurring or =1 for recurring
@@ -236,7 +236,7 @@ def wilcoxon_test_statistic(selected_patients):
     return stat_map, p_map
 
 
-def mann_whitney_test_statistic(selected_patients, data_directory):
+def mann_whitney_test_statistic(selected_patients):
     """
     Conduct a mann whitney test SUM rank test
 
@@ -246,8 +246,8 @@ def mann_whitney_test_statistic(selected_patients, data_directory):
 
     # Tag patients with recurrence:1 and non-recurrence:0
     patients_who_recur, patients_who_dont_recur = separate_by_recurrence(selected_patients)
-    rec_fieldMaps, _ = stack_local_fields(patients_who_recur, 1, dataDir=data_directory)
-    nonrec_fieldMaps, _ = stack_local_fields(patients_who_dont_recur, 0, dataDir=data_directory)
+    rec_fieldMaps, _ = stack_local_fields(patients_who_recur, 1)
+    nonrec_fieldMaps, _ = stack_local_fields(patients_who_dont_recur, 0)
     stat_map, p_map = mann_whitney_u_test(rec_fieldMaps, nonrec_fieldMaps)
     return stat_map, p_map
 
