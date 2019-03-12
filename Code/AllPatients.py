@@ -39,6 +39,17 @@ def global_remove_stageT3(all_patients):
     return early_staged_patients
 
 
+def remove_high_risk(all_patients):
+    '''
+    A function which will return all_patients with the high risk patients removed
+
+    :param all_patients: The global data of all patients
+    :return: The global data for patients of low and intermediate cancer risk
+    '''
+
+    return all_patients[~all_patients['risk'].isin('High')]
+
+
 class AllPatients:
     def __init__(self, dataDir, fileNames):
         filePath = r'%s/%s.csv' % (dataDir, fileNames[0])
@@ -59,6 +70,9 @@ class AllPatients:
 
     def remove_stageT3(self):
         return global_remove_stageT3(self.allPatients)
+
+    def remove_risk(self):
+        return remove_high_risk(self.allPatients)
 
 
 def testIt():

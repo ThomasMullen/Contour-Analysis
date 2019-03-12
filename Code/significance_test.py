@@ -17,8 +17,8 @@ from plot_functions import create_polar_axis
 def pymining_t_test(selected_patients):
     # Tag patients with recurrence:1 and non-recurrence:0
     patients_who_recur, patients_who_dont_recur = separate_by_recurrence(selected_patients)
-    (rec_fieldMaps, rec_label_array) = stack_local_fields(patients_who_recur, 1, r'../Data/OnlyProstateResults/normMaps')
-    (non_rec_field_maps, non_rec_label_array) = stack_local_fields(patients_who_dont_recur, 0, r'../Data/OnlyProstateResults/normMaps')
+    (rec_fieldMaps, rec_label_array) = stack_local_fields(patients_who_recur, 1)
+    (non_rec_field_maps, non_rec_label_array) = stack_local_fields(patients_who_dont_recur, 0)
 
     # Concatenate the two
     totalPatients = np.concatenate((rec_fieldMaps, non_rec_field_maps), axis=-1)
@@ -66,6 +66,24 @@ def test_superimpose(t_map, pos_t_dist, neg_t_dist):
     plt.show()
 
 
+def map_with_thresholds(statistic_map):
+    '''
+    This will plot the contours superimposed on the statistic map which is np.flip vertically
+    :param t_map: take in the numpy array t-map
+    :return: returns a plots of the contours of the tmap
+    '''
+    coutour_map = statistic_map.copy()
+    # clrs = ['magenta', 'lime', 'orange', 'red']
+    # critical_t_values = np.percentile(coutour_map.flatten(), [5, 95])
+    critical_statistic_values = np.percentile(statistic_map.flatten(), [5, 95])
+    plt.contour(coutour_map, levels=critical_statistic_values, colors=['magenta', 'lime'])
+    plt.gca()
+    axes = create_polar_axis()
+    heat_map = sns.heatmap(statistic_map, center=0, xticklabels=axes[0], yticklabels=axes[1], cmap='RdBu')
+    # heat_map = sns.heatmap(np.flip(t_map, 0), center=0, xticklabels=axes[0], yticklabels=axes[1], cmap='RdBu')
+    heat_map.set(ylabel='Theta, $\dot{\Theta}$', xlabel='Azimutal, $\phi$', title='')
+    plt.show()
+
 def pValueMap(t_to_p_map):
     """
     A function which will create a map of p-values from a map of t-values and thresholds
@@ -104,6 +122,7 @@ def stack_local_fields(global_df, recurrence_label, dataDir=r'../Data/OnlyProsta
     :param dataDir: Data directory containing local field data file
     :return: 3d np array of local field stacked 120x60xnumber of recurrence/non-recurrence i.e [theta x phi x patient_index] and label
     """
+
     df = pd.DataFrame(global_df["patientList"]).astype(int)
     dfFiles = df.assign(file_path=lambda df: df["patientList"].map(lambda x: r'%s/%s.csv' % (dataDir, x)))
     numberOfPatients = len(dfFiles)
@@ -162,30 +181,74 @@ def global_statistical_analysis(selected_patients):
 
     print('Dice: Global negative p: %.6f Global positive p: %.6f' % (global_neg_p_value, global_pos_p_value))
 
-    # Test the relationship between dice coefficient and recurrence
-    # df = selected_patients.assign(vol_ratio=lambda df: df["volumeContour"].map(lambda x: x.volumeContour/x.volumeContourAuto))
-    global_neg_p_value, global_pos_p_value, _, _ = pm.permutationTest(df["vol_ratio"], df["recurrence"], 1000)
+    # Test the relationship between ratio of volumes and recurrence: V_man/V_auto
+    global_neg_p_value, global_pos_p_value, _, _ = pm.permutationTest(
+        selected_patients["volumeRatio"], selected_patients["recurrence"], 1000)
 
-    print('V_man/V_auto: Global negative p: %.6f Global positive p: %.6f' % (global_neg_p_value, global_pos_p_value))
+    print('VRatio: Global negative p: %.6f Global positive p: %.6f' % (global_neg_p_value, global_pos_p_value))
 
 
 
 def wilcoxon_test(rec_field_maps, nonrec_field_maps):
+    # TODO:  implement random sampling
+
+    stat = np.zeros((60, 120))
+    p_value = np.zeros((60, 120))
+
+    for x in range(60):
+        for y in range(120):
+            stat[x][y], p_value[x][y] = ss.wilcoxon(rec_field_maps[x][y][:], nonrec_field_maps[x][y][:74])
+    #         56 for low and intermediate combined
+    #         74 for high on its own
+    return stat, p_value
+
+
+def mann_whitney_u_test(rec_field_maps, nonrec_field_maps):
+    """
+    A function to conduct the mann whitney u test per voxel of our radial difference maps
+
+    :param rec_field_maps: recurrence maps
+    :param nonrec_field_maps: no recurrence maps
+    :return: A map of the u-statistic and the p-value
+    """
+
     stat = np.zeros((60, 120))
     p_value = np.zeros((60, 120))
     for x in range(60):
         for y in range(120):
-            stat[x][y], p_value[x][y] = ss.wilcoxon(rec_field_maps[x][y][:], nonrec_field_maps[x][y][:57])
-    print(stat)
+            stat[x][y], p_value[x][y] = ss.mannwhitneyu(rec_field_maps[x][y][:], nonrec_field_maps[x][y][:], alternative='two-sided')
+    return stat, p_value
 
 
-def wilcoxon_test_statistics(selected_patients):
-    # TODO: randomise the no-recurrence patients
+def wilcoxon_test_statistic(selected_patients):
+    """
+    Conduct a wilcoxon SIGN rank test
+
+    :param selected_patients: Dataframe of all patients
+    :return: maps of the statistic and the p-values
+    """
+
     # Tag patients with recurrence:1 and non-recurrence:0
     patients_who_recur, patients_who_dont_recur = separate_by_recurrence(selected_patients)
     rec_fieldMaps, _ = stack_local_fields(patients_who_recur, 1)
     nonrec_fieldMaps, _ = stack_local_fields(patients_who_dont_recur, 0)
     stat_map, p_map = wilcoxon_test(rec_fieldMaps, nonrec_fieldMaps)
+    return stat_map, p_map
+
+
+def mann_whitney_test_statistic(selected_patients, data_directory):
+    """
+    Conduct a mann whitney test SUM rank test
+
+    :param selected_patients: dataframe of all patients
+    :return: maps of the statistic and the p-values
+    """
+
+    # Tag patients with recurrence:1 and non-recurrence:0
+    patients_who_recur, patients_who_dont_recur = separate_by_recurrence(selected_patients)
+    rec_fieldMaps, _ = stack_local_fields(patients_who_recur, 1, dataDir=data_directory)
+    nonrec_fieldMaps, _ = stack_local_fields(patients_who_dont_recur, 0, dataDir=data_directory)
+    stat_map, p_map = mann_whitney_u_test(rec_fieldMaps, nonrec_fieldMaps)
     return stat_map, p_map
 
 

@@ -72,7 +72,7 @@ def doPermutation(doseData, statuses):
 
 def imagesTTest(doseData, statuses):
     """
-    Calculate DSC cuts per-voxel t statistic between two images. Uses Welford's method to calculate mean and variance.
+    Calculate per-voxel t statistic between two images. Uses Welford's method to calculate mean and variance.
     NB: there is DSC cuts tricky little bit at the end. Welford's method requires dividing by N to get variance, the T-test
     also requires dividing by N, so we just divide by N^2.
     Inputs:

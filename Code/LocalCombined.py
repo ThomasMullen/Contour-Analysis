@@ -18,9 +18,9 @@ from lifelines import KaplanMeierFitter
 from AllPatients import separate_by_recurrence, separate_by_risk
 from LocalFilter import load_global_patients, radial_mean_sd_for_patients, partition_patient_data_with_outliers
 from plot_functions import plot_heat_map_np, plot_scatter, plot_histogram, plot_heat_map, show_local_fields, \
-    test_on_single_map, triangulation_qa, load_map
-from significance_test import wilcoxon_test_statistics, pymining_t_test, t_map_with_thresholds, test_superimpose, \
-    global_statistical_analysis
+    test_on_single_map, triangulation_qa
+from significance_test import wilcoxon_test_statistic, mann_whitney_test_statistic, pymining_t_test, t_map_with_thresholds, test_superimpose, \
+    global_statistical_analysis, map_with_thresholds
 
 sns.set()
 
@@ -155,10 +155,10 @@ def read_and_return_patient_stats(calculated_csv_name="test", dataDirectory=r"..
 
 def cuts_from_ct_scans(global_df):
     # removes patients with corrupt scans
-    rogue_ct_scans_dir_16 = r"../Corrupt_CT_Scans/16Fractions/"
-    rogue_ct_scans_dir_19 = r"../Corrupt_CT_Scans/19Fractions/"
-    rouge_ct_scans_dir_16_old = r"../Corrupt_CT_Scans/16Fractions_old/"
-    rouge_ct_scans_dir_comb = r"../Corrupt_CT_Scans/Combined_Fractions/"
+    # rogue_ct_scans_dir_16 = r"../Corrupt_CT_Scans/16Fractions/"
+    # rogue_ct_scans_dir_19 = r"../Corrupt_CT_Scans/19Fractions/"
+    # rouge_ct_scans_dir_16_old = r"../Corrupt_CT_Scans/16Fractions_old/"
+    rouge_ct_scans_dir_comb = r"../Corrupt_CT_Scans/Corrupt/"
 
     # Removes the selected corrupt ct scan patients from enhancedDF
     global_df = get_corrupt_patients(global_df, rouge_ct_scans_dir_comb)
@@ -166,20 +166,26 @@ def cuts_from_ct_scans(global_df):
 
 
 def test_analysis_function():
-    dataDirectory = r"../Data/OnlyProstateResults/normMaps"
-    enhancedDF = pd.read_csv(r'../Data/OnlyProstateResults/All_patient_data.csv')
+    dataDirectory = r"../Data/Deep_learning_results/normMaps"
+    enhancedDF = pd.read_csv(r'../Data/Deep_learning_results/All_patient_data.csv')
+    enhancedDF = cuts_from_ct_scans(enhancedDF)
 
-    # _, lower, upper = partition_patient_data_with_outliers(enhancedDF, -2, 2)
-    # show_local_fields(upper, dataDirectory)
-    # Statistical cuts
-    # enhancedDF = statistical_cuts(enhancedDF)
+    # Low and intermediate risk patients
+    low_and_intermediate_risk_patients = enhancedDF[~enhancedDF['risk'].isin(['High'])]
+    _, p_map_mwu = mann_whitney_test_statistic(low_and_intermediate_risk_patients, dataDirectory)
+    map_with_thresholds(p_map_mwu)
+    global_statistical_analysis(low_and_intermediate_risk_patients)
 
-    # t-statistics
-    # enhancedDF = pd.concat([enhancedDF.groupby('risk').get_group('Intermediate'), enhancedDF.groupby('risk').get_group('Low')])
-    # enhancedDF = enhancedDF.groupby('fractions').get_group(19)
+    # High risk patients
+    high_risk_patients = separate_by_risk(enhancedDF)[2]
+    _, p_map_mwu = mann_whitney_test_statistic(high_risk_patients, dataDirectory)
+    map_with_thresholds(p_map_mwu)
+    global_statistical_analysis(high_risk_patients)
 
-    T = enhancedDF["recurrenceTime"]
-    E = enhancedDF["recurrence"]
+
+def test_survival_analysis(patient_data_base, data_directory):
+    T = patient_data_base["recurrenceTime"]
+    E = patient_data_base["recurrence"]
 
     kmf = KaplanMeierFitter()
     kmf.fit(T, event_observed=E)
@@ -187,28 +193,7 @@ def test_analysis_function():
     kmf.confidence_interval_
     kmf.median_
     kmf.plot()
-
-    global_neg_p_value, global_pos_p_value, neg_t_thresh, pos_t_thresh, t_value_map = pymining_t_test(enhancedDF)
-    print('Global negative p: %.6f Global positive p: %.6f' % (global_neg_p_value, global_pos_p_value))
-    # plot_heat_map_np(t_value_map[0], 'maximum t-value map')
-    # t_map_with_thresholds(t_value_map[0])
-    plot_histogram(t_value_map[0].flatten(), 'magenta', 50, 't-distrubtion of map')
-    plot_scatter(enhancedDF, 'lime')
-    test_superimpose(t_value_map[0], pos_t_thresh, neg_t_thresh)
-
-    # global_neg_p_value, global_pos_p_value, neg_t_thresh, pos_t_thresh, t_value_map = pymining_t_test(enhancedDF)
-    # print('Global negative p: %.6f Global positive p: %.6f' % (global_neg_p_value, global_pos_p_value))
-    # # plot_heat_map_np(t_value_map[0], 'maximum t-value map')
-    # # t_map_with_thresholds(t_value_map[0])
-    # plot_histogram(t_value_map[0].flatten(), 'magenta', 50, 't-distrubtion of map')
-    # plot_scatter(enhancedDF, 'lime')
-    # test_superimpose(t_value_map[0], pos_t_thresh, neg_t_thresh)
-    # global_statistical_analysis(enhancedDF)
-
-    # wilcoxon statistics
-    # w_stat, p_map = wilcoxon_test_statistics(enhancedDF)
-    # plot_heat_map_np(w_stat, 'wilcoxon map')
-    # plot_heat_map_np(p_map, 'p map')
+    return
 
 
 if __name__ == '__main__':
