@@ -17,8 +17,8 @@ from plot_functions import create_polar_axis
 def pymining_t_test(selected_patients):
     # Tag patients with recurrence:1 and non-recurrence:0
     patients_who_recur, patients_who_dont_recur = separate_by_recurrence(selected_patients)
-    (rec_fieldMaps, rec_label_array) = stack_local_fields(patients_who_recur, 1)
-    (non_rec_field_maps, non_rec_label_array) = stack_local_fields(patients_who_dont_recur, 0)
+    (rec_fieldMaps, rec_label_array) = stack_local_fields(patients_who_recur, 1, r'../Data/OnlyProstateResults/normMaps')
+    (non_rec_field_maps, non_rec_label_array) = stack_local_fields(patients_who_dont_recur, 0, r'../Data/OnlyProstateResults/normMaps')
 
     # Concatenate the two
     totalPatients = np.concatenate((rec_fieldMaps, non_rec_field_maps), axis=-1)
@@ -104,7 +104,7 @@ def stack_local_fields(global_df, recurrence_label, dataDir=r'../Data/OnlyProsta
     :param dataDir: Data directory containing local field data file
     :return: 3d np array of local field stacked 120x60xnumber of recurrence/non-recurrence i.e [theta x phi x patient_index] and label
     """
-    df = pd.DataFrame(global_df["patientList"])
+    df = pd.DataFrame(global_df["patientList"]).astype(int)
     dfFiles = df.assign(file_path=lambda df: df["patientList"].map(lambda x: r'%s/%s.csv' % (dataDir, x)))
     numberOfPatients = len(dfFiles)
     fieldMaps = np.zeros((60, 120, numberOfPatients))
@@ -161,6 +161,13 @@ def global_statistical_analysis(selected_patients):
         selected_patients["DSC"], selected_patients["recurrence"], 1000)
 
     print('Dice: Global negative p: %.6f Global positive p: %.6f' % (global_neg_p_value, global_pos_p_value))
+
+    # Test the relationship between dice coefficient and recurrence
+    # df = selected_patients.assign(vol_ratio=lambda df: df["volumeContour"].map(lambda x: x.volumeContour/x.volumeContourAuto))
+    global_neg_p_value, global_pos_p_value, _, _ = pm.permutationTest(df["vol_ratio"], df["recurrence"], 1000)
+
+    print('V_man/V_auto: Global negative p: %.6f Global positive p: %.6f' % (global_neg_p_value, global_pos_p_value))
+
 
 
 def wilcoxon_test(rec_field_maps, nonrec_field_maps):

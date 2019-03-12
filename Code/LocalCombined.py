@@ -10,15 +10,15 @@ This is used to create temporary functions and run the main source of code
 import re
 from os import listdir
 from os.path import isfile, join
-
 import numpy as np
 import pandas as pd
 import seaborn as sns
 
+from lifelines import KaplanMeierFitter
 from AllPatients import separate_by_recurrence, separate_by_risk
 from LocalFilter import load_global_patients, radial_mean_sd_for_patients, partition_patient_data_with_outliers
 from plot_functions import plot_heat_map_np, plot_scatter, plot_histogram, plot_heat_map, show_local_fields, \
-    test_on_single_map, triangulation_qa
+    test_on_single_map, triangulation_qa, load_map
 from significance_test import wilcoxon_test_statistics, pymining_t_test, t_map_with_thresholds, test_superimpose, \
     global_statistical_analysis
 
@@ -80,27 +80,26 @@ def plot_sample_mean_and_sd_maps(selected_patients):
     np.sqrt(varMap1 + varMap2).to_csv("../outputResults/std_difference_map.csv", header=None, index=False)
 
 
-
-def print_volume_difference_details(patientsDF):
-    '''
-    :param patientsDF: is a dataframe that contains the patients global variables
+def print_volume_difference_details(patient_database):
+    """
+    :param patient_database: is a dataframe that contains the patients global variables
     :return: prints volume difference statistics for collectiver patient, then patients with recurrence and patients /
     without
-    '''
-    print(patientsDF["volumeContourDifference"].describe())
-    patients_who_recur, patients_who_dont_recur = separate_by_recurrence(patientsDF)
+    """
+    print(patient_database["volumeContourDifference"].describe())
+    patients_who_recur, patients_who_dont_recur = separate_by_recurrence(patient_database)
     print(patients_who_recur["volumeContourDifference"].describe())
     print(patients_who_dont_recur["volumeContourDifference"].describe())
 
 
 def get_corrupt_patients(all_patients_df, data_directory):
-    '''
+    """
     Reads in filenames from data directory, exstracts the patient ids and removes them from the dataset
     :param all_patients_df: global dataframe
     :param data_directory: data directory that has the rogue patient names
     :return: returns clean dataset
-    '''
-    # Create list of filepaths
+    """
+    # Create list of file path
     file_list = [f for f in listdir(data_directory) if isfile(join(data_directory, f))]
     # parse filename and extract id
     patient_id = list(map(lambda x: re.split('[_ .]', x)[1], file_list))
@@ -109,33 +108,33 @@ def get_corrupt_patients(all_patients_df, data_directory):
     return clean_patients_ct_scans
 
 
-def statistical_cuts(enhancedDF, dataDirectory=r"../Data/OnlyProstateResults/AllFields"):
-    '''
-    Produce histograme plots and within has partition cuts base on patients max delta r, std, dsc, and vol diff
-    :param enhancedDF: global patient df
+def statistical_cuts(patient_database, data_directory=r"../Data/OnlyProstateResults/AllFields"):
+    """
+    Produce histogram plots and within has partition cuts base on patients max delta r, std, dsc, and vol diff
+    :param patient_database: global patient df
     :param dataDirectory: Directory of the patient radial maps
     :return: clean dataset
-    '''
+    """
     # Plotting histograms before any cuts
-    plot_histogram(enhancedDF['sd'], 'red', 50, name="Standard Deviations of patients map")
-    plot_histogram(enhancedDF['maxval'], 'lime', 50, name="Maximum value of patients map")
-    plot_histogram(enhancedDF['DSC'], 'green', 50, name="Dice of patients map")
-    plot_histogram(enhancedDF['volumeContourDifference'], 'blue', 50, name="Volume difference of patients map")
+    plot_histogram(patient_database['sd'], 'red', 50, name="Standard Deviations of patients map")
+    plot_histogram(patient_database['maxval'], 'lime', 50, name="Maximum value of patients map")
+    plot_histogram(patient_database['DSC'], 'green', 50, name="Dice of patients map")
+    plot_histogram(patient_database['volumeContourDifference'], 'blue', 50, name="Volume difference of patients map")
 
     # Look for poor triangulation of patient maps
     # SD of patient map
-    _, _, upper_bound = partition_patient_data_with_outliers(enhancedDF, 0, 5, "sd")
-    clean_patients = enhancedDF[~enhancedDF['patientList'].isin(upper_bound['patientList'])]
+    _, _, upper_bound = partition_patient_data_with_outliers(patient_database, 0, 5, "sd")
+    clean_patients = patient_database[~patient_database['patientList'].isin(upper_bound['patientList'])]
     print(clean_patients.shape)
 
     # Max value of Patient
-    _, lower_bound, upper_bound = partition_patient_data_with_outliers(enhancedDF, -5, 5, "maxval")
+    _, lower_bound, upper_bound = partition_patient_data_with_outliers(patient_database, -5, 5, "maxval")
     clean_patients = clean_patients[~clean_patients['patientList'].isin(upper_bound['patientList'])]
     clean_patients = clean_patients[~clean_patients['patientList'].isin(lower_bound['patientList'])]
     print(clean_patients.shape)
 
     # Dice Coefficient
-    _, lower_bound, _ = partition_patient_data_with_outliers(enhancedDF, 0.7, 0.999, "DSC")
+    _, lower_bound, _ = partition_patient_data_with_outliers(patient_database, 0.7, 0.999, "DSC")
     clean_patients = clean_patients[~clean_patients['patientList'].isin(lower_bound['patientList'])]
     print(clean_patients.shape)
     return clean_patients
@@ -167,30 +166,27 @@ def cuts_from_ct_scans(global_df):
 
 
 def test_analysis_function():
-    dataDirectory = r"../Data/OnlyProstateResults/AllFields"
+    dataDirectory = r"../Data/OnlyProstateResults/normMaps"
     enhancedDF = pd.read_csv(r'../Data/OnlyProstateResults/All_patient_data.csv')
 
+    # _, lower, upper = partition_patient_data_with_outliers(enhancedDF, -2, 2)
+    # show_local_fields(upper, dataDirectory)
     # Statistical cuts
     # enhancedDF = statistical_cuts(enhancedDF)
 
     # t-statistics
-    # global_neg_p_value, global_pos_p_value, neg_t_thresh, pos_t_thresh, t_value_map = pymining_t_test(enhancedDF)
-    # print('Global negative p: %.6f Global positive p: %.6f' % (global_neg_p_value, global_pos_p_value))
-    # # plot_heat_map_np(t_value_map[0], 'maximum t-value map')
-    # # t_map_with_thresholds(t_value_map[0])
-    # plot_histogram(t_value_map[0].flatten(), 'magenta', 50, 't-distrubtion of map')
-    # plot_scatter(enhancedDF, 'lime')
-    # test_superimpose(t_value_map[0], pos_t_thresh, neg_t_thresh)
+    # enhancedDF = pd.concat([enhancedDF.groupby('risk').get_group('Intermediate'), enhancedDF.groupby('risk').get_group('Low')])
+    # enhancedDF = enhancedDF.groupby('fractions').get_group(19)
 
-    no_high_risk = pd.concat([enhancedDF.groupby('risk').get_group('Intermediate'), enhancedDF.groupby('risk').get_group('Low')])
-    global_neg_p_value, global_pos_p_value, neg_t_thresh, pos_t_thresh, t_value_map = pymining_t_test(no_high_risk)
-    print('Global negative p: %.6f Global positive p: %.6f' % (global_neg_p_value, global_pos_p_value))
-    # plot_heat_map_np(t_value_map[0], 'maximum t-value map')
-    # t_map_with_thresholds(t_value_map[0])
-    plot_histogram(t_value_map[0].flatten(), 'magenta', 50, 't-distrubtion of map')
-    plot_scatter(no_high_risk, 'lime')
-    test_superimpose(t_value_map[0], pos_t_thresh, neg_t_thresh)
-    global_statistical_analysis(no_high_risk)
+    T = enhancedDF["recurrenceTime"]
+    E = enhancedDF["recurrence"]
+
+    kmf = KaplanMeierFitter()
+    kmf.fit(T, event_observed=E)
+    kmf.survival_function_
+    kmf.confidence_interval_
+    kmf.median_
+    kmf.plot()
 
     global_neg_p_value, global_pos_p_value, neg_t_thresh, pos_t_thresh, t_value_map = pymining_t_test(enhancedDF)
     print('Global negative p: %.6f Global positive p: %.6f' % (global_neg_p_value, global_pos_p_value))
@@ -199,36 +195,15 @@ def test_analysis_function():
     plot_histogram(t_value_map[0].flatten(), 'magenta', 50, 't-distrubtion of map')
     plot_scatter(enhancedDF, 'lime')
     test_superimpose(t_value_map[0], pos_t_thresh, neg_t_thresh)
-    global_statistical_analysis(enhancedDF)
 
-    global_neg_p_value, global_pos_p_value, neg_t_thresh, pos_t_thresh, t_value_map = pymining_t_test(separate_by_risk(enhancedDF)[0])
-    print('Global negative p: %.6f Global positive p: %.6f' % (global_neg_p_value, global_pos_p_value))
-    # plot_heat_map_np(t_value_map[0], 'maximum t-value map')
-    # t_map_with_thresholds(t_value_map[0])
-    plot_histogram(t_value_map[0].flatten(), 'magenta', 50, 't-distrubtion of map')
-    plot_scatter(separate_by_risk(enhancedDF)[0], 'lime')
-    test_superimpose(t_value_map[0], pos_t_thresh, neg_t_thresh)
-    global_statistical_analysis(separate_by_risk(enhancedDF)[0])
-
-    global_neg_p_value, global_pos_p_value, neg_t_thresh, pos_t_thresh, t_value_map = pymining_t_test(separate_by_risk(enhancedDF)[1])
-    print('Global negative p: %.6f Global positive p: %.6f' % (global_neg_p_value, global_pos_p_value))
-    # plot_heat_map_np(t_value_map[0], 'maximum t-value map')
-    # t_map_with_thresholds(t_value_map[0])
-    plot_histogram(t_value_map[0].flatten(), 'magenta', 50, 't-distrubtion of map')
-    plot_scatter(separate_by_risk(enhancedDF)[1], 'lime')
-    test_superimpose(t_value_map[0], pos_t_thresh, neg_t_thresh)
-    global_statistical_analysis(separate_by_risk(enhancedDF)[1])
-
-    global_neg_p_value, global_pos_p_value, neg_t_thresh, pos_t_thresh, t_value_map = pymining_t_test(separate_by_risk(enhancedDF)[2])
-    print('Global negative p: %.6f Global positive p: %.6f' % (global_neg_p_value, global_pos_p_value))
-    # plot_heat_map_np(t_value_map[0], 'maximum t-value map')
-    # t_map_with_thresholds(t_value_map[0])
-    plot_histogram(t_value_map[0].flatten(), 'magenta', 50, 't-distrubtion of map')
-    plot_scatter(separate_by_risk(enhancedDF)[2], 'lime')
-    test_superimpose(t_value_map[0], pos_t_thresh, neg_t_thresh)
-    global_statistical_analysis(separate_by_risk(enhancedDF)[2])
-
-
+    # global_neg_p_value, global_pos_p_value, neg_t_thresh, pos_t_thresh, t_value_map = pymining_t_test(enhancedDF)
+    # print('Global negative p: %.6f Global positive p: %.6f' % (global_neg_p_value, global_pos_p_value))
+    # # plot_heat_map_np(t_value_map[0], 'maximum t-value map')
+    # # t_map_with_thresholds(t_value_map[0])
+    # plot_histogram(t_value_map[0].flatten(), 'magenta', 50, 't-distrubtion of map')
+    # plot_scatter(enhancedDF, 'lime')
+    # test_superimpose(t_value_map[0], pos_t_thresh, neg_t_thresh)
+    # global_statistical_analysis(enhancedDF)
 
     # wilcoxon statistics
     # w_stat, p_map = wilcoxon_test_statistics(enhancedDF)
