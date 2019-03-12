@@ -122,7 +122,8 @@ def stack_local_fields(global_df, recurrence_label, dataDir=r'../Data/OnlyProsta
     :param dataDir: Data directory containing local field data file
     :return: 3d np array of local field stacked 120x60xnumber of recurrence/non-recurrence i.e [theta x phi x patient_index] and label
     """
-    df = pd.DataFrame(global_df["patientList"])
+
+    df = pd.DataFrame(global_df["patientList"]).astype(int)
     dfFiles = df.assign(file_path=lambda df: df["patientList"].map(lambda x: r'%s/%s.csv' % (dataDir, x)))
     numberOfPatients = len(dfFiles)
     fieldMaps = np.zeros((60, 120, numberOfPatients))
@@ -235,7 +236,7 @@ def wilcoxon_test_statistic(selected_patients):
     return stat_map, p_map
 
 
-def mann_whitney_test_statistic(selected_patients):
+def mann_whitney_test_statistic(selected_patients, data_directory):
     """
     Conduct a mann whitney test SUM rank test
 
@@ -245,8 +246,8 @@ def mann_whitney_test_statistic(selected_patients):
 
     # Tag patients with recurrence:1 and non-recurrence:0
     patients_who_recur, patients_who_dont_recur = separate_by_recurrence(selected_patients)
-    rec_fieldMaps, _ = stack_local_fields(patients_who_recur, 1)
-    nonrec_fieldMaps, _ = stack_local_fields(patients_who_dont_recur, 0)
+    rec_fieldMaps, _ = stack_local_fields(patients_who_recur, 1, dataDir=data_directory)
+    nonrec_fieldMaps, _ = stack_local_fields(patients_who_dont_recur, 0, dataDir=data_directory)
     stat_map, p_map = mann_whitney_u_test(rec_fieldMaps, nonrec_fieldMaps)
     return stat_map, p_map
 

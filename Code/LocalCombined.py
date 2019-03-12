@@ -167,23 +167,21 @@ def cuts_from_ct_scans(global_df):
 
 
 def test_analysis_function():
-    dataDirectory = r"../Data/OnlyProstateResults/normMaps"
-    enhancedDF = pd.read_csv(r'../Data/OnlyProstateResults/All_patient_data.csv')
+    dataDirectory = r"../Data/Deep_learning_results/normMaps"
+    enhancedDF = pd.read_csv(r'../Data/Deep_learning_results/All_patient_data.csv')
     enhancedDF = cuts_from_ct_scans(enhancedDF)
 
     # Low and intermediate risk patients
     low_and_intermediate_risk_patients = enhancedDF[~enhancedDF['risk'].isin(['High'])]
-    # _, p_map_wilcox = wilcoxon_test_statistic(low_and_intermediate_risk_patients)
-    # map_with_thresholds(p_map_wilcox)
-    _, p_map_mwu = mann_whitney_test_statistic(low_and_intermediate_risk_patients)
+    _, p_map_mwu = mann_whitney_test_statistic(low_and_intermediate_risk_patients, dataDirectory)
     map_with_thresholds(p_map_mwu)
+    global_statistical_analysis(low_and_intermediate_risk_patients)
 
     # High risk patients
     high_risk_patients = separate_by_risk(enhancedDF)[2]
-    # _, p_map_wilcox = wilcoxon_test_statistic(high_risk_patients)
-    # map_with_thresholds(p_map_wilcox)
-    _, p_map_mwu = mann_whitney_test_statistic(high_risk_patients)
+    _, p_map_mwu = mann_whitney_test_statistic(high_risk_patients, dataDirectory)
     map_with_thresholds(p_map_mwu)
+    global_statistical_analysis(high_risk_patients)
 
 
 if __name__ == '__main__':

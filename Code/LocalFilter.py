@@ -48,20 +48,14 @@ def load_global_patients():
     Corrupt patients were identified by loading the maps of the upper/lower bounds of the selection cuts.
     :return: All global data of all patients in DSC cuts single df
     """
-    # List the patient ID's of those who are contained in our ATLAS and have corrupted local maps & prothesis
-    atlas = {'201211759', '201006023', '200800425', '200510956', '200914524', '200912498', '201011433', '201212018',
-             '201204091', '200711546', '201208233', '201100014', '200913648', '201000110', '200908368'}
 
-    '''we have identified these corrupted from previous contour. we need to check '''
-    # expected_corrupt_to_check = {200710358, 200705181, 200807021, 200502036, 200606193, 200303191, \ 200708782,
-    # 200503218, 200511135, 200301067, 200501574, 200502944, \ 201001322, 201007576, 201009663, 200502133, 200502319,
-    # 200502439, 200502794, \ 200503516, 200508940, 200511480, 199301039, 200405868, 200504358, 200701300, 200502136,
-    # \ 200609194, 200704603}
+    corrupt = {'200610929'}
+
     expected_corrupt_to_check = {}
-    patients_ID_to_exclude = atlas.union(expected_corrupt_to_check)
+    patients_ID_to_exclude = corrupt.union(expected_corrupt_to_check)
     all_patients = AllPatients(r"../Data/OnlyProstateResults/Global",
                                ['All_patient_data'])
-    # all_patients.removePatients(patients_ID_to_exclude)
+    all_patients.removePatients(patients_ID_to_exclude)
     # all_patients.remove_stageT3()
     return all_patients
 
