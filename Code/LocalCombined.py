@@ -13,13 +13,15 @@ from os.path import isfile, join
 import numpy as np
 import pandas as pd
 import seaborn as sns
+import matplotlib.pyplot as plt
 
 from lifelines import KaplanMeierFitter
 from AllPatients import separate_by_recurrence, separate_by_risk
 from LocalFilter import load_global_patients, radial_mean_sd_for_patients, partition_patient_data_with_outliers
 from plot_functions import plot_heat_map_np, plot_scatter, plot_histogram, plot_heat_map, show_local_fields, \
     test_on_single_map, triangulation_qa
-from significance_test import wilcoxon_test_statistic, mann_whitney_test_statistic, pymining_t_test, t_map_with_thresholds, test_superimpose, \
+from significance_test import wilcoxon_test_statistic, mann_whitney_test_statistic, pymining_t_test, \
+    t_map_with_thresholds, test_superimpose, \
     global_statistical_analysis, map_with_thresholds
 
 sns.set()
@@ -140,7 +142,8 @@ def statistical_cuts(patient_database, data_directory=r"../Data/OnlyProstateResu
     return clean_patients
 
 
-def read_and_return_patient_stats(calculated_csv_name="All_patient_data_no_NA", dataDirectory=r"../Data/Deep_learning_results/deltaRMaps"):
+def read_and_return_patient_stats(calculated_csv_name="All_patient_data_no_NA",
+                                  dataDirectory=r"../Data/Deep_learning_results/deltaRMaps"):
     '''
     Loads up and concatenates table then writes a single data frame with mean, st and max r value for each patient
     map added
@@ -182,39 +185,46 @@ def test_analysis_function(enhancedDF):
 def test_survival_analysis(patient_data_base):
     # Remove patient that have not time event
     # patient_data_base = patient_data_base[patient_data_base.recurrenceTime != '']
-
-    T = patient_data_base["timeToEvent"]
-    E = patient_data_base["recurrence"]
-
+    #
+    # T = patient_data_base["timeToEvent"]
+    # E = patient_data_base["recurrence"]
+    #
     kmf = KaplanMeierFitter()
-    kmf.fit(T, event_observed=E)
+    # kmf.fit(T, event_observed=E)
+    # kmf.plot()
+
+    dice_median = patient_data_base["DSC"].median()
+
+    # dsc = patient_data_base['DSC']
+    # ix = (dsc <= dice_median)
+    #
+    # kmf.fit(T[~ix], E[~ix], label='Lower Half Dice Patients')
+    # kmf.fit(T[ix], E[ix], label='Upper Half Dice Patients')
+    # kmf.plot()
+
+    upper_group = patient_data_base[patient_data_base.DSC >= dice_median]
+    lower_group = patient_data_base[patient_data_base.DSC <= dice_median]
+    T1 = upper_group["timeToEvent"]
+    E1 = upper_group["recurrence"]
+    T2 = lower_group["timeToEvent"]
+    E2 = lower_group["recurrence"]
+
+    ax = plt.subplot(111)
+
+    kmf.fit(T1, event_observed=E1, label=['Upper'])
     kmf.survival_function_
     kmf.confidence_interval_
     kmf.median_
-    kmf.plot()
-    #
-    dice_median = patient_data_base["DSC"].median()
-
-    dsc = patient_data_base['DSC']
-    ix = (dsc <= dice_median)
-
-    kmf.fit(T[~ix], E[~ix], label='Lower Half Dice Patients')
-    kmf.fit(T[ix], E[ix], label='Upper Half Dice Patients')
-    kmf.plot()
-
-    # upper_group = patient_data_base[patient_data_base.DSC >= dice_median]
-    # lower_group = patient_data_base[patient_data_base.DSC <= dice_median]
-    # T1 = upper_group["timeToEvent"]
-    # E1 = upper_group["recurrence"]
-    # T2 = lower_group["timeToEvent"]
-    # E2 = lower_group["recurrence"]
-    #
-    # kmf = KaplanMeierFitter()
-    # kmf.fit(T1, E1, label='Upper Half Dice Patients')
-    # ax = kmf.plot()
-    # kmf.fit(T2, E2, label='Lower Half Dice Patients')
-    # kmf.plot(ax=ax)
+    kmf.survival_function_.plot(ax=ax)
+    kmf.fit(T2, event_observed=E2, label=['Lower'])
+    kmf.survival_function_
+    kmf.confidence_interval_
+    kmf.median_
+    kmf.survival_function_.plot(ax=ax)
+    plt.title('Lifespans of different tumor DNA profile')
+    plt.show()
     return
+
 
 if __name__ == '__main__':
     # read_and_return_patient_stats()
