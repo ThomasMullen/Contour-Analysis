@@ -15,7 +15,7 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-from lifelines import KaplanMeierFitter
+from lifelines import KaplanMeierFitter, NelsonAalenFitter
 from AllPatients import separate_by_recurrence, separate_by_risk
 from LocalFilter import load_global_patients, radial_mean_sd_for_patients, partition_patient_data_with_outliers
 from plot_functions import plot_heat_map_np, plot_scatter, plot_histogram, plot_heat_map, show_local_fields, \
@@ -183,25 +183,11 @@ def test_analysis_function(enhancedDF):
 
 
 def test_survival_analysis(patient_data_base):
-    # Remove patient that have not time event
-    # patient_data_base = patient_data_base[patient_data_base.recurrenceTime != '']
-    #
-    # T = patient_data_base["timeToEvent"]
-    # E = patient_data_base["recurrence"]
-    #
-    kmf = KaplanMeierFitter()
-    # kmf.fit(T, event_observed=E)
-    # kmf.plot()
+    # Create subplot
+    fig, axes = plt.subplots(1, 1)
 
+    # Define Patient Groups
     dice_median = patient_data_base["DSC"].median()
-
-    # dsc = patient_data_base['DSC']
-    # ix = (dsc <= dice_median)
-    #
-    # kmf.fit(T[~ix], E[~ix], label='Lower Half Dice Patients')
-    # kmf.fit(T[ix], E[ix], label='Upper Half Dice Patients')
-    # kmf.plot()
-
     upper_group = patient_data_base[patient_data_base.DSC >= dice_median]
     lower_group = patient_data_base[patient_data_base.DSC <= dice_median]
     T1 = upper_group["timeToEvent"]
@@ -209,20 +195,30 @@ def test_survival_analysis(patient_data_base):
     T2 = lower_group["timeToEvent"]
     E2 = lower_group["recurrence"]
 
-    ax = plt.subplot(111)
+    # Produce data fits
+    kmf_upper = KaplanMeierFitter().fit(T1, event_observed=E1, label='Upper')
+    kmf_upper.survival_function_
+    kmf_upper.confidence_interval_
+    kmf_upper.median_
+    kmf_upper.plot()
 
-    kmf.fit(T1, event_observed=E1, label=['Upper'])
-    kmf.survival_function_
-    kmf.confidence_interval_
-    kmf.median_
-    kmf.survival_function_.plot(ax=ax)
-    kmf.fit(T2, event_observed=E2, label=['Lower'])
-    kmf.survival_function_
-    kmf.confidence_interval_
-    kmf.median_
-    kmf.survival_function_.plot(ax=ax)
-    plt.title('Lifespans of different tumor DNA profile')
+    kmf_lower = KaplanMeierFitter().fit(T2, event_observed=E2, label='Lower')
+    kmf_lower.survival_function_
+    kmf_lower.confidence_interval_
+    kmf_lower.median_
+    kmf_lower.plot()
+
     plt.show()
+
+    # plt.subplot(212)
+    naf = NelsonAalenFitter()
+    naf.fit(T1, event_observed=E1, label=['Upper'])
+    naf.plot_hazard(bandwidth=3.0)
+    plt.show()
+    # naf.fit(T2, event_observed=E2, label=['Lower'])
+    # naf.plot_hazard(ax=ax2, bandwidth=3.0)
+    # plt.title('Lifespans of different tumor DNA profile')
+
     return
 
 
@@ -230,7 +226,7 @@ if __name__ == '__main__':
     # read_and_return_patient_stats()
     dataDirectory = r"../Data/Deep_learning_results/deltaRMaps"
     enhancedDF = pd.read_csv(r'../Data/Deep_learning_results/All_patient_data_no_time_event_NA.csv')
-    # enhancedDF = cuts_from_ct_scans(enhancedDF)
+    enhancedDF = cuts_from_ct_scans(enhancedDF)
     test_survival_analysis(enhancedDF)
     # test_analysis_function(enhancedDF)
     # triangulation_qa()
