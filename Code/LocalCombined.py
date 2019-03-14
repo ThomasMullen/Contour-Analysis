@@ -189,63 +189,47 @@ def test_survival_analysis(patient_data_base):
     # Remove patient that have not time event
     # patient_data_base = patient_data_base[patient_data_base.recurrenceTime != '']
     #
-    # T = patient_data_base["timeToEvent"]
-    # E = patient_data_base["recurrence"]
+    T = patient_data_base["timeToEvent"]
+    E = patient_data_base["recurrence"]
     #
     kmf = KaplanMeierFitter()
     # kmf.fit(T, event_observed=E)
     # kmf.plot()
 
-    DSC_groups = patient_data_base["DSC"].quantile([.25, .5, .75, 1.0])
-    quartile_1_DSC = patient_data_base[patient_data_base.DSC <= DSC_groups[0]]
-    quartile_2_DSC = patient_data_base[patient_data_base.DSC <= DSC_groups[1] and patient_data_base.DSC > DSC_groups[0]]
-    quartile_3_DSC = patient_data_base[patient_data_base.DSC <= DSC_groups[2] and patient_data_base.DSC > DSC_groups[1]]
-    quartile_4_DSC = patient_data_base[patient_data_base.DSC > DSC_groups[2]]
+    # Survival function groupby DSC
+    # DSC_groups = patient_data_base["DSC"].quantile([.25, .5, .75, 1.0])
+    # dsc = patient_data_base['DSC']
+    #
+    # ix_1 = (dsc <= DSC_groups[0.25])
+    # ix_2 = (dsc > DSC_groups[0.25]) & (dsc < DSC_groups[0.5])
+    # ix_3 = (dsc > DSC_groups[0.5]) & (dsc < DSC_groups[0.75])
+    # ix_4 = (dsc > DSC_groups[0.75])
+    #
+    # # fit the model for 1st cohort
+    # kmf.fit(T[ix_1], E[ix_1], label='First Quartile')
+    # a1 = kmf.plot()
+    # # fit the model for 2nd cohort
+    # kmf.fit(T[ix_2], E[ix_2], label='Second Quartile')
+    # kmf.plot(ax=a1)
+    # # fit the model for 3rd cohort
+    # kmf.fit(T[ix_3], E[ix_3], label='Third Quartile')
+    # kmf.plot(ax=a1)
+    # # fit the model for 4th cohort
+    # kmf.fit(T[ix_4], E[ix_4], label='Forth Quartile')
+    # kmf.plot(ax=a1)
+    # plt.show()
 
-
-    T1 = quartile_1_DSC["timeToEvent"]
-    E1 = quartile_1_DSC["recurrence"]
-    T2 = quartile_2_DSC["timeToEvent"]
-    E2 = quartile_2_DSC["recurrence"]
-    T3 = quartile_3_DSC["timeToEvent"]
-    E3 = quartile_3_DSC["recurrence"]
-    T4 = quartile_4_DSC["timeToEvent"]
-    E4 = quartile_4_DSC["recurrence"]
-
-
-    ax = plt.subplot(111)
-
-    kmf.fit(T1, event_observed=E1, label=['Upper'], timeline=4)
-    kmf.survival_function_
-    kmf.confidence_interval_
-    kmf.median_
-    kmf.survival_function_.plot(ax=ax)
-    kmf.fit(T2, event_observed=E2, label=['Lower'], timeline=4)
-    kmf.survival_function_
-    kmf.confidence_interval_
-    kmf.median_
-    kmf.survival_function_.plot(ax=ax)
-    kmf.fit(T3, event_observed=E3, label=['Lower'], timeline=4)
-    kmf.survival_function_
-    kmf.confidence_interval_
-    kmf.median_
-    kmf.survival_function_.plot(ax=ax)
-    kmf.fit(T4, event_observed=E4, label=['Lower'], timeline=4)
-    kmf.survival_function_
-    kmf.confidence_interval_
-    kmf.median_
-    kmf.survival_function_.plot(ax=ax)
-    plt.title('Lifespans of different tumor DNA profile')
+    # Survival function separated by fraction
+    kmf_1 = KaplanMeierFitter()
+    fraction_19 = patient_data_base["fractions"]
+    ix_19 = fraction_19 == 19
+    #
+    kmf.fit(T[ix_19], E[ix_19], label='First Quartile')
+    a2 = kmf.plot()
+    # fit the model for 2nd cohort
+    kmf.fit(T[~ix_19], E[~ix_19], label='Second Quartile')
+    kmf.plot(ax=a2)
     plt.show()
-
-    # plt.subplot(212)
-    naf = NelsonAalenFitter()
-    naf.fit(T1, event_observed=E1, label=['Upper'])
-    naf.plot_hazard(bandwidth=3.0)
-    plt.show()
-    # naf.fit(T2, event_observed=E2, label=['Lower'])
-    # naf.plot_hazard(ax=ax2, bandwidth=3.0)
-    # plt.title('Lifespans of different tumor DNA profile')
 
     return
 
@@ -253,7 +237,7 @@ def test_survival_analysis(patient_data_base):
 if __name__ == '__main__':
     # read_and_return_patient_stats()
     dataDirectory = r"../Data/Deep_learning_results/deltaRMaps"
-    enhancedDF = pd.read_csv(r'../Data/Deep_learning_results/All_patient_data_no_time_event_NA.csv')
+    enhancedDF = pd.read_csv(r'../Data/Deep_learning_results/All_patient_data_no_NA.csv')
     enhancedDF = cuts_from_ct_scans(enhancedDF)
     test_survival_analysis(enhancedDF)
     # test_analysis_function(enhancedDF)
