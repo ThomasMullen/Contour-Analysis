@@ -22,7 +22,7 @@ from plot_functions import plot_heat_map_np, plot_scatter, plot_histogram, plot_
     test_on_single_map, triangulation_qa
 from significance_test import wilcoxon_test_statistic, mann_whitney_test_statistic, pymining_t_test, \
     t_map_with_thresholds, test_superimpose, \
-    global_statistical_analysis, map_with_thresholds
+    global_statistical_analysis, map_with_thresholds, non_parametric_permutation_test
 
 sns.set()
 
@@ -170,44 +170,72 @@ def cuts_from_ct_scans(global_df):
 
 def test_analysis_function(enhancedDF):
     # Low and intermediate risk patients
-    low_and_intermediate_risk_patients = enhancedDF[~enhancedDF['risk'].isin(['High'])]
+
+    print("\nGlobal analysis: low & intermediate risk patients")
+    low_and_intermediate_risk_patients = enhancedDF[~enhancedDF['risk'].isin(['High', 'high', 'int/high'])]
     _, p_map_mwu = mann_whitney_test_statistic(low_and_intermediate_risk_patients)
     map_with_thresholds(p_map_mwu)
     global_statistical_analysis(low_and_intermediate_risk_patients)
 
     # High risk patients
-    high_risk_patients = separate_by_risk(enhancedDF)[2]
+    print("\nGlobal analysis: high risk patients")
+    high_risk_patients = enhancedDF[enhancedDF['risk'].isin(['High', 'high', 'int/high'])]
     _, p_map_mwu = mann_whitney_test_statistic(high_risk_patients)
     map_with_thresholds(p_map_mwu)
     global_statistical_analysis(high_risk_patients)
 
 
 def test_survival_analysis(patient_data_base):
-    # Create subplot
-    fig, axes = plt.subplots(1, 1)
+    # Remove patient that have not time event
+    # patient_data_base = patient_data_base[patient_data_base.recurrenceTime != '']
+    #
+    # T = patient_data_base["timeToEvent"]
+    # E = patient_data_base["recurrence"]
+    #
+    kmf = KaplanMeierFitter()
+    # kmf.fit(T, event_observed=E)
+    # kmf.plot()
 
-    # Define Patient Groups
-    dice_median = patient_data_base["DSC"].median()
-    upper_group = patient_data_base[patient_data_base.DSC >= dice_median]
-    lower_group = patient_data_base[patient_data_base.DSC <= dice_median]
-    T1 = upper_group["timeToEvent"]
-    E1 = upper_group["recurrence"]
-    T2 = lower_group["timeToEvent"]
-    E2 = lower_group["recurrence"]
+    DSC_groups = patient_data_base["DSC"].quantile([.25, .5, .75, 1.0])
+    quartile_1_DSC = patient_data_base[patient_data_base.DSC <= DSC_groups[0]]
+    quartile_2_DSC = patient_data_base[patient_data_base.DSC <= DSC_groups[1] and patient_data_base.DSC > DSC_groups[0]]
+    quartile_3_DSC = patient_data_base[patient_data_base.DSC <= DSC_groups[2] and patient_data_base.DSC > DSC_groups[1]]
+    quartile_4_DSC = patient_data_base[patient_data_base.DSC > DSC_groups[2]]
 
-    # Produce data fits
-    kmf_upper = KaplanMeierFitter().fit(T1, event_observed=E1, label='Upper')
-    kmf_upper.survival_function_
-    kmf_upper.confidence_interval_
-    kmf_upper.median_
-    kmf_upper.plot()
 
-    kmf_lower = KaplanMeierFitter().fit(T2, event_observed=E2, label='Lower')
-    kmf_lower.survival_function_
-    kmf_lower.confidence_interval_
-    kmf_lower.median_
-    kmf_lower.plot()
+    T1 = quartile_1_DSC["timeToEvent"]
+    E1 = quartile_1_DSC["recurrence"]
+    T2 = quartile_2_DSC["timeToEvent"]
+    E2 = quartile_2_DSC["recurrence"]
+    T3 = quartile_3_DSC["timeToEvent"]
+    E3 = quartile_3_DSC["recurrence"]
+    T4 = quartile_4_DSC["timeToEvent"]
+    E4 = quartile_4_DSC["recurrence"]
 
+
+    ax = plt.subplot(111)
+
+    kmf.fit(T1, event_observed=E1, label=['Upper'], timeline=4)
+    kmf.survival_function_
+    kmf.confidence_interval_
+    kmf.median_
+    kmf.survival_function_.plot(ax=ax)
+    kmf.fit(T2, event_observed=E2, label=['Lower'], timeline=4)
+    kmf.survival_function_
+    kmf.confidence_interval_
+    kmf.median_
+    kmf.survival_function_.plot(ax=ax)
+    kmf.fit(T3, event_observed=E3, label=['Lower'], timeline=4)
+    kmf.survival_function_
+    kmf.confidence_interval_
+    kmf.median_
+    kmf.survival_function_.plot(ax=ax)
+    kmf.fit(T4, event_observed=E4, label=['Lower'], timeline=4)
+    kmf.survival_function_
+    kmf.confidence_interval_
+    kmf.median_
+    kmf.survival_function_.plot(ax=ax)
+    plt.title('Lifespans of different tumor DNA profile')
     plt.show()
 
     # plt.subplot(212)

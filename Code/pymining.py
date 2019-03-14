@@ -56,14 +56,14 @@ def permutationTest(doseData, statuses, nperm=1000):
 
 def doPermutation(doseData, statuses):
     """
-        Permute the statuses and return the maximum t value for this permutation
-        Inputs:
-            - doseData: the dose data, should be structured such that the number of patients in it is along the last axis
-            - statuses: the outcome labels. 1 indicates an event, 0 indicates no event. These will be permuted in this function to
-                        assess the null hypothesis of no dose interaction
-        Returns:
-            - (tMin, tMax): the extreme values of the whole t-value map for this permutation
-        """
+    Permute the statuses and return the maximum t value for this permutation
+    Inputs:
+        - doseData: the dose data, should be structured such that the number of patients in it is along the last axis
+        - statuses: the outcome labels. 1 indicates an event, 0 indicates no event. These will be permuted in this function to
+                    assess the null hypothesis of no dose interaction
+    Returns:
+        - (tMin, tMax): the extreme values of the whole t-value map for this permutation
+    """
     pstatuses = np.random.permutation(statuses)
     permT = imagesTTest(doseData, pstatuses)
 

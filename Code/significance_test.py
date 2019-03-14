@@ -12,6 +12,7 @@ import seaborn as sns
 from scipy import stats as ss
 from AllPatients import separate_by_recurrence
 from plot_functions import create_polar_axis
+from mlxtend.evaluate import permutation_test
 
 
 def pymining_t_test(selected_patients):
@@ -169,24 +170,26 @@ def global_statistical_analysis(selected_patients):
     :param selected_patients: A dataframe of all patients
     '''
 
-    # Test the relationship between volume difference and recurrence
-    global_neg_p_value, global_pos_p_value, _, _ = pm.permutationTest(
-        selected_patients["volumeContourDifference"], selected_patients["recurrence"], 1000)
+    # Split the patients by recurrence
+    patients_who_recur, patients_who_dont_recur = separate_by_recurrence(selected_patients)
+    print('#rec: %.f, #n_rec: %.f' % (patients_who_recur.shape[0], patients_who_dont_recur.shape[0]))
 
-    print('Vdiff: Global negative p: %.6f Global positive p: %.6f' % (global_neg_p_value, global_pos_p_value))
+    # Test the relationship between volume difference and recurrence
+    global_p, lower_p, upper_p = non_parametric_permutation_test(patients_who_recur["volumeContourDifference"],
+                                              patients_who_dont_recur["volumeContourDifference"])
+    print('Vdiff: p_value(rec=/=n_rec): %.6f p_value(rec<n_rec): %.6f p_value(rec>n_rec): %.6f' %
+          (global_p, lower_p, upper_p))
 
     # Test the relationship between dice coefficient and recurrence
-    global_neg_p_value, global_pos_p_value, _, _ = pm.permutationTest(
-        selected_patients["DSC"], selected_patients["recurrence"], 1000)
-
-    print('Dice: Global negative p: %.6f Global positive p: %.6f' % (global_neg_p_value, global_pos_p_value))
+    global_p, lower_p, upper_p = non_parametric_permutation_test(patients_who_recur["DSC"], patients_who_dont_recur["DSC"])
+    print('DSC: p_value(rec=/=n_rec): %.6f p_value(rec<n_rec): %.6f p_value(rec>n_rec): %.6f' %
+          (global_p, lower_p, upper_p))
 
     # Test the relationship between ratio of volumes and recurrence: V_man/V_auto
-    global_neg_p_value, global_pos_p_value, _, _ = pm.permutationTest(
-        selected_patients["volumeRatio"], selected_patients["recurrence"], 1000)
-
-    print('VRatio: Global negative p: %.6f Global positive p: %.6f' % (global_neg_p_value, global_pos_p_value))
-
+    global_p, lower_p, upper_p = non_parametric_permutation_test(patients_who_recur["volumeRatio"],
+                                              patients_who_dont_recur["volumeRatio"])
+    print('VRatio: p_value(rec=/=n_rec): %.6f p_value(rec<n_rec): %.6f p_value(rec>n_rec): %.6f' %
+          (global_p, lower_p, upper_p))
 
 
 def wilcoxon_test(rec_field_maps, nonrec_field_maps):
@@ -250,6 +253,34 @@ def mann_whitney_test_statistic(selected_patients):
     nonrec_fieldMaps, _ = stack_local_fields(patients_who_dont_recur, 0)
     stat_map, p_map = mann_whitney_u_test(rec_fieldMaps, nonrec_fieldMaps)
     return stat_map, p_map
+
+
+def non_parametric_permutation_test(recurrence_group, no_recurrence_group):
+    """
+    A non-parametric permutation test for the null hypothesis that patients grouped by cancer recurrence come from
+    the same distribution.
+
+    1) Compute the difference (here: mean) of sample x and sample y
+    2) Combine all measurements into a single dataset
+    3) Draw a permuted dataset from all possible permutations of the dataset in 2.
+    4) Divide the permuted dataset into two datasets x' and y' of size n and m, respectively
+    5) Compute the difference (here: mean) of sample x' and sample y' and record this difference
+    6) Repeat steps 3-5 until all permutations are evaluated
+    7) Return the p-value as the number of times the recorded differences were more extreme than the original
+    difference from 1. and divide this number by the total number of permutations
+
+    :param selected_patients: A data frame column of a patient characteristic to analyse
+    :param test_type: A string either 'two_tail', or 'one_tail' to signify the type of test
+    :return: The p-value for the test
+    """
+
+    global_p_value = permutation_test(recurrence_group, no_recurrence_group, method='approximate', num_rounds=10000, seed=0)
+    lower_p_value = permutation_test(recurrence_group, no_recurrence_group, func='x_mean < y_mean',
+                                     method='approximate', num_rounds=10000, seed=0)
+    upper_p_value = permutation_test(recurrence_group, no_recurrence_group, func='x_mean > y_mean',
+                                     method='approximate', num_rounds=10000, seed=0)
+
+    return global_p_value, lower_p_value, upper_p_value
 
 
 def test():
