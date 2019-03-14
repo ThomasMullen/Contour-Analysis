@@ -12,6 +12,7 @@ import seaborn as sns
 from scipy import stats as ss
 from AllPatients import separate_by_recurrence
 from plot_functions import create_polar_axis
+from mlxtend.evaluate import permutation_test
 
 
 def pymining_t_test(selected_patients):
@@ -169,24 +170,22 @@ def global_statistical_analysis(selected_patients):
     :param selected_patients: A dataframe of all patients
     '''
 
-    # Test the relationship between volume difference and recurrence
-    global_neg_p_value, global_pos_p_value, _, _ = pm.permutationTest(
-        selected_patients["volumeContourDifference"], selected_patients["recurrence"], 1000)
+    # Split the patients by recurrence
+    patients_who_recur, patients_who_dont_recur = separate_by_recurrence(selected_patients)
 
-    print('Vdiff: Global negative p: %.6f Global positive p: %.6f' % (global_neg_p_value, global_pos_p_value))
+    # Test the relationship between volume difference and recurrence
+    p_value = non_parametric_permutation_test(patients_who_recur["volumeContourDifference"],
+                                              patients_who_dont_recur["volumeContourDifference"])
+    print('Vdiff: p-value: %.6f' % (p_value))
 
     # Test the relationship between dice coefficient and recurrence
-    global_neg_p_value, global_pos_p_value, _, _ = pm.permutationTest(
-        selected_patients["DSC"], selected_patients["recurrence"], 1000)
-
-    print('Dice: Global negative p: %.6f Global positive p: %.6f' % (global_neg_p_value, global_pos_p_value))
+    p_value = non_parametric_permutation_test(patients_who_recur["DSC"], patients_who_dont_recur["DSC"])
+    print('Dice: p-value: %.6f' % (p_value))
 
     # Test the relationship between ratio of volumes and recurrence: V_man/V_auto
-    global_neg_p_value, global_pos_p_value, _, _ = pm.permutationTest(
-        selected_patients["volumeRatio"], selected_patients["recurrence"], 1000)
-
-    print('VRatio: Global negative p: %.6f Global positive p: %.6f' % (global_neg_p_value, global_pos_p_value))
-
+    p_value = non_parametric_permutation_test(patients_who_recur["volumeRatio"],
+                                              patients_who_dont_recur["volumeRatio"])
+    print('VRatio: p-value: %.6f' % (p_value))
 
 
 def wilcoxon_test(rec_field_maps, nonrec_field_maps):
@@ -250,6 +249,22 @@ def mann_whitney_test_statistic(selected_patients):
     nonrec_fieldMaps, _ = stack_local_fields(patients_who_dont_recur, 0)
     stat_map, p_map = mann_whitney_u_test(rec_fieldMaps, nonrec_fieldMaps)
     return stat_map, p_map
+
+
+def non_parametric_permutation_test(recurrence_group, no_recurrence_group):
+    """
+    A nonparametric permutation test for the null hypothesis that patients grouped by cancer recurrence come from
+    the same distribution.
+
+    :param selected_patients: A data frame column of a patient characteristic to analyse
+    :return: The p-value for the test
+    """
+
+    p_value = permutation_test(recurrence_group, no_recurrence_group,
+                               method='approximate',
+                               num_rounds=10000,
+                               seed=0)
+    return p_value
 
 
 def test():

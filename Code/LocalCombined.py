@@ -22,7 +22,7 @@ from plot_functions import plot_heat_map_np, plot_scatter, plot_histogram, plot_
     test_on_single_map, triangulation_qa
 from significance_test import wilcoxon_test_statistic, mann_whitney_test_statistic, pymining_t_test, \
     t_map_with_thresholds, test_superimpose, \
-    global_statistical_analysis, map_with_thresholds
+    global_statistical_analysis, map_with_thresholds, non_parametric_permutation_test
 
 sns.set()
 
@@ -170,13 +170,13 @@ def cuts_from_ct_scans(global_df):
 
 def test_analysis_function(enhancedDF):
     # Low and intermediate risk patients
-    low_and_intermediate_risk_patients = enhancedDF[~enhancedDF['risk'].isin(['High'])]
+    low_and_intermediate_risk_patients = enhancedDF[~enhancedDF['risk'].isin(['High', 'high', 'int/high'])]
     _, p_map_mwu = mann_whitney_test_statistic(low_and_intermediate_risk_patients)
     map_with_thresholds(p_map_mwu)
     global_statistical_analysis(low_and_intermediate_risk_patients)
 
     # High risk patients
-    high_risk_patients = separate_by_risk(enhancedDF)[2]
+    high_risk_patients = enhancedDF[enhancedDF['risk'].isin(['High', 'high', 'int/high'])]
     _, p_map_mwu = mann_whitney_test_statistic(high_risk_patients)
     map_with_thresholds(p_map_mwu)
     global_statistical_analysis(high_risk_patients)
@@ -211,12 +211,12 @@ def test_survival_analysis(patient_data_base):
 
     ax = plt.subplot(111)
 
-    kmf.fit(T1, event_observed=E1, label=['Upper'])
+    kmf.fit(T1, event_observed=E1, label=['Upper'], timeline=4)
     kmf.survival_function_
     kmf.confidence_interval_
     kmf.median_
     kmf.survival_function_.plot(ax=ax)
-    kmf.fit(T2, event_observed=E2, label=['Lower'])
+    kmf.fit(T2, event_observed=E2, label=['Lower'], timeline=4)
     kmf.survival_function_
     kmf.confidence_interval_
     kmf.median_
@@ -230,8 +230,8 @@ if __name__ == '__main__':
     # read_and_return_patient_stats()
     dataDirectory = r"../Data/Deep_learning_results/deltaRMaps"
     enhancedDF = pd.read_csv(r'../Data/Deep_learning_results/All_patient_data_no_time_event_NA.csv')
-    # enhancedDF = cuts_from_ct_scans(enhancedDF)
-    test_survival_analysis(enhancedDF)
-    # test_analysis_function(enhancedDF)
+    enhancedDF = cuts_from_ct_scans(enhancedDF)
+    # test_survival_analysis(enhancedDF)
+    test_analysis_function(enhancedDF)
     # triangulation_qa()
     # test_on_single_map()
