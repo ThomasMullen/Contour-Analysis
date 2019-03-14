@@ -174,18 +174,21 @@ def global_statistical_analysis(selected_patients):
     patients_who_recur, patients_who_dont_recur = separate_by_recurrence(selected_patients)
 
     # Test the relationship between volume difference and recurrence
-    p_value = non_parametric_permutation_test(patients_who_recur["volumeContourDifference"],
+    global_p, lower_p, upper_p = non_parametric_permutation_test(patients_who_recur["volumeContourDifference"],
                                               patients_who_dont_recur["volumeContourDifference"])
-    print('Vdiff: p-value: %.6f' % (p_value))
+    print('Vdiff: p_value(rec=/=n_rec): %.6f p_value(rec<n_rec): %.6f p_value(rec>n_rec): %.6f' %
+          (global_p, lower_p, upper_p))
 
     # Test the relationship between dice coefficient and recurrence
-    p_value = non_parametric_permutation_test(patients_who_recur["DSC"], patients_who_dont_recur["DSC"])
-    print('Dice: p-value: %.6f' % (p_value))
+    global_p, lower_p, upper_p = non_parametric_permutation_test(patients_who_recur["DSC"], patients_who_dont_recur["DSC"])
+    print('DSC: p_value(rec=/=n_rec): %.6f p_value(rec<n_rec): %.6f p_value(rec>n_rec): %.6f' %
+          (global_p, lower_p, upper_p))
 
     # Test the relationship between ratio of volumes and recurrence: V_man/V_auto
-    p_value = non_parametric_permutation_test(patients_who_recur["volumeRatio"],
+    global_p, lower_p, upper_p = non_parametric_permutation_test(patients_who_recur["volumeRatio"],
                                               patients_who_dont_recur["volumeRatio"])
-    print('VRatio: p-value: %.6f' % (p_value))
+    print('VRatio: p_value(rec=/=n_rec): %.6f p_value(rec<n_rec): %.6f p_value(rec>n_rec): %.6f' %
+          (global_p, lower_p, upper_p))
 
 
 def wilcoxon_test(rec_field_maps, nonrec_field_maps):
@@ -253,7 +256,7 @@ def mann_whitney_test_statistic(selected_patients):
 
 def non_parametric_permutation_test(recurrence_group, no_recurrence_group):
     """
-    A non-parametric 2-sided permutation test for the null hypothesis that patients grouped by cancer recurrence come from
+    A non-parametric permutation test for the null hypothesis that patients grouped by cancer recurrence come from
     the same distribution.
 
     1) Compute the difference (here: mean) of sample x and sample y
@@ -266,11 +269,17 @@ def non_parametric_permutation_test(recurrence_group, no_recurrence_group):
     difference from 1. and divide this number by the total number of permutations
 
     :param selected_patients: A data frame column of a patient characteristic to analyse
+    :param test_type: A string either 'two_tail', or 'one_tail' to signify the type of test
     :return: The p-value for the test
     """
 
-    p_value = permutation_test(recurrence_group, no_recurrence_group, method='approximate', num_rounds=10000, seed=0)
-    return p_value
+    global_p_value = permutation_test(recurrence_group, no_recurrence_group, method='approximate', num_rounds=10000, seed=0)
+    lower_p_value = permutation_test(recurrence_group, no_recurrence_group, func='x_mean < y_mean',
+                                     method='approximate', num_rounds=10000, seed=0)
+    upper_p_value = permutation_test(recurrence_group, no_recurrence_group, func='x_mean > y_mean',
+                                     method='approximate', num_rounds=10000, seed=0)
+
+    return global_p_value, lower_p_value, upper_p_value
 
 
 def test():
