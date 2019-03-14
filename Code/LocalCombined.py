@@ -197,7 +197,7 @@ def test_survival_analysis(patient_data_base):
     # kmf.plot()
 
     DSC_groups = patient_data_base["DSC"].quantile([.25, .5, .75, 1.0])
-    quartile_1_DSC = patient_data_base[patient_data_base.DSC <= DSC_groups[0]]
+    quartile_1_DSC = patient_data_base[patient_data_base["DSC"] <= DSC_groups[0.25]]
     quartile_2_DSC = patient_data_base[patient_data_base.DSC <= DSC_groups[1] and patient_data_base.DSC > DSC_groups[0]]
     quartile_3_DSC = patient_data_base[patient_data_base.DSC <= DSC_groups[2] and patient_data_base.DSC > DSC_groups[1]]
     quartile_4_DSC = patient_data_base[patient_data_base.DSC > DSC_groups[2]]
