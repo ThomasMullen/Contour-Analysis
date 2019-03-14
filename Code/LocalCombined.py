@@ -239,7 +239,18 @@ if __name__ == '__main__':
     dataDirectory = r"../Data/Deep_learning_results/deltaRMaps"
     enhancedDF = pd.read_csv(r'../Data/Deep_learning_results/All_patient_data_no_NA.csv')
     enhancedDF = cuts_from_ct_scans(enhancedDF)
-    test_survival_analysis(enhancedDF)
+    enhancedDF = enhancedDF.sort_values("timeToEvent")
+    enhancedDF = enhancedDF.drop(['Unnamed: 0', 'Unnamed: 0.1', 'patientNumber', 'mean_sd_maxV'], axis=1)
+    # enhancedDF[[‘timeToEvent’, 'recurrence’, 'fractions’, 'stage’, 'grade’, 'risk’, 'volumeContour’, 'volumeContourAuto’, 'volumeContourDifference’, 'DSC’, 'volumeRatio’, 'mean’, 'sd’, 'maxval’]]
+    print(enhancedDF.timeToEvent.head())
+    print(enhancedDF.columns.values)
+
+    new_order = [6,1,2,3,4,5,7,8,9,10,11,12,13,14,0]
+    enhancedDF = enhancedDF[enhancedDF.columns[new_order]]
+    print(enhancedDF.head(10))
+    print(enhancedDF.columns.values)
+
+    enhancedDF.to_csv('../Data/Deep_learning_results/All_patient_data_no_NA.csv')
+    # test_survival_analysis(enhancedDF)
     # test_analysis_function(enhancedDF)
-    # triangulation_qa()
-    # test_on_single_map()
+
