@@ -253,17 +253,23 @@ def mann_whitney_test_statistic(selected_patients):
 
 def non_parametric_permutation_test(recurrence_group, no_recurrence_group):
     """
-    A nonparametric permutation test for the null hypothesis that patients grouped by cancer recurrence come from
+    A non-parametric 2-sided permutation test for the null hypothesis that patients grouped by cancer recurrence come from
     the same distribution.
+
+    1) Compute the difference (here: mean) of sample x and sample y
+    2) Combine all measurements into a single dataset
+    3) Draw a permuted dataset from all possible permutations of the dataset in 2.
+    4) Divide the permuted dataset into two datasets x' and y' of size n and m, respectively
+    5) Compute the difference (here: mean) of sample x' and sample y' and record this difference
+    6) Repeat steps 3-5 until all permutations are evaluated
+    7) Return the p-value as the number of times the recorded differences were more extreme than the original
+    difference from 1. and divide this number by the total number of permutations
 
     :param selected_patients: A data frame column of a patient characteristic to analyse
     :return: The p-value for the test
     """
 
-    p_value = permutation_test(recurrence_group, no_recurrence_group,
-                               method='approximate',
-                               num_rounds=10000,
-                               seed=0)
+    p_value = permutation_test(recurrence_group, no_recurrence_group, method='approximate', num_rounds=10000, seed=0)
     return p_value
 
 
