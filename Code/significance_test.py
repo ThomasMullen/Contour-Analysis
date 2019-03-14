@@ -172,6 +172,7 @@ def global_statistical_analysis(selected_patients):
 
     # Split the patients by recurrence
     patients_who_recur, patients_who_dont_recur = separate_by_recurrence(selected_patients)
+    print('#rec: %.f, #n_rec: %.f' % (patients_who_recur.shape[0], patients_who_dont_recur.shape[0]))
 
     # Test the relationship between volume difference and recurrence
     global_p, lower_p, upper_p = non_parametric_permutation_test(patients_who_recur["volumeContourDifference"],
