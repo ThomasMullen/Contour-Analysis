@@ -196,21 +196,22 @@ def test_survival_analysis(patient_data_base):
     # kmf.fit(T, event_observed=E)
     # kmf.plot()
 
-    dice_median = patient_data_base["DSC"].median()
+    DSC_groups = patient_data_base["DSC"].quantile([.25, .5, .75, 1.0])
+    quartile_1_DSC = patient_data_base[patient_data_base.DSC <= DSC_groups[0]]
+    quartile_2_DSC = patient_data_base[patient_data_base.DSC <= DSC_groups[1] and patient_data_base.DSC > DSC_groups[0]]
+    quartile_3_DSC = patient_data_base[patient_data_base.DSC <= DSC_groups[2] and patient_data_base.DSC > DSC_groups[1]]
+    quartile_4_DSC = patient_data_base[patient_data_base.DSC > DSC_groups[2]]
 
-    # dsc = patient_data_base['DSC']
-    # ix = (dsc <= dice_median)
-    #
-    # kmf.fit(T[~ix], E[~ix], label='Lower Half Dice Patients')
-    # kmf.fit(T[ix], E[ix], label='Upper Half Dice Patients')
-    # kmf.plot()
 
-    upper_group = patient_data_base[patient_data_base.DSC >= dice_median]
-    lower_group = patient_data_base[patient_data_base.DSC <= dice_median]
-    T1 = upper_group["timeToEvent"]
-    E1 = upper_group["recurrence"]
-    T2 = lower_group["timeToEvent"]
-    E2 = lower_group["recurrence"]
+    T1 = quartile_1_DSC["timeToEvent"]
+    E1 = quartile_1_DSC["recurrence"]
+    T2 = quartile_2_DSC["timeToEvent"]
+    E2 = quartile_2_DSC["recurrence"]
+    T3 = quartile_3_DSC["timeToEvent"]
+    E3 = quartile_3_DSC["recurrence"]
+    T4 = quartile_4_DSC["timeToEvent"]
+    E4 = quartile_4_DSC["recurrence"]
+
 
     ax = plt.subplot(111)
 
@@ -220,6 +221,16 @@ def test_survival_analysis(patient_data_base):
     kmf.median_
     kmf.survival_function_.plot(ax=ax)
     kmf.fit(T2, event_observed=E2, label=['Lower'], timeline=4)
+    kmf.survival_function_
+    kmf.confidence_interval_
+    kmf.median_
+    kmf.survival_function_.plot(ax=ax)
+    kmf.fit(T3, event_observed=E3, label=['Lower'], timeline=4)
+    kmf.survival_function_
+    kmf.confidence_interval_
+    kmf.median_
+    kmf.survival_function_.plot(ax=ax)
+    kmf.fit(T4, event_observed=E4, label=['Lower'], timeline=4)
     kmf.survival_function_
     kmf.confidence_interval_
     kmf.median_
@@ -234,7 +245,7 @@ if __name__ == '__main__':
     dataDirectory = r"../Data/Deep_learning_results/deltaRMaps"
     enhancedDF = pd.read_csv(r'../Data/Deep_learning_results/All_patient_data_no_time_event_NA.csv')
     enhancedDF = cuts_from_ct_scans(enhancedDF)
-    # test_survival_analysis(enhancedDF)
-    test_analysis_function(enhancedDF)
+    test_survival_analysis(enhancedDF)
+    # test_analysis_function(enhancedDF)
     # triangulation_qa()
     # test_on_single_map()
