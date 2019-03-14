@@ -22,7 +22,8 @@ from plot_functions import plot_heat_map_np, plot_scatter, plot_histogram, plot_
     test_on_single_map, triangulation_qa
 from significance_test import wilcoxon_test_statistic, mann_whitney_test_statistic, pymining_t_test, \
     t_map_with_thresholds, test_superimpose, \
-    global_statistical_analysis, map_with_thresholds, non_parametric_permutation_test
+    global_statistical_analysis, map_with_thresholds, non_parametric_permutation_test, stack_local_fields
+from DataFormatting import data_frame_to_XDR
 
 sns.set()
 
@@ -240,12 +241,17 @@ def test_survival_analysis(patient_data_base):
     return
 
 
+def file_conversion_test(patients):
+    _, _ = stack_local_fields(patients, 0)
+
+
 if __name__ == '__main__':
     # read_and_return_patient_stats()
     dataDirectory = r"../Data/Deep_learning_results/deltaRMaps"
     enhancedDF = pd.read_csv(r'../Data/Deep_learning_results/All_patient_data_no_time_event_NA.csv')
     enhancedDF = cuts_from_ct_scans(enhancedDF)
-    test_survival_analysis(enhancedDF)
+    # test_survival_analysis(enhancedDF)
+    file_conversion_test(enhancedDF)
     # test_analysis_function(enhancedDF)
     # triangulation_qa()
     # test_on_single_map()

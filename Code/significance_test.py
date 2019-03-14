@@ -13,7 +13,7 @@ from scipy import stats as ss
 from AllPatients import separate_by_recurrence
 from plot_functions import create_polar_axis
 from mlxtend.evaluate import permutation_test
-
+from DataFormatting import data_frame_to_XDR
 
 def pymining_t_test(selected_patients):
     # Tag patients with recurrence:1 and non-recurrence:0
@@ -137,6 +137,7 @@ def stack_local_fields(global_df, recurrence_label, dataDir=r'../Data/Deep_learn
     i = 0
     for f in dfFiles.file_path:
         fieldMaps[:, :, i] = pd.read_csv(f, header=None).as_matrix()[:, :]
+        data_frame_to_XDR(fieldMaps[:, :, i], global_df["patientList"][i])
         i += 1
 
     return fieldMaps, label_array

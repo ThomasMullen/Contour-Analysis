@@ -13,15 +13,8 @@ def data_frame_to_XDR(patient_map, map_name):
     """
 
     p = xdrlib.Packer()
-    p.pack_list(patient_map, p.pack_double)
+    p.pack_farray(7200, patient_map.flatten(), p.pack_double)
 
     newFile = open('../Data/Deep_learning_results/mapsXDR/%s.xdr' % (map_name), "wb")
     newFile.write(p.get_buffer())
     newFile.close()
-
-
-def test_XDR_conversion():
-
-
-if __name__ == '__main__':
-    test_XDR_conversion()
