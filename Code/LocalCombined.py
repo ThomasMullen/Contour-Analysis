@@ -186,43 +186,46 @@ def test_analysis_function(enhancedDF):
     global_statistical_analysis(high_risk_patients)
 
 
-def test_survival_analysis(patient_data_base):
+def survival_analysis_dsc(patient_data_base):
     # Remove patient that have not time event
     # patient_data_base = patient_data_base[patient_data_base.recurrenceTime != '']
-    #
+
     T = patient_data_base["timeToEvent"]
     E = patient_data_base["recurrence"]
-    #
+
     kmf = KaplanMeierFitter()
-    # kmf.fit(T, event_observed=E)
-    # kmf.plot()
+    kmf.fit(T, event_observed=E)
+    kmf.plot()
 
     # Survival function groupby DSC
-    # DSC_groups = patient_data_base["DSC"].quantile([.25, .5, .75, 1.0])
-    # dsc = patient_data_base['DSC']
-    #
-    # ix_1 = (dsc <= DSC_groups[0.25])
-    # ix_2 = (dsc > DSC_groups[0.25]) & (dsc < DSC_groups[0.5])
-    # ix_3 = (dsc > DSC_groups[0.5]) & (dsc < DSC_groups[0.75])
-    # ix_4 = (dsc > DSC_groups[0.75])
-    #
-    # # fit the model for 1st cohort
-    # kmf.fit(T[ix_1], E[ix_1], label='First Quartile')
-    # a1 = kmf.plot()
-    # # fit the model for 2nd cohort
-    # kmf.fit(T[ix_2], E[ix_2], label='Second Quartile')
-    # kmf.plot(ax=a1)
-    # # fit the model for 3rd cohort
-    # kmf.fit(T[ix_3], E[ix_3], label='Third Quartile')
-    # kmf.plot(ax=a1)
-    # # fit the model for 4th cohort
-    # kmf.fit(T[ix_4], E[ix_4], label='Forth Quartile')
-    # kmf.plot(ax=a1)
-    # plt.show()
+    DSC_groups = patient_data_base["DSC"].quantile([.25, .5, .75, 1.0])
+    dsc = patient_data_base['DSC']
 
-    # Survival function separated by fraction
-    kmf_1 = KaplanMeierFitter()
-    fraction_19 = patient_data_base["fractions"]
+    ix_1 = (dsc <= DSC_groups[0.25])
+    ix_2 = (dsc > DSC_groups[0.25]) & (dsc < DSC_groups[0.5])
+    ix_3 = (dsc > DSC_groups[0.5]) & (dsc < DSC_groups[0.75])
+    ix_4 = (dsc > DSC_groups[0.75])
+
+    # fit the model for 1st cohort
+    kmf.fit(T[ix_1], E[ix_1], label='First Quartile')
+    a1 = kmf.plot()
+    # fit the model for 2nd cohort
+    kmf.fit(T[ix_2], E[ix_2], label='Second Quartile')
+    kmf.plot(ax=a1)
+    # fit the model for 3rd cohort
+    kmf.fit(T[ix_3], E[ix_3], label='Third Quartile')
+    kmf.plot(ax=a1)
+    # fit the model for 4th cohort
+    kmf.fit(T[ix_4], E[ix_4], label='Forth Quartile')
+    kmf.plot(ax=a1)
+    plt.show()
+    return
+
+def survival_analysis_fractions(patient_df):
+    T = patient_df["timeToEvent"]
+    E = patient_df["recurrence"]
+    kmf = KaplanMeierFitter()
+    fraction_19 = patient_df["fractions"]
     ix_19 = fraction_19 == 19
     #
     kmf.fit(T[ix_19], E[ix_19], label='First Quartile')
@@ -231,7 +234,6 @@ def test_survival_analysis(patient_data_base):
     kmf.fit(T[~ix_19], E[~ix_19], label='Second Quartile')
     kmf.plot(ax=a2)
     plt.show()
-    return
 
 
 def file_conversion_test(patients):
@@ -243,20 +245,7 @@ if __name__ == '__main__':
     dataDirectory = r"../Data/Deep_learning_results/deltaRMaps"
     enhancedDF = pd.read_csv(r'../Data/Deep_learning_results/All_patient_data_no_NA.csv')
     enhancedDF = cuts_from_ct_scans(enhancedDF)
-    enhancedDF = enhancedDF.sort_values("timeToEvent")
-    enhancedDF = enhancedDF.drop(['Unnamed: 0', 'Unnamed: 0.1', 'patientNumber', 'mean_sd_maxV'], axis=1)
-    # enhancedDF[[‘timeToEvent’, 'recurrence’, 'fractions’, 'stage’, 'grade’, 'risk’, 'volumeContour’, 'volumeContourAuto’, 'volumeContourDifference’, 'DSC’, 'volumeRatio’, 'mean’, 'sd’, 'maxval’]]
-    print(enhancedDF.timeToEvent.head())
-    print(enhancedDF.columns.values)
 
-    new_order = [6,1,2,3,4,5,7,8,9,10,11,12,13,14,0]
-    enhancedDF = enhancedDF[enhancedDF.columns[new_order]]
-    print(enhancedDF.head(10))
-    print(enhancedDF.columns.values)
-
-    enhancedDF.to_csv('../Data/Deep_learning_results/All_patient_data_no_NA.csv')
-    # test_survival_analysis(enhancedDF)
-    # test_survival_analysis(enhancedDF)
-    file_conversion_test(enhancedDF)
+    # file_conversion_test(enhancedDF)
     # test_analysis_function(enhancedDF)
 
