@@ -19,7 +19,7 @@ from lifelines import KaplanMeierFitter, NelsonAalenFitter
 from AllPatients import separate_by_recurrence, separate_by_risk
 from LocalFilter import load_global_patients, radial_mean_sd_for_patients, partition_patient_data_with_outliers
 from plot_functions import plot_heat_map_np, plot_scatter, plot_histogram, plot_heat_map, show_local_fields, \
-    test_on_single_map, triangulation_qa
+    test_on_single_map, triangulation_qa, load_map
 from significance_test import wilcoxon_test_statistic, mann_whitney_test_statistic, pymining_t_test, \
     t_map_with_thresholds, test_superimpose, \
     global_statistical_analysis, map_with_thresholds, non_parametric_permutation_test, stack_local_fields
@@ -241,7 +241,7 @@ def file_conversion_test(patients):
     _, _ = stack_local_fields(patients, 0)
 
 
-def add_covariate_data(clean_patient_data, new_data_file='patientAges', covariate_names=['patientList', 'age']):
+def add_covariate_data(clean_patient_data, new_data_file='patientAges',  covariate_names=['patientList', 'age']):
     '''
     This function reads in patient data with new variable and attaches it to the main patient data frame and converts
     categorical data into numerical values. It also removes the patient ID so its instantly renewable.
@@ -251,8 +251,9 @@ def add_covariate_data(clean_patient_data, new_data_file='patientAges', covariat
     :return: Returns the data with new variables and no patient ID
     '''
 
-    patient_patient_data = pd.read_csv(r'../Data/Deep_learning_results/'+ new_data_file +'.csv')
-    clean_patient_data = pd.merge(clean_patient_data, patient_patient_data[covariate_names], how='inner', on='patientList')
+    patient_patient_data = pd.read_csv(r'../Data/Deep_learning_results/' + new_data_file + '.csv')
+    clean_patient_data = pd.merge(clean_patient_data, patient_patient_data[covariate_names], how='inner',
+                                  on='patientList')
 
     # Numerate categorical data
     clean_patient_data['fractions'] = clean_patient_data['fractions'].apply(lambda x: 0 if x == 16 else 1)
@@ -260,10 +261,12 @@ def add_covariate_data(clean_patient_data, new_data_file='patientAges', covariat
     clean_patient_data['risk'] = clean_patient_data['risk'].apply(lambda x: 0 if x == 'Low' else (2 if x == 'High' else 1))
     # Drop patient ID
     patientID_list = clean_patient_data['patientList']
-    clean_patient_data = clean_patient_data.drop(['patientList', 'stage', 'mean', 'sd'], axis=1)
     print(clean_patient_data[['fractions', 'grade', 'risk']])
     print(clean_patient_data.head(n=1))
     return clean_patient_data, patientID_list
+
+
+
 
 if __name__ == '__main__':
     # read_and_return_patient_stats()
@@ -271,9 +274,17 @@ if __name__ == '__main__':
     # enhancedDF = pd.read_csv(r'../Data/Deep_learning_results/All_patient_data_no_NA.csv')
     # enhancedDF = cuts_from_ct_scans(enhancedDF)
     # survival_analysis_fractions(enhancedDF)
+
+    # DSC = load_map(r'../Data/Deep_learning_results/covariate_maps/', 'DSC')
+    # plot_heat_map(DSC, 1, 1.5)
+
     enhancedDF = pd.read_csv(r'../Data/Deep_learning_results/per_vox_cox.csv')
     (enhancedDF, patient_list) = add_covariate_data(enhancedDF)
+    (enhancedDF, patient_list) = add_covariate_data(enhancedDF, 'psa_patients', ['patientList', 'psa'])
+    enhancedDF = enhancedDF.drop_duplicates(subset='patientList')
+    clean_patient_data = enhancedDF.drop(['mean','sd','stage'], axis=1)
+    print(clean_patient_data)
     # enhancedDF.to_csv('../Data/Deep_learning_results/cox_vox_data.tsv', sep='\t', header=False, index=False)
-    patient_list.to_csv('../Data/Deep_learning_results/cox_vox_patientID_data.tsv', sep='\t', index=False)
+    # patient_list.to_csv('../Data/Deep_learning_results/cox_vox_patientID_data.tsv', sep='\t', index=False)
     # file_conversion_test(enhancedDF)
     # test_analysis_function(enhancedDF)
