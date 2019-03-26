@@ -137,7 +137,7 @@ def stack_local_fields(global_df, recurrence_label, dataDir=r'../Data/Deep_learn
     i = 0
     for f in dfFiles.file_path:
         fieldMaps[:, :, i] = pd.read_csv(f, header=None).as_matrix()[:, :]
-        data_frame_to_XDR(fieldMaps[:, :, i], global_df["patientList"][i])
+        # data_frame_to_XDR(fieldMaps[:, :, i], global_df["patientList"][i])
         i += 1
 
     return fieldMaps, label_array

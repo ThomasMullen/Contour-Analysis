@@ -221,6 +221,7 @@ def survival_analysis_dsc(patient_data_base):
     plt.show()
     return
 
+
 def survival_analysis_fractions(patient_df):
     T = patient_df["timeToEvent"]
     E = patient_df["recurrence"]
@@ -240,12 +241,39 @@ def file_conversion_test(patients):
     _, _ = stack_local_fields(patients, 0)
 
 
+def add_covariate_data(clean_patient_data, new_data_file='patientAges', covariate_names=['patientList', 'age']):
+    '''
+    This function reads in patient data with new variable and attaches it to the main patient data frame and converts
+    categorical data into numerical values. It also removes the patient ID so its instantly renewable.
+    :param clean_patient_data: The main patient database
+    :param new_data_file: The datafile name in deep learning folder
+    :param covariate_names: Fist include patient list then the new variables you wish to add
+    :return: Returns the data with new variables and no patient ID
+    '''
+
+    patient_patient_data = pd.read_csv(r'../Data/Deep_learning_results/'+ new_data_file +'.csv')
+    clean_patient_data = pd.merge(clean_patient_data, patient_patient_data[covariate_names], how='inner', on='patientList')
+
+    # Numerate categorical data
+    clean_patient_data['fractions'] = clean_patient_data['fractions'].apply(lambda x: 0 if x == 16 else 1)
+    clean_patient_data['grade'] = clean_patient_data['grade'].apply(lambda x: 0 if x <= 6 else (1 if x == 7 else 2))
+    clean_patient_data['risk'] = clean_patient_data['risk'].apply(lambda x: 0 if x == 'Low' else (2 if x == 'High' else 1))
+    # Drop patient ID
+    patientID_list = clean_patient_data['patientList']
+    clean_patient_data = clean_patient_data.drop(['patientList', 'stage', 'mean', 'sd'], axis=1)
+    print(clean_patient_data[['fractions', 'grade', 'risk']])
+    print(clean_patient_data.head(n=1))
+    return clean_patient_data, patientID_list
+
 if __name__ == '__main__':
     # read_and_return_patient_stats()
-    dataDirectory = r"../Data/Deep_learning_results/deltaRMaps"
-    enhancedDF = pd.read_csv(r'../Data/Deep_learning_results/All_patient_data_no_NA.csv')
-    enhancedDF = cuts_from_ct_scans(enhancedDF)
-
+    # dataDirectory = r"../Data/Deep_learning_results/deltaRMaps"
+    # enhancedDF = pd.read_csv(r'../Data/Deep_learning_results/All_patient_data_no_NA.csv')
+    # enhancedDF = cuts_from_ct_scans(enhancedDF)
+    # survival_analysis_fractions(enhancedDF)
+    enhancedDF = pd.read_csv(r'../Data/Deep_learning_results/per_vox_cox.csv')
+    (enhancedDF, patient_list) = add_covariate_data(enhancedDF)
+    # enhancedDF.to_csv('../Data/Deep_learning_results/cox_vox_data.tsv', sep='\t', header=False, index=False)
+    patient_list.to_csv('../Data/Deep_learning_results/cox_vox_patientID_data.tsv', sep='\t', index=False)
     # file_conversion_test(enhancedDF)
     # test_analysis_function(enhancedDF)
-
