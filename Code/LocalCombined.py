@@ -241,6 +241,23 @@ def file_conversion_test(patients):
     _, _ = stack_local_fields(patients, 0)
 
 
+def numerate_categorical_data(clean_patient_data):
+    """
+    A function to numerate the categorical data ready for our Cox regression
+
+    :param clean_patient_data: A data frame of patients
+    :return: a data frame of patients with parameters in categorical format
+    """
+
+    # Numerate categorical data
+    clean_patient_data['fractions'] = clean_patient_data['fractions'].apply(lambda x: 0 if x == 16 else 1)
+    clean_patient_data['grade'] = clean_patient_data['grade'].apply(lambda x: 0 if x <= 6 else (1 if x == 7 else 2))
+    clean_patient_data['risk'] = clean_patient_data['risk'].apply(
+    lambda x: 0 if x == 'Low' else (2 if x == 'High' else 1))
+
+    return clean_patient_data
+
+
 def add_covariate_data(clean_patient_data, new_data_file='patientAges',  covariate_names=['patientList', 'age']):
     '''
     This function reads in patient data with new variable and attaches it to the main patient data frame and converts
@@ -255,14 +272,10 @@ def add_covariate_data(clean_patient_data, new_data_file='patientAges',  covaria
     clean_patient_data = pd.merge(clean_patient_data, patient_patient_data[covariate_names], how='inner',
                                   on='patientList')
 
-    # Numerate categorical data
-    clean_patient_data['fractions'] = clean_patient_data['fractions'].apply(lambda x: 0 if x == 16 else 1)
-    clean_patient_data['grade'] = clean_patient_data['grade'].apply(lambda x: 0 if x <= 6 else (1 if x == 7 else 2))
-    clean_patient_data['risk'] = clean_patient_data['risk'].apply(lambda x: 0 if x == 'Low' else (2 if x == 'High' else 1))
     # Drop patient ID
     patientID_list = clean_patient_data['patientList']
-    print(clean_patient_data[['fractions', 'grade', 'risk']])
-    print(clean_patient_data.head(n=1))
+    # print(clean_patient_data[['fractions', 'grade', 'risk']])
+    # print(clean_patient_data.head(n=1))
     return clean_patient_data, patientID_list
 
 
@@ -279,12 +292,12 @@ if __name__ == '__main__':
     # plot_heat_map(DSC, 1, 1.5)
 
     enhancedDF = pd.read_csv(r'../Data/Deep_learning_results/per_vox_cox.csv')
-    (enhancedDF, patient_list) = add_covariate_data(enhancedDF)
-    (enhancedDF, patient_list) = add_covariate_data(enhancedDF, 'psa_patients', ['patientList', 'psa'])
+    (enhancedDF, patient_list) = add_covariate_data(enhancedDF) # Add patient ages
+    (enhancedDF, patient_list) = add_covariate_data(enhancedDF, 'psa_patients', ['patientList', 'psa']) # Add psa
+    enhancedDF = numerate_categorical_data(enhancedDF)
     enhancedDF = enhancedDF.drop_duplicates(subset='patientList')
-    clean_patient_data = enhancedDF.drop(['mean','sd','stage'], axis=1)
-    print(clean_patient_data)
-    # enhancedDF.to_csv('../Data/Deep_learning_results/cox_vox_data.tsv', sep='\t', header=False, index=False)
-    # patient_list.to_csv('../Data/Deep_learning_results/cox_vox_patientID_data.tsv', sep='\t', index=False)
+    enhancedDF = enhancedDF.drop(['mean','sd','stage', 'patientList', 'volumeContour', 'volumeRatio'], axis=1)
+    enhancedDF.to_csv('../Data/Deep_learning_results/cox_vox_data.tsv', sep='\t', header=False, index=False)
+    patient_list.to_csv('../Data/Deep_learning_results/cox_vox_patientID_data.tsv', sep='\t', index=False)
     # file_conversion_test(enhancedDF)
     # test_analysis_function(enhancedDF)
