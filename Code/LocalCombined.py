@@ -296,6 +296,7 @@ if __name__ == '__main__':
     (enhancedDF, patient_list) = add_covariate_data(enhancedDF, 'psa_patients', ['patientList', 'psa']) # Add psa
     enhancedDF = numerate_categorical_data(enhancedDF)
     enhancedDF = enhancedDF.drop_duplicates(subset='patientList')
+    patient_list = patient_list.drop_duplicates()
     enhancedDF = enhancedDF.drop(['mean','sd','stage', 'patientList', 'volumeContour', 'volumeRatio'], axis=1)
     enhancedDF.to_csv('../Data/Deep_learning_results/cox_vox_data.tsv', sep='\t', header=False, index=False)
     patient_list.to_csv('../Data/Deep_learning_results/cox_vox_patientID_data.tsv', sep='\t', index=False)
