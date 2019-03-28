@@ -252,8 +252,8 @@ def numerate_categorical_data(clean_patient_data):
     # Numerate categorical data
     clean_patient_data['fractions'] = clean_patient_data['fractions'].apply(lambda x: 0 if x == 16 else 1)
     clean_patient_data['grade'] = clean_patient_data['grade'].apply(lambda x: 0 if x <= 6 else (1 if x == 7 else 2))
-    clean_patient_data['risk'] = clean_patient_data['risk'].apply(
-    lambda x: 0 if x == 'Low' else (2 if x == 'High' else 1))
+    clean_patient_data['risk'] = clean_patient_data['risk'].apply(lambda x: 0 if x == 'Low' else (2 if x == 'High' \
+                                                                                                      else 1))
 
     return clean_patient_data
 
@@ -288,19 +288,19 @@ def test_plot_subplot():
     map6 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/DSC.csv')
 
     f, axes = plt.subplots(3, 2, sharex='col', sharey='row')
-    heat_map1 = sns.heatmap(map1.values, center=0, ax=axes[0,0], cmap='RdBu')
+    heat_map1 = sns.heatmap(map1.values, center=1, ax=axes[0,0], cmap='RdBu')
     heat_map1.set_xlabel(''); heat_map1.set_ylabel('')
-    heat_map2 = sns.heatmap(map2.values, center=0, ax=axes[0,1], cmap='RdBu')
+    heat_map2 = sns.heatmap(map2.values, center=1, ax=axes[0,1], cmap='RdBu')
     heat_map2.set_xlabel(''); heat_map2.set_ylabel('')
 
-    heat_map3 = sns.heatmap(map3.values, center=0, ax=axes[1,0], cmap='RdBu')
+    heat_map3 = sns.heatmap(map3.values, center=1, ax=axes[1,0], cmap='RdBu')
     heat_map3.set_xlabel(''); heat_map3.set_ylabel('')
-    heat_map4 = sns.heatmap(map4.values, center=0, ax=axes[1,1], cmap='RdBu')
+    heat_map4 = sns.heatmap(map4.values, center=1, ax=axes[1,1], cmap='RdBu')
     heat_map4.set_xlabel(''); heat_map4.set_ylabel('')
 
-    heat_map5 = sns.heatmap(map5.values, center=0, ax=axes[2,0], cmap='RdBu')
+    heat_map5 = sns.heatmap(map5.values, center=1, ax=axes[2,0], cmap='RdBu')
     heat_map5.set_xlabel(''); heat_map5.set_ylabel('')
-    heat_map6 = sns.heatmap(map6.values, center=0, ax=axes[2,1], cmap='RdBu')
+    heat_map6 = sns.heatmap(map6.values, center=1, ax=axes[2,1], cmap='RdBu')
     heat_map6.set_xlabel(''); heat_map6.set_ylabel('')
 
     # Fine-tune figure; make subplots farther from each other.
