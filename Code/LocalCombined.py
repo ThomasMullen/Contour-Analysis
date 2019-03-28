@@ -186,25 +186,18 @@ def test_analysis_function(enhancedDF):
     global_statistical_analysis(high_risk_patients)
 
 
-def survival_analysis_dsc(patient_data_base):
+def survival_analysis_dsc(patient_data_base, category='DSC'):
     # Remove patient that have not time event
     # patient_data_base = patient_data_base[patient_data_base.recurrenceTime != '']
 
-    T = patient_data_base["timeToEvent"]
-    E = patient_data_base["recurrence"]
-
-    kmf = KaplanMeierFitter()
-    kmf.fit(T, event_observed=E)
-    kmf.plot()
-
     # Survival function groupby DSC
-    DSC_groups = patient_data_base["DSC"].quantile([.25, .5, .75, 1.0])
-    dsc = patient_data_base['DSC']
+    category_groups = patient_data_base[category].quantile([.25, .5, .75, 1.0])
+    dsc = patient_data_base[category]
 
-    ix_1 = (dsc <= DSC_groups[0.25])
-    ix_2 = (dsc > DSC_groups[0.25]) & (dsc < DSC_groups[0.5])
-    ix_3 = (dsc > DSC_groups[0.5]) & (dsc < DSC_groups[0.75])
-    ix_4 = (dsc > DSC_groups[0.75])
+    ix_1 = (dsc <= category_groups[0.25])
+    ix_2 = (dsc > category_groups[0.25]) & (dsc < category_groups[0.5])
+    ix_3 = (dsc > category_groups[0.5]) & (dsc < category_groups[0.75])
+    ix_4 = (dsc > category_groups[0.75])
 
     # fit the model for 1st cohort
     kmf.fit(T[ix_1], E[ix_1], label='First Quartile')
