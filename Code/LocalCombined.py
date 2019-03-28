@@ -19,7 +19,7 @@ from lifelines import KaplanMeierFitter, NelsonAalenFitter
 from AllPatients import separate_by_recurrence, separate_by_risk
 from LocalFilter import load_global_patients, radial_mean_sd_for_patients, partition_patient_data_with_outliers
 from plot_functions import plot_heat_map_np, plot_scatter, plot_histogram, plot_heat_map, show_local_fields, \
-    test_on_single_map, triangulation_qa, load_map
+    test_on_single_map, triangulation_qa, load_map, create_polar_axis
 from significance_test import wilcoxon_test_statistic, mann_whitney_test_statistic, pymining_t_test, \
     t_map_with_thresholds, test_superimpose, \
     global_statistical_analysis, map_with_thresholds, non_parametric_permutation_test, stack_local_fields
@@ -266,6 +266,49 @@ def add_covariate_data(clean_patient_data, new_data_file='patientAges',  covaria
     return clean_patient_data, patientID_list
 
 
+def test_plot_subplot():
+    map1 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/fractions.csv')
+    map2 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/grade.csv')
+    map3 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/risk.csv')
+    map4 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/autoVolume.csv')
+    map5 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/volDiff.csv')
+    map6 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/DSC.csv')
+
+    f, axes = plt.subplots(3, 2, sharex='col', sharey='row')
+    heat_map1 = sns.heatmap(map1.values, center=0, ax=axes[0,0], cmap='RdBu')
+    heat_map1.set_xlabel(''); heat_map1.set_ylabel('')
+    heat_map2 = sns.heatmap(map2.values, center=0, ax=axes[0,1], cmap='RdBu')
+    heat_map2.set_xlabel(''); heat_map2.set_ylabel('')
+
+    heat_map3 = sns.heatmap(map3.values, center=0, ax=axes[1,0], cmap='RdBu')
+    heat_map3.set_xlabel(''); heat_map3.set_ylabel('')
+    heat_map4 = sns.heatmap(map4.values, center=0, ax=axes[1,1], cmap='RdBu')
+    heat_map4.set_xlabel(''); heat_map4.set_ylabel('')
+
+    heat_map5 = sns.heatmap(map5.values, center=0, ax=axes[2,0], cmap='RdBu')
+    heat_map5.set_xlabel(''); heat_map5.set_ylabel('')
+    heat_map6 = sns.heatmap(map6.values, center=0, ax=axes[2,1], cmap='RdBu')
+    heat_map6.set_xlabel(''); heat_map6.set_ylabel('')
+
+    # Fine-tune figure; make subplots farther from each other.
+    f.subplots_adjust(hspace=0.3)
+
+    plt.tight_layout()
+    plt.show(block=True)
+
+    map_with_thresholds(map1, [np.exp(-0.61932497), np.exp(1.537291617)], False)
+    map_with_thresholds(map2, [np.exp(-0.40557674), np.exp(1.527019767)], False)
+    map_with_thresholds(map3, [np.exp(-0.7852519641), np.exp(1.5154914)], False)
+    map_with_thresholds(map4, [np.exp(-0.922503813), np.exp(1.368455538)], False)
+    map_with_thresholds(map5, [np.exp(-0.013251058), np.exp(1.428210471)], False)
+    map_with_thresholds(map5, [np.exp(-0.071880355), np.exp(0.962964104)], False)
+
+    data = pd.read_csv(r'../Data/Deep_learning_results/per_vox_cox.csv')
+    g = sns.PairGrid(data, vars=['grade', 'volumeContour', 'volumeContourAuto', 'DSC', 'volumeContourDifference'],
+                     hue='recurrence', palette='RdBu_r')
+    g.map(plt.scatter, alpha=0.8)
+    g.add_legend();
+    plt.show(block=True)
 
 
 if __name__ == '__main__':
@@ -277,13 +320,14 @@ if __name__ == '__main__':
 
     # DSC = load_map(r'../Data/Deep_learning_results/covariate_maps/', 'DSC')
     # plot_heat_map(DSC, 1, 1.5)
-
-    enhancedDF = pd.read_csv(r'../Data/Deep_learning_results/per_vox_cox.csv')
-    (enhancedDF, patient_list) = add_covariate_data(enhancedDF)
-    (enhancedDF, patient_list) = add_covariate_data(enhancedDF, 'psa_patients', ['patientList', 'psa'])
-    enhancedDF = enhancedDF.drop_duplicates(subset='patientList')
-    clean_patient_data = enhancedDF.drop(['mean','sd','stage'], axis=1)
-    print(clean_patient_data)
+    test_plot_subplot()
+    x=0
+    # enhancedDF = pd.read_csv(r'../Data/Deep_learning_results/per_vox_cox.csv')
+    # (enhancedDF, patient_list) = add_covariate_data(enhancedDF)
+    # (enhancedDF, patient_list) = add_covariate_data(enhancedDF, 'psa_patients', ['patientList', 'psa'])
+    # enhancedDF = enhancedDF.drop_duplicates(subset='patientList')
+    # clean_patient_data = enhancedDF.drop(['mean','sd','stage'], axis=1)
+    # print(clean_patient_data)
     # enhancedDF.to_csv('../Data/Deep_learning_results/cox_vox_data.tsv', sep='\t', header=False, index=False)
     # patient_list.to_csv('../Data/Deep_learning_results/cox_vox_patientID_data.tsv', sep='\t', index=False)
     # file_conversion_test(enhancedDF)

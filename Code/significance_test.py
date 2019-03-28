@@ -15,6 +15,7 @@ from plot_functions import create_polar_axis
 from mlxtend.evaluate import permutation_test
 from DataFormatting import data_frame_to_XDR
 
+
 def pymining_t_test(selected_patients):
     # Tag patients with recurrence:1 and non-recurrence:0
     patients_who_recur, patients_who_dont_recur = separate_by_recurrence(selected_patients)
@@ -67,16 +68,16 @@ def test_superimpose(t_map, pos_t_dist, neg_t_dist):
     plt.show()
 
 
-def map_with_thresholds(statistic_map):
+def map_with_thresholds(statistic_map, critical_statistic_values=[5, 95], is_percentile=True):
     '''
     This will plot the contours superimposed on the statistic map which is np.flip vertically
     :param t_map: take in the numpy array t-map
     :return: returns a plots of the contours of the tmap
     '''
     coutour_map = statistic_map.copy()
-    # clrs = ['magenta', 'lime', 'orange', 'red']
-    # critical_t_values = np.percentile(coutour_map.flatten(), [5, 95])
-    critical_statistic_values = np.percentile(statistic_map.flatten(), [5, 95])
+
+    if is_percentile == True:
+        critical_statistic_values = np.percentile(statistic_map.flatten(), critical_statistic_values)
     plt.contour(coutour_map, levels=critical_statistic_values, colors=['magenta', 'lime'])
     plt.gca()
     axes = create_polar_axis()
@@ -84,6 +85,7 @@ def map_with_thresholds(statistic_map):
     # heat_map = sns.heatmap(np.flip(t_map, 0), center=0, xticklabels=axes[0], yticklabels=axes[1], cmap='RdBu')
     heat_map.set(ylabel='Theta, $\dot{\Theta}$', xlabel='Azimutal, $\phi$', title='')
     plt.show()
+
 
 def pValueMap(t_to_p_map):
     """
@@ -177,18 +179,19 @@ def global_statistical_analysis(selected_patients):
 
     # Test the relationship between volume difference and recurrence
     global_p, lower_p, upper_p = non_parametric_permutation_test(patients_who_recur["volumeContourDifference"],
-                                              patients_who_dont_recur["volumeContourDifference"])
+                                                                 patients_who_dont_recur["volumeContourDifference"])
     print('Vdiff: p_value(rec=/=n_rec): %.6f p_value(rec<n_rec): %.6f p_value(rec>n_rec): %.6f' %
           (global_p, lower_p, upper_p))
 
     # Test the relationship between dice coefficient and recurrence
-    global_p, lower_p, upper_p = non_parametric_permutation_test(patients_who_recur["DSC"], patients_who_dont_recur["DSC"])
+    global_p, lower_p, upper_p = non_parametric_permutation_test(patients_who_recur["DSC"],
+                                                                 patients_who_dont_recur["DSC"])
     print('DSC: p_value(rec=/=n_rec): %.6f p_value(rec<n_rec): %.6f p_value(rec>n_rec): %.6f' %
           (global_p, lower_p, upper_p))
 
     # Test the relationship between ratio of volumes and recurrence: V_man/V_auto
     global_p, lower_p, upper_p = non_parametric_permutation_test(patients_who_recur["volumeRatio"],
-                                              patients_who_dont_recur["volumeRatio"])
+                                                                 patients_who_dont_recur["volumeRatio"])
     print('VRatio: p_value(rec=/=n_rec): %.6f p_value(rec<n_rec): %.6f p_value(rec>n_rec): %.6f' %
           (global_p, lower_p, upper_p))
 
@@ -220,7 +223,8 @@ def mann_whitney_u_test(rec_field_maps, nonrec_field_maps):
     p_value = np.zeros((60, 120))
     for x in range(60):
         for y in range(120):
-            stat[x][y], p_value[x][y] = ss.mannwhitneyu(rec_field_maps[x][y][:], nonrec_field_maps[x][y][:], alternative='two-sided')
+            stat[x][y], p_value[x][y] = ss.mannwhitneyu(rec_field_maps[x][y][:], nonrec_field_maps[x][y][:],
+                                                        alternative='two-sided')
     return stat, p_value
 
 
@@ -275,7 +279,8 @@ def non_parametric_permutation_test(recurrence_group, no_recurrence_group):
     :return: The p-value for the test
     """
 
-    global_p_value = permutation_test(recurrence_group, no_recurrence_group, method='approximate', num_rounds=10000, seed=0)
+    global_p_value = permutation_test(recurrence_group, no_recurrence_group, method='approximate', num_rounds=10000,
+                                      seed=0)
     lower_p_value = permutation_test(recurrence_group, no_recurrence_group, func='x_mean < y_mean',
                                      method='approximate', num_rounds=10000, seed=0)
     upper_p_value = permutation_test(recurrence_group, no_recurrence_group, func='x_mean > y_mean',
