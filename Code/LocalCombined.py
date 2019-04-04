@@ -207,10 +207,10 @@ def survival_analysis_dsc(patient_data_base, category='DSC'):
     kmf = KaplanMeierFitter()
     T = patient_df["timeToEvent"]
     E = patient_df["recurrence"]
-    kmf.fit(T[ix_1], E[ix_1], label='First Quartile')
+    kmf.fit(T[ix_1], E[ix_1], label="First Quartile")
     a1 = kmf.plot()
     # fit the model for 2nd cohort
-    kmf.fit(T[ix_2], E[ix_2], label='Second Quartile')
+    kmf.fit(T[ix_2], E[ix_2], label="Second Quartile")
     kmf.plot(ax=a1)
     # fit the model for 3rd cohort
     kmf.fit(T[ix_3], E[ix_3], label='Third Quartile')
@@ -229,10 +229,10 @@ def survival_analysis_fractions(patient_df):
     fraction_19 = patient_df["fractions"]
     ix_19 = fraction_19 == 19
     #
-    kmf.fit(T[ix_19], E[ix_19], label=’First Quartile’)
+    kmf.fit(T[ix_19], E[ix_19], label="19 Fractions")
     a2 = kmf.plot()
     # fit the model for 2nd cohort
-    kmf.fit(T[~ix_19], E[~ix_19], label=’Second Quartile’)
+    kmf.fit(T[~ix_19], E[~ix_19], label="16 Fractions")
     kmf.plot(ax=a2)
     plt.show()
 
@@ -252,8 +252,8 @@ def numerate_categorical_data(clean_patient_data):
     # Numerate categorical data
     clean_patient_data['fractions'] = clean_patient_data['fractions'].apply(lambda x: 0 if x == 16 else 1)
     clean_patient_data['grade'] = clean_patient_data['grade'].apply(lambda x: 0 if x <= 6 else (1 if x == 7 else 2))
-    clean_patient_data['risk'] = clean_patient_data['risk'].apply(lambda x: 0 if x == 'Low' else (2 if x == 'High' \
-                                                                                                      else 1))
+    clean_patient_data['risk'] = clean_patient_data['risk'].apply(
+    lambda x: 0 if x == ['Low', 'Low/Int?'] else (2 if x == 'High' else 1))
 
     return clean_patient_data
 
@@ -280,48 +280,90 @@ def add_covariate_data(clean_patient_data, new_data_file='patientAges',  covaria
 
 
 def test_plot_subplot():
-    map1 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/fractions.csv')
-    map2 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/grade.csv')
-    map3 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/risk.csv')
-    map4 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/autoVolume.csv')
-    map5 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/volDiff.csv')
-    map6 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/DSC.csv')
+    map1 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/withGrade/csv_results/fractions.csv')
+    map2 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/withGrade/csv_results/grade.csv')
+    map3 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/withGrade/csv_results/risk.csv')
+    map4 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/withGrade/csv_results/autoVolume.csv')
+    map5 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/withGrade/csv_results/age.csv')
+    map6 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/withGrade/csv_results/deltaR.csv')
 
-    f, axes = plt.subplots(3, 2, sharex='col', sharey='row')
-    heat_map1 = sns.heatmap(map1.values, center=1, ax=axes[0,0], cmap='RdBu')
-    heat_map1.set_xlabel(''); heat_map1.set_ylabel('')
-    heat_map2 = sns.heatmap(map2.values, center=1, ax=axes[0,1], cmap='RdBu')
-    heat_map2.set_xlabel(''); heat_map2.set_ylabel('')
+    sig_map1 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/withGrade/csv_results_sig/fractions_sig.csv')
+    sig_map2 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/withGrade/csv_results_sig/grade_sig.csv')
+    sig_map3 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/withGrade/csv_results_sig/risk_sig.csv')
+    sig_map4 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/withGrade/csv_results_sig/autoVolume_sig.csv')
+    sig_map5 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/withGrade/csv_results_sig/age_sig.csv')
+    sig_map6 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/withGrade/csv_results_sig/deltaR_sig.csv')
 
-    heat_map3 = sns.heatmap(map3.values, center=1, ax=axes[1,0], cmap='RdBu')
-    heat_map3.set_xlabel(''); heat_map3.set_ylabel('')
-    heat_map4 = sns.heatmap(map4.values, center=1, ax=axes[1,1], cmap='RdBu')
-    heat_map4.set_xlabel(''); heat_map4.set_ylabel('')
 
-    heat_map5 = sns.heatmap(map5.values, center=1, ax=axes[2,0], cmap='RdBu')
-    heat_map5.set_xlabel(''); heat_map5.set_ylabel('')
-    heat_map6 = sns.heatmap(map6.values, center=1, ax=axes[2,1], cmap='RdBu')
-    heat_map6.set_xlabel(''); heat_map6.set_ylabel('')
+    # f, axes = plt.subplots(3, 2, sharex='col', sharey='row')
+    # heat_map1 = sns.heatmap(map1.values, center=0, ax=axes[0,0], cmap='RdBu', vmin=0, vmax=2,
+    #             cbar=False)
+    # heat_map1.set_xlabel(''); heat_map1.set_ylabel('')
+    # heat_map2 = sns.heatmap(map2.values, center=0, ax=axes[0,1], cmap='RdBu', vmin=0, vmax=2,
+    #             cbar=False)
+    # heat_map2.set_xlabel(''); heat_map2.set_ylabel('')
+    #
+    # heat_map3 = sns.heatmap(map3.values, center=0, ax=axes[1,0], cmap='RdBu', vmin=0, vmax=2,
+    #             cbar=False)
+    # heat_map3.set_xlabel(''); heat_map3.set_ylabel('')
+    # heat_map4 = sns.heatmap(map4.values, center=0, ax=axes[1,1], cmap='RdBu', vmin=0, vmax=2,
+    #             cbar=False)
+    # heat_map4.set_xlabel(''); heat_map4.set_ylabel('')
+    #
+    # heat_map5 = sns.heatmap(map5.values, center=0, ax=axes[2,0], cmap='RdBu', vmin=0, vmax=2,
+    #             cbar=False)
+    # heat_map5.set_xlabel(''); heat_map5.set_ylabel('')
+    # # heat_map6 = sns.heatmap(map6.values, center=0, ax=axes[2,1], cmap='RdBu', vmin=0, vmax=2,
+    # #             cbar=False)
+    # # heat_map6.set_xlabel(''); heat_map6.set_ylabel('')
+    #
+    # # Fine-tune figure; make subplots farther from each other.
+    # f.subplots_adjust(hspace=0.3)
+    #
+    # plt.tight_layout()
+    # plt.show(block=True)
 
-    # Fine-tune figure; make subplots farther from each other.
-    f.subplots_adjust(hspace=0.3)
+    # Thresholds without grade
+    # map_with_thresholds(map1, [np.exp(0), np.exp(1.8348171773659745)], False)
+    # map_with_thresholds(map3, [np.exp(-0.69973541041431797), np.exp(1.4003677492629816)], False)
+    # map_with_thresholds(map4, [np.exp(-0.015974724319552071), np.exp(1.1236690064758252)], False)
+    # map_with_thresholds(map5, [np.exp(-0.0072990457219818941), np.exp(0.081051212841960679)], False)
+    # map_with_thresholds(map6, [np.exp(-1.8004828254133396), np.exp(2.3135563039910414)], False)
 
-    plt.tight_layout()
-    plt.show(block=True)
-
-    map_with_thresholds(map1, [np.exp(-0.61932497), np.exp(1.537291617)], False)
-    map_with_thresholds(map2, [np.exp(-0.40557674), np.exp(1.527019767)], False)
-    map_with_thresholds(map3, [np.exp(-0.7852519641), np.exp(1.5154914)], False)
-    map_with_thresholds(map4, [np.exp(-0.922503813), np.exp(1.368455538)], False)
-    map_with_thresholds(map5, [np.exp(-0.013251058), np.exp(1.428210471)], False)
-    map_with_thresholds(map5, [np.exp(-0.071880355), np.exp(0.962964104)], False)
+    # Thresholds with grade
+    map_with_thresholds(map1, [np.exp(-0.472801192), np.exp(1.880958152)], False)
+    map_with_thresholds(map2, [np.exp(-0.481561145), np.exp(1.51658389)], False)
+    map_with_thresholds(map3, [np.exp(-0.615623492), np.exp(1.393389023)], False)
+    map_with_thresholds(map4, [np.exp(-0.01628528), np.exp(1.163254349)], False)
+    map_with_thresholds(map5, [np.exp(-0.011873742), np.exp(0.09111272)], False)
+    map_with_thresholds(map6, [np.exp(-1.727245154), np.exp(2.384893813)], False)
+    map_with_thresholds(sig_map1, [0.05], False)
+    map_with_thresholds(sig_map2, [0.05], False)
+    map_with_thresholds(sig_map3, [0.05], False)
+    map_with_thresholds(sig_map4, [0.05], False)
+    map_with_thresholds(sig_map5, [0.05], False)
+    map_with_thresholds(sig_map6, [0.05], False)
 
     data = pd.read_csv(r'../Data/Deep_learning_results/per_vox_cox.csv')
-    g = sns.PairGrid(data, vars=['grade', 'volumeContour', 'volumeContourAuto', 'DSC', 'volumeContourDifference'],
+    g = sns.PairGrid(data, vars=['fractions', 'risk', 'autoContourVolume', 'age'],
                      hue='recurrence', palette='RdBu_r')
     g.map(plt.scatter, alpha=0.8)
     g.add_legend();
     plt.show(block=True)
+
+
+def clean_data_and_add_covariates():
+    enhancedDF = pd.read_csv(r'../Data/Deep_learning_results/per_vox_cox.csv')
+    (enhancedDF, patient_list) = add_covariate_data(enhancedDF)
+    (enhancedDF, patient_list) = add_covariate_data(enhancedDF, 'psa_patients', ['patientList', 'psa'])
+    enhancedDF = enhancedDF.drop_duplicates(subset='patientList')
+    clean_patient_data = enhancedDF.drop(['mean', 'sd', 'stage', 'patientList', 'volumeContour', 'psa', 'volumeRatio'],
+                                         axis=1)
+    print(clean_patient_data)
+    patient_list = patient_list.drop_duplicates()
+    clean_patient_data = numerate_categorical_data(clean_patient_data)
+    clean_patient_data.to_csv('../Data/Deep_learning_results/cox_vox_data.tsv', sep='\t', header=False, index=False)
+    patient_list.to_csv('../Data/Deep_learning_results/cox_vox_patientID_data.tsv', sep='\t', index=False)
 
 
 if __name__ == '__main__':
@@ -334,14 +376,8 @@ if __name__ == '__main__':
     # DSC = load_map(r'../Data/Deep_learning_results/covariate_maps/', 'DSC')
     # plot_heat_map(DSC, 1, 1.5)
     test_plot_subplot()
-    x=0
-    # enhancedDF = pd.read_csv(r'../Data/Deep_learning_results/per_vox_cox.csv')
-    # (enhancedDF, patient_list) = add_covariate_data(enhancedDF)
-    # (enhancedDF, patient_list) = add_covariate_data(enhancedDF, 'psa_patients', ['patientList', 'psa'])
-    # enhancedDF = enhancedDF.drop_duplicates(subset='patientList')
-    # clean_patient_data = enhancedDF.drop(['mean','sd','stage'], axis=1)
-    # print(clean_patient_data)
-    # enhancedDF.to_csv('../Data/Deep_learning_results/cox_vox_data.tsv', sep='\t', header=False, index=False)
-    # patient_list.to_csv('../Data/Deep_learning_results/cox_vox_patientID_data.tsv', sep='\t', index=False)
+    # x=0
+
+    # clean_data_and_add_covariates()
     # file_conversion_test(enhancedDF)
     # test_analysis_function(enhancedDF)
