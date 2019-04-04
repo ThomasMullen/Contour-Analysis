@@ -14,6 +14,10 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+from IPython.display import set_matplotlib_formats
+set_matplotlib_formats('pdf')
+
+
 
 from lifelines import KaplanMeierFitter, NelsonAalenFitter
 from AllPatients import separate_by_recurrence, separate_by_risk
@@ -200,6 +204,9 @@ def survival_analysis_dsc(patient_data_base, category='DSC'):
     ix_4 = (dsc > category_groups[0.75])
 
     # fit the model for 1st cohort
+    kmf = KaplanMeierFitter()
+    T = patient_df["timeToEvent"]
+    E = patient_df["recurrence"]
     kmf.fit(T[ix_1], E[ix_1], label='First Quartile')
     a1 = kmf.plot()
     # fit the model for 2nd cohort
@@ -222,10 +229,10 @@ def survival_analysis_fractions(patient_df):
     fraction_19 = patient_df["fractions"]
     ix_19 = fraction_19 == 19
     #
-    kmf.fit(T[ix_19], E[ix_19], label='First Quartile')
+    kmf.fit(T[ix_19], E[ix_19], label=’First Quartile’)
     a2 = kmf.plot()
     # fit the model for 2nd cohort
-    kmf.fit(T[~ix_19], E[~ix_19], label='Second Quartile')
+    kmf.fit(T[~ix_19], E[~ix_19], label=’Second Quartile’)
     kmf.plot(ax=a2)
     plt.show()
 
