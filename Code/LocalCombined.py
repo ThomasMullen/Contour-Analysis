@@ -331,25 +331,25 @@ def test_plot_subplot():
     # map_with_thresholds(map6, [np.exp(-1.8004828254133396), np.exp(2.3135563039910414)], False)
 
     # Thresholds with grade
-    map_with_thresholds(map1, [np.exp(-0.472801192), np.exp(1.880958152)], False)
-    map_with_thresholds(map2, [np.exp(-0.481561145), np.exp(1.51658389)], False)
-    map_with_thresholds(map3, [np.exp(-0.615623492), np.exp(1.393389023)], False)
-    map_with_thresholds(map4, [np.exp(-0.01628528), np.exp(1.163254349)], False)
-    map_with_thresholds(map5, [np.exp(-0.011873742), np.exp(0.09111272)], False)
-    map_with_thresholds(map6, [np.exp(-1.727245154), np.exp(2.384893813)], False)
-    map_with_thresholds(sig_map1, [0.05], False)
-    map_with_thresholds(sig_map2, [0.05], False)
-    map_with_thresholds(sig_map3, [0.05], False)
-    map_with_thresholds(sig_map4, [0.05], False)
-    map_with_thresholds(sig_map5, [0.05], False)
-    map_with_thresholds(sig_map6, [0.05], False)
+    # map_with_thresholds(map1, [np.exp(-0.472801192), np.exp(1.880958152)], False)
+    # map_with_thresholds(map2, [np.exp(-0.481561145), np.exp(1.51658389)], False)
+    # map_with_thresholds(map3, [np.exp(-0.615623492), np.exp(1.393389023)], False)
+    # map_with_thresholds(map4, [np.exp(-0.01628528), np.exp(1.163254349)], False)
+    # map_with_thresholds(map5, [np.exp(-0.011873742), np.exp(0.09111272)], False)
+    map_with_thresholds(pow(map6, 0.5), [pow(np.exp(-1.727245154), 0.5), pow(np.exp(2.384893813), 0.5)], False)
+    # map_with_thresholds(sig_map1, [0.05], False)
+    # map_with_thresholds(sig_map2, [0.05], False)
+    # map_with_thresholds(sig_map3, [0.05], False)
+    # map_with_thresholds(sig_map4, [0.05], False)
+    # map_with_thresholds(sig_map5, [0.05], False)
+    # map_with_thresholds(sig_map6, [0.05], False)
 
-    data = pd.read_csv(r'../Data/Deep_learning_results/per_vox_cox.csv')
-    g = sns.PairGrid(data, vars=['fractions', 'risk', 'autoContourVolume', 'age'],
-                     hue='recurrence', palette='RdBu_r')
-    g.map(plt.scatter, alpha=0.8)
-    g.add_legend();
-    plt.show(block=True)
+    # data = pd.read_csv(r'../Data/Deep_learning_results/per_vox_cox.csv')
+    # g = sns.PairGrid(data, vars=['fractions', 'risk', 'autoContourVolume', 'age'],
+    #                  hue='recurrence', palette='RdBu_r')
+    # g.map(plt.scatter, alpha=0.8)
+    # g.add_legend();
+    # plt.show(block=True)
 
 
 def clean_data_and_add_covariates():
@@ -369,13 +369,14 @@ def clean_data_and_add_covariates():
 if __name__ == '__main__':
     # read_and_return_patient_stats()
     # dataDirectory = r"../Data/Deep_learning_results/deltaRMaps"
-    # enhancedDF = pd.read_csv(r'../Data/Deep_learning_results/All_patient_data_no_NA.csv')
-    # enhancedDF = cuts_from_ct_scans(enhancedDF)
+    enhancedDF = pd.read_csv(r'../Data/Deep_learning_results/global_results/all_patients_cleaned.csv')
+    enhancedDF = cuts_from_ct_scans(enhancedDF)
+    # enhancedDF.to_csv("../Data/Deep_learning_results/global_results/patients_cleaned_after_cuts.csv", index=False)
     # survival_analysis_fractions(enhancedDF)
 
     # DSC = load_map(r'../Data/Deep_learning_results/covariate_maps/', 'DSC')
     # plot_heat_map(DSC, 1, 1.5)
-    test_plot_subplot()
+    # test_plot_subplot()
     # x=0
 
     # clean_data_and_add_covariates()

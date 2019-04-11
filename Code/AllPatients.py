@@ -34,8 +34,7 @@ def global_remove_stageT3(all_patients):
     :return: returns the global patient data with stages >T3 removed
     """
 
-    late_staged_patients = ('T3b', 'T3b/T4', 'T4', 'T3B', 'T39')
-    early_staged_patients = all_patients[~all_patients['Stage'].isin(late_staged_patients)]
+    early_staged_patients = all_patients[~all_patients['stage'].isin([ "T3b", "T3B", "T3b/T4", "T4 N0 M1", "T4", "T39", "nan", "T3NA"])]
     return early_staged_patients
 
 
