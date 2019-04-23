@@ -363,8 +363,7 @@ def clean_data(data):
     cleaned_data = data.copy()
     cleaned_data = cleaned_data.drop_duplicates(subset='patientList')
     cleaned_data = cuts_from_ct_scans(cleaned_data)
-    cleaned_data = cleaned_data.drop(['patientNumber', 'patientList', 'recurrence_4years', 'sdDoseDiff', 'volumeContour', 'volumeContourDifference', 'DSC', 'volumeRatio'], axis=1)
-    # cleaned_data = cleaned_data.drop(['patientList'], axis=1)
+    cleaned_data = cleaned_data.drop(['patientNumber', 'recurrence_4years', 'sdDoseDiff', 'volumeContour', 'volumeContourDifference', 'DSC', 'volumeRatio'], axis=1)
     # field, _ = stack_local_fields(clean_data, 1)
     # del_r = field[17][80][:]
     # clean_data['delta_r'] = del_r
@@ -384,11 +383,21 @@ if __name__ == '__main__':
     # read_and_return_patient_stats()
     # dataDirectory = r"../Data/Deep_learning_results/deltaRMaps"
     enhancedDF = pd.read_csv(r'../Data/Deep_learning_results/global_results/all_patients.csv')
-    enhancedDF["delta_r"] = stack_local_fields(enhancedDF, 1)[0][17][80][:]
     clean_data = clean_data(enhancedDF)
+    stacked_fields = stack_local_fields(clean_data, 1)[0][:][:][:]
 
-    cph_global_test(clean_data) # Produce global cox table
-
+    HR = np.zeros((60, 120))
+    p_value = np.zeros((60, 120))
+    for x in range(60):
+        for y in range(120):
+            clean_data["delta_r"] = stacked_fields[x][y][:]
+            clean_data = clean_data.drop(['patientList'], axis=1)
+            cph_stats = cph_global_test(clean_data) # Produce global cox table
+            print(cph_stats['exp(coef)']['delta_r']) # Access the HR of delta r
+            print(cph_stats['p']['delta_r']) # Access the p-value of delta r
+            HR[x][y] = cph_stats['exp(coef)']['delta_r']
+            p_value[x][y] = cph_stats['p']['delta_r']
+    print(HR)
 
     # clean_data.to_csv("../Data/Deep_learning_results/global_results/all_patients_cleaned.csv", index=False)
     # survival_analysis_fractions(enhancedDF)
