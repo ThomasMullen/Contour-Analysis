@@ -344,6 +344,23 @@ def cph_global_test(global_df):
     print(cph_stats)
     return cph_stats
 
+def cph_produce_map(clean_data):
+    stacked_fields = stack_local_fields(clean_data, 1)[0][:][:][:]
+
+    HR = np.zeros((60, 120))
+    p_value = np.zeros((60, 120))
+    for x in range(60):
+        for y in range(120):
+            clean_data["delta_r"] = stacked_fields[x][y][:]
+            clean_data = clean_data.drop(['patientList'], axis=1)
+            cph_stats = cph_global_test(clean_data) # Produce global cox table
+            print(cph_stats['exp(coef)']['delta_r']) # Access the HR of delta r
+            print(cph_stats['p']['delta_r']) # Access the p-value of delta r
+            HR[x][y] = cph_stats['exp(coef)']['delta_r']
+            p_value[x][y] = cph_stats['p']['delta_r']
+    print(HR)
+    return HR, p_value
+
 
 def test():
     return 0

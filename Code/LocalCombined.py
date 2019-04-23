@@ -24,7 +24,7 @@ from LocalFilter import load_global_patients, radial_mean_sd_for_patients, parti
 from plot_functions import plot_heat_map_np, plot_scatter, plot_histogram, plot_heat_map, show_local_fields, \
     test_on_single_map, triangulation_qa, load_map, create_polar_axis
 from significance_test import cph_global_test, mann_whitney_test_statistic, pymining_t_test, \
-    t_map_with_thresholds, test_superimpose, sample_normality_test, \
+    t_map_with_thresholds, test_superimpose, sample_normality_test, cph_produce_map, \
     global_statistical_analysis, map_with_thresholds, non_parametric_permutation_test, stack_local_fields, normality_map
 from DataFormatting import data_frame_to_XDR
 
@@ -384,20 +384,7 @@ if __name__ == '__main__':
     # dataDirectory = r"../Data/Deep_learning_results/deltaRMaps"
     enhancedDF = pd.read_csv(r'../Data/Deep_learning_results/global_results/all_patients.csv')
     clean_data = clean_data(enhancedDF)
-    stacked_fields = stack_local_fields(clean_data, 1)[0][:][:][:]
-
-    HR = np.zeros((60, 120))
-    p_value = np.zeros((60, 120))
-    for x in range(60):
-        for y in range(120):
-            clean_data["delta_r"] = stacked_fields[x][y][:]
-            clean_data = clean_data.drop(['patientList'], axis=1)
-            cph_stats = cph_global_test(clean_data) # Produce global cox table
-            print(cph_stats['exp(coef)']['delta_r']) # Access the HR of delta r
-            print(cph_stats['p']['delta_r']) # Access the p-value of delta r
-            HR[x][y] = cph_stats['exp(coef)']['delta_r']
-            p_value[x][y] = cph_stats['p']['delta_r']
-    print(HR)
+    HR_map, p_map = cph_produce_map(clean_data)
 
     # clean_data.to_csv("../Data/Deep_learning_results/global_results/all_patients_cleaned.csv", index=False)
     # survival_analysis_fractions(enhancedDF)
