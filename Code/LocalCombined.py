@@ -365,7 +365,9 @@ def clean_data(data):
     cleaned_data = cuts_from_ct_scans(cleaned_data)
     cleaned_data = cleaned_data.drop(['patientNumber', 'recurrence_4years', 'sdDoseDiff', 'volumeContour', 'volumeContourDifference', 'DSC', 'volumeRatio'], axis=1)
     # cleaned_data = cleaned_data.drop(['patientList'], axis=1)
-    clean_data["delta_r"] = stack_local_fields(clean_data, 1)[0][17][80][:]
+    # field, _ = stack_local_fields(clean_data, 1)
+    # del_r = field[17][80][:]
+    # clean_data['delta_r'] = del_r
     cleaned_data = numerate_categorical_data(cleaned_data)
 
     return cleaned_data
@@ -382,10 +384,10 @@ if __name__ == '__main__':
     # read_and_return_patient_stats()
     # dataDirectory = r"../Data/Deep_learning_results/deltaRMaps"
     enhancedDF = pd.read_csv(r'../Data/Deep_learning_results/global_results/all_patients.csv')
+    enhancedDF["delta_r"] = stack_local_fields(enhancedDF, 1)[0][17][80][:]
     clean_data = clean_data(enhancedDF)
 
-
-    # cph_global_test(clean_data) # Produce global cox table
+    cph_global_test(clean_data) # Produce global cox table
 
 
     # clean_data.to_csv("../Data/Deep_learning_results/global_results/all_patients_cleaned.csv", index=False)
