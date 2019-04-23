@@ -229,10 +229,10 @@ def survival_analysis_fractions(patient_df):
     fraction_19 = patient_df["fractions"]
     ix_19 = fraction_19 == 19
     #
-    kmf.fit(T[ix_19], E[ix_19], label=’First Quartile’)
+    kmf.fit(T[ix_19], E[ix_19], label="19 Fraction")
     a2 = kmf.plot()
     # fit the model for 2nd cohort
-    kmf.fit(T[~ix_19], E[~ix_19], label=’Second Quartile’)
+    kmf.fit(T[~ix_19], E[~ix_19], label="16 Fraction")
     kmf.plot(ax=a2)
     plt.show()
 
@@ -323,8 +323,18 @@ def test_plot_subplot():
     g.add_legend();
     plt.show(block=True)
 
+def test_categorical_map():
+    initial_map = pd.read_csv(r'/Users/Tom/PycharmProjects/Contour-Analysis/Data/Deep_learning_results/deltaRMaps/196703818.csv', header=None).values
+
+    final_map = list(map(lambda y: list(map(lambda x: 0 if x <= -2 else (2 if x >= 2 else 1), y)), initial_map))
+    new = final_map.reshape(60,120)
+
+    print(new)
+    # print(final_map.shape)
+    return
 
 if __name__ == '__main__':
+    test_categorical_map()
     # read_and_return_patient_stats()
     # dataDirectory = r"../Data/Deep_learning_results/deltaRMaps"
     # enhancedDF = pd.read_csv(r'../Data/Deep_learning_results/All_patient_data_no_NA.csv')
@@ -333,8 +343,8 @@ if __name__ == '__main__':
 
     # DSC = load_map(r'../Data/Deep_learning_results/covariate_maps/', 'DSC')
     # plot_heat_map(DSC, 1, 1.5)
-    test_plot_subplot()
-    x=0
+    # test_plot_subplot()
+    # x=0
     # enhancedDF = pd.read_csv(r'../Data/Deep_learning_results/per_vox_cox.csv')
     # (enhancedDF, patient_list) = add_covariate_data(enhancedDF)
     # (enhancedDF, patient_list) = add_covariate_data(enhancedDF, 'psa_patients', ['patientList', 'psa'])
