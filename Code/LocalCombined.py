@@ -363,7 +363,7 @@ def clean_data(data):
     cleaned_data = data.copy()
     cleaned_data = cleaned_data.drop_duplicates(subset='patientList')
     cleaned_data = cuts_from_ct_scans(cleaned_data)
-    cleaned_data = cleaned_data.drop(['patientNumber', 'recurrence_4years', 'sdDoseDiff', 'volumeContour', 'volumeContourDifference', 'DSC', 'volumeRatio'], axis=1)
+    cleaned_data = cleaned_data.drop(['patientNumber', 'patientList', 'recurrence_4years', 'sdDoseDiff', 'volumeContour', 'volumeContourDifference', 'DSC', 'volumeRatio'], axis=1)
     # cleaned_data = cleaned_data.drop(['patientList'], axis=1)
     # field, _ = stack_local_fields(clean_data, 1)
     # del_r = field[17][80][:]

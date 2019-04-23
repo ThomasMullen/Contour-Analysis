@@ -333,13 +333,16 @@ def non_parametric_permutation_test(recurrence_group, no_recurrence_group):
 def cph_global_test(global_df):
     '''
     Produces PH cox regression and write to an external file marking the history of predicotr variable being removed
+    line 1188 in coxph_fitter.py shows cph parameters that we can access its useful!
+    This funciton returns a cph stats df
     :param global_df: The clean global data frame with variable removed
     :return: a description of the covariates significance to patient survival
     '''
     cph = CoxPHFitter()
     cph.fit(global_df, duration_col='timeToEvent', event_col='recurrence_outcome', show_progress=True)
-    cph.print_summary()
-    return
+    cph_stats = cph.summary
+    print(cph_stats)
+    return cph_stats
 
 
 def test():
