@@ -253,7 +253,7 @@ def numerate_categorical_data(clean_patient_data):
     clean_patient_data['fractions'] = clean_patient_data['fractions'].apply(lambda x: 0 if x == 16 else 1)
     clean_patient_data['grade'] = clean_patient_data['grade'].apply(lambda x: 0 if x <= 6 else (1 if x == 7 else 2))
     clean_patient_data['risk'] = clean_patient_data['risk'].apply(
-    lambda x: 0 if x == ['Low', 'Low/Int?'] else (2 if x == 'High' else 1))
+        lambda x: 0 if (x == 'Low' or x == 'low') else (2 if (x == 'High' or x == 'high' or x == 'int/high') else 1))
 
     return clean_patient_data
 
@@ -280,19 +280,19 @@ def add_covariate_data(clean_patient_data, new_data_file='patientAges',  covaria
 
 
 def test_plot_subplot():
-    map1 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/withGrade/csv_results/fractions.csv')
-    map2 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/withGrade/csv_results/grade.csv')
-    map3 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/withGrade/csv_results/risk.csv')
-    map4 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/withGrade/csv_results/autoVolume.csv')
-    map5 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/withGrade/csv_results/age.csv')
+    # map1 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/withGrade/csv_results/fractions.csv')
+    # map2 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/withGrade/csv_results/grade.csv')
+    # map3 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/withGrade/csv_results/risk.csv')
+    # map4 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/withGrade/csv_results/autoVolume.csv')
+    # map5 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/withGrade/csv_results/age.csv')
     map6 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/withGrade/csv_results/deltaR.csv')
 
-    sig_map1 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/withGrade/csv_results_sig/fractions_sig.csv')
-    sig_map2 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/withGrade/csv_results_sig/grade_sig.csv')
-    sig_map3 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/withGrade/csv_results_sig/risk_sig.csv')
-    sig_map4 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/withGrade/csv_results_sig/autoVolume_sig.csv')
-    sig_map5 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/withGrade/csv_results_sig/age_sig.csv')
-    sig_map6 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/withGrade/csv_results_sig/deltaR_sig.csv')
+    # sig_map1 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/withGrade/csv_results_sig/fractions_sig.csv')
+    # sig_map2 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/withGrade/csv_results_sig/grade_sig.csv')
+    # sig_map3 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/withGrade/csv_results_sig/risk_sig.csv')
+    # sig_map4 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/withGrade/csv_results_sig/autoVolume_sig.csv')
+    # sig_map5 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/withGrade/csv_results_sig/age_sig.csv')
+    # sig_map6 = pd.read_csv(r'../Data/Deep_learning_results/covariate_maps/withGrade/csv_results_sig/deltaR_sig.csv')
 
 
     # f, axes = plt.subplots(3, 2, sharex='col', sharey='row')
@@ -336,7 +336,7 @@ def test_plot_subplot():
     # map_with_thresholds(map3, [np.exp(-0.615623492), np.exp(1.393389023)], False)
     # map_with_thresholds(map4, [np.exp(-0.01628528), np.exp(1.163254349)], False)
     # map_with_thresholds(map5, [np.exp(-0.011873742), np.exp(0.09111272)], False)
-    map_with_thresholds(pow(map6, 0.5), [pow(np.exp(-1.727245154), 0.5), pow(np.exp(2.384893813), 0.5)], False)
+    map_with_thresholds(map6, [np.exp(-1.727245154), np.exp(2.384893813)], False)
     # map_with_thresholds(sig_map1, [0.05], False)
     # map_with_thresholds(sig_map2, [0.05], False)
     # map_with_thresholds(sig_map3, [0.05], False)
@@ -352,26 +352,31 @@ def test_plot_subplot():
     # plt.show(block=True)
 
 
-def clean_data_and_add_covariates():
-    enhancedDF = pd.read_csv(r'../Data/Deep_learning_results/per_vox_cox.csv')
-    (enhancedDF, patient_list) = add_covariate_data(enhancedDF)
-    (enhancedDF, patient_list) = add_covariate_data(enhancedDF, 'psa_patients', ['patientList', 'psa'])
-    enhancedDF = enhancedDF.drop_duplicates(subset='patientList')
-    clean_patient_data = enhancedDF.drop(['mean', 'sd', 'stage', 'patientList', 'volumeContour', 'psa', 'volumeRatio'],
-                                         axis=1)
-    print(clean_patient_data)
-    patient_list = patient_list.drop_duplicates()
-    clean_patient_data = numerate_categorical_data(clean_patient_data)
-    clean_patient_data.to_csv('../Data/Deep_learning_results/cox_vox_data.tsv', sep='\t', header=False, index=False)
-    patient_list.to_csv('../Data/Deep_learning_results/cox_vox_patientID_data.tsv', sep='\t', index=False)
+def clean_data(data):
+    """
+    A function to remove all errors from the data, and replace categorical data
+    Errors include: duplicates, NA values, un-wanted columns, CT-identified patients to remove
+
+    :param data: A data frame of all patients
+    :return: A data frame of cleaned patients
+    """
+
+    cleaned_data = data.copy()
+    cleaned_data = cleaned_data.drop_duplicates(subset='patientList')
+    # cleaned_data = cleaned_data.drop(['patientNumber', 'recurrence_4years', 'volumeContourDifference',
+    #                                   'DSC', 'volumeRatio', 'sdDoseDiff'], axis=1)
+    cleaned_data = cuts_from_ct_scans(cleaned_data)
+    cleaned_data = numerate_categorical_data(cleaned_data)
+
+    return cleaned_data
 
 
 if __name__ == '__main__':
     # read_and_return_patient_stats()
     # dataDirectory = r"../Data/Deep_learning_results/deltaRMaps"
-    enhancedDF = pd.read_csv(r'../Data/Deep_learning_results/global_results/all_patients_cleaned.csv')
-    enhancedDF = cuts_from_ct_scans(enhancedDF)
-    # enhancedDF.to_csv("../Data/Deep_learning_results/global_results/patients_cleaned_after_cuts.csv", index=False)
+    enhancedDF = pd.read_csv(r'../Data/Deep_learning_results/global_results/all_patients.csv')
+    clean_data = clean_data(enhancedDF)
+    clean_data.to_csv("../Data/Deep_learning_results/global_results/all_patients_cleaned.csv", index=False)
     # survival_analysis_fractions(enhancedDF)
 
     # DSC = load_map(r'../Data/Deep_learning_results/covariate_maps/', 'DSC')

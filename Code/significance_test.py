@@ -196,6 +196,12 @@ def global_statistical_analysis(selected_patients):
     print('VRatio: p_value(rec=/=n_rec): %.6f p_value(rec<n_rec): %.6f p_value(rec>n_rec): %.6f' %
           (global_p, lower_p, upper_p))
 
+    # Test the relationship between mean dose diff and recurrence: V_man/V_auto
+    global_p, lower_p, upper_p = non_parametric_permutation_test(patients_who_recur["meanDoseDiff"],
+                                                                 patients_who_dont_recur["meanDoseDiff"])
+    print('VRatio: p_value(rec=/=n_rec): %.6f p_value(rec<n_rec): %.6f p_value(rec>n_rec): %.6f' %
+          (global_p, lower_p, upper_p))
+
 
 def wilcoxon_test(rec_field_maps, nonrec_field_maps):
     # TODO:  implement random sampling
