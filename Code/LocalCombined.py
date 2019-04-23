@@ -18,13 +18,12 @@ from IPython.display import set_matplotlib_formats
 set_matplotlib_formats('pdf')
 
 
-
-from lifelines import KaplanMeierFitter, NelsonAalenFitter
+from lifelines import KaplanMeierFitter, NelsonAalenFitter, CoxPHFitter
 from AllPatients import separate_by_recurrence, separate_by_risk
 from LocalFilter import load_global_patients, radial_mean_sd_for_patients, partition_patient_data_with_outliers
 from plot_functions import plot_heat_map_np, plot_scatter, plot_histogram, plot_heat_map, show_local_fields, \
     test_on_single_map, triangulation_qa, load_map, create_polar_axis
-from significance_test import wilcoxon_test_statistic, mann_whitney_test_statistic, pymining_t_test, \
+from significance_test import cph_global_test, mann_whitney_test_statistic, pymining_t_test, \
     t_map_with_thresholds, test_superimpose, \
     global_statistical_analysis, map_with_thresholds, non_parametric_permutation_test, stack_local_fields
 from DataFormatting import data_frame_to_XDR
@@ -363,8 +362,8 @@ def clean_data(data):
 
     cleaned_data = data.copy()
     cleaned_data = cleaned_data.drop_duplicates(subset='patientList')
-    # cleaned_data = cleaned_data.drop(['patientNumber', 'recurrence_4years', 'volumeContourDifference',
-    #                                   'DSC', 'volumeRatio', 'sdDoseDiff'], axis=1)
+    cleaned_data = cleaned_data.drop(['patientNumber', 'recurrence_4years', 'volumeContourDifference',
+                                      'DSC', 'volumeRatio', 'sdDoseDiff'], axis=1)
     cleaned_data = cuts_from_ct_scans(cleaned_data)
     cleaned_data = numerate_categorical_data(cleaned_data)
 
@@ -372,10 +371,8 @@ def clean_data(data):
 
 def test_categorical_map():
     initial_map = pd.read_csv(r'/Users/Tom/PycharmProjects/Contour-Analysis/Data/Deep_learning_results/deltaRMaps/196703818.csv', header=None).values
-
     final_map = list(map(lambda y: list(map(lambda x: 0 if x <= -2 else (2 if x >= 2 else 1), y)), initial_map))
     new = final_map.reshape(60,120)
-
     print(new)
     # print(final_map.shape)
     return
@@ -385,6 +382,8 @@ if __name__ == '__main__':
     # dataDirectory = r"../Data/Deep_learning_results/deltaRMaps"
     enhancedDF = pd.read_csv(r'../Data/Deep_learning_results/global_results/all_patients.csv')
     clean_data = clean_data(enhancedDF)
+    cph_global_test(clean_data)
+
     clean_data.to_csv("../Data/Deep_learning_results/global_results/all_patients_cleaned.csv", index=False)
     # survival_analysis_fractions(enhancedDF)
 

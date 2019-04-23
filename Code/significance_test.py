@@ -13,6 +13,7 @@ from scipy import stats as ss
 from AllPatients import separate_by_recurrence
 from plot_functions import create_polar_axis
 from mlxtend.evaluate import permutation_test
+from lifelines import CoxPHFitter
 from DataFormatting import data_frame_to_XDR
 
 
@@ -294,6 +295,23 @@ def non_parametric_permutation_test(recurrence_group, no_recurrence_group):
                                      method='approximate', num_rounds=10000, seed=0)
 
     return global_p_value, lower_p_value, upper_p_value
+
+
+def cph_global_test(global_df):
+    '''
+    Produces PH cox regression and write to an external file marking the history of predicotr variable being removed
+    :param global_df: The clean global data frame with variable removed
+    :return: a description of the covariates significance to patient survival
+    '''
+    cph = CoxPHFitter()
+    cph.fit(global_df, duration_col='timeToEvent', event_col='recurrence_outcome', show_progress=True)
+    cph.print_summary()
+
+    # info_sheet = open("/Users/Tom/CP_info", "w+")
+    # info_sheet.wirte(cph.print_summary())
+    # info_sheet.close()
+
+    return
 
 
 def test():
