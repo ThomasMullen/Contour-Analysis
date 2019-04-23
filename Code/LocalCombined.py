@@ -204,8 +204,8 @@ def survival_analysis_dsc(patient_data_base, category='DSC'):
 
     # fit the model for 1st cohort
     kmf = KaplanMeierFitter()
-    T = patient_df["timeToEvent"]
-    E = patient_df["recurrence"]
+    T = patient_data_base["timeToEvent"]
+    E = patient_data_base["recurrence"]
     kmf.fit(T[ix_1], E[ix_1], label="First Quartile")
     a1 = kmf.plot()
     # fit the model for 2nd cohort
@@ -363,7 +363,7 @@ def clean_data(data):
     cleaned_data = data.copy()
     cleaned_data = cleaned_data.drop_duplicates(subset='patientList')
     cleaned_data = cuts_from_ct_scans(cleaned_data)
-    cleaned_data = cleaned_data.drop(['patientNumber', 'recurrence_4years', 'patientList', 'sdDoseDiff', 'volumeRatio', 'volumeContourDifference'], axis=1)
+    cleaned_data = cleaned_data.drop(['patientNumber', 'recurrence_4years', 'patientList', 'sdDoseDiff', 'volumeContour', 'volumeContourDifference', 'volumeRatio'], axis=1)
     cleaned_data = numerate_categorical_data(cleaned_data)
 
     return cleaned_data
