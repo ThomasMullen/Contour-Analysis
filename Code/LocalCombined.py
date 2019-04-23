@@ -362,9 +362,8 @@ def clean_data(data):
 
     cleaned_data = data.copy()
     cleaned_data = cleaned_data.drop_duplicates(subset='patientList')
-    cleaned_data = cleaned_data.drop(['patientNumber', 'recurrence_4years', 'volumeContourDifference',
-                                      'DSC', 'volumeRatio', 'sdDoseDiff'], axis=1)
     cleaned_data = cuts_from_ct_scans(cleaned_data)
+    cleaned_data = cleaned_data.drop(['patientNumber', 'recurrence_4years', 'patientList', 'sdDoseDiff', 'volumeRatio', 'volumeContourDifference'], axis=1)
     cleaned_data = numerate_categorical_data(cleaned_data)
 
     return cleaned_data

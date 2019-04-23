@@ -306,11 +306,6 @@ def cph_global_test(global_df):
     cph = CoxPHFitter()
     cph.fit(global_df, duration_col='timeToEvent', event_col='recurrence_outcome', show_progress=True)
     cph.print_summary()
-
-    # info_sheet = open("/Users/Tom/CP_info", "w+")
-    # info_sheet.wirte(cph.print_summary())
-    # info_sheet.close()
-
     return
 
 
