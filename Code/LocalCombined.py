@@ -24,8 +24,8 @@ from LocalFilter import load_global_patients, radial_mean_sd_for_patients, parti
 from plot_functions import plot_heat_map_np, plot_scatter, plot_histogram, plot_heat_map, show_local_fields, \
     test_on_single_map, triangulation_qa, load_map, create_polar_axis
 from significance_test import cph_global_test, mann_whitney_test_statistic, pymining_t_test, \
-    t_map_with_thresholds, test_superimpose, \
-    global_statistical_analysis, map_with_thresholds, non_parametric_permutation_test, stack_local_fields
+    t_map_with_thresholds, test_superimpose, sample_normality_test, \
+    global_statistical_analysis, map_with_thresholds, non_parametric_permutation_test, stack_local_fields, normality_map
 from DataFormatting import data_frame_to_XDR
 
 sns.set()
@@ -363,7 +363,8 @@ def clean_data(data):
     cleaned_data = data.copy()
     cleaned_data = cleaned_data.drop_duplicates(subset='patientList')
     cleaned_data = cuts_from_ct_scans(cleaned_data)
-    cleaned_data = cleaned_data.drop(['patientNumber', 'recurrence_4years', 'patientList', 'sdDoseDiff', 'volumeContour', 'volumeContourDifference', 'volumeRatio'], axis=1)
+    cleaned_data = cleaned_data.drop(['patientNumber', 'recurrence_4years', 'sdDoseDiff', 'volumeContour', 'volumeContourDifference', 'volumeRatio'], axis=1)
+    # cleaned_data = cleaned_data.drop(['patientList'], axis=1)
     cleaned_data = numerate_categorical_data(cleaned_data)
 
     return cleaned_data
@@ -381,9 +382,15 @@ if __name__ == '__main__':
     # dataDirectory = r"../Data/Deep_learning_results/deltaRMaps"
     enhancedDF = pd.read_csv(r'../Data/Deep_learning_results/global_results/all_patients.csv')
     clean_data = clean_data(enhancedDF)
-    cph_global_test(clean_data)
 
-    clean_data.to_csv("../Data/Deep_learning_results/global_results/all_patients_cleaned.csv", index=False)
+    kurt2, p_value = normality_map(clean_data)
+    plot_heat_map_np(p_value, 'normality significance map')
+    plot_histogram(p_value.flatten(), 'red', 50, 'normality significance map')
+
+    # cph_global_test(clean_data) # Produce global cox table
+
+
+    # clean_data.to_csv("../Data/Deep_learning_results/global_results/all_patients_cleaned.csv", index=False)
     # survival_analysis_fractions(enhancedDF)
 
     # DSC = load_map(r'../Data/Deep_learning_results/covariate_maps/', 'DSC')

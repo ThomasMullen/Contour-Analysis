@@ -236,6 +236,39 @@ def mann_whitney_u_test(rec_field_maps, nonrec_field_maps):
     return stat, p_value
 
 
+def sample_normality_test(clean_data, theta, azi, sample_size=25):
+    '''
+    This function performs a normality check on the patient delta df to ensure that it can be used in a t-test
+    :param clean_data: patient df
+    :param theta: range 0-60
+    :param azi: range 0-120
+    :param sample_size: size for sample check
+    :return:
+    '''
+
+    stackd_fields = stack_local_fields(clean_data, 1)
+    # Select random sample from the voxel element
+    # random_sample = np.random.choice(stackd_fields[0][theta][azi][:], sample_size)
+    # perform normality check
+    k2, p = ss.normaltest(stackd_fields[0][theta][azi][:])
+    alpha = 1e-3
+    print("p = {:g}".format(p))
+    print("k2 = {:g}".format(k2))
+    if p < alpha:  # null hypothesis: x comes from a normal distribution
+        print("The null hypothesis can be rejected")
+    else:
+        print("The null hypothesis cannot be rejected")
+    return k2, p
+
+def normality_map(clean_data):
+    stackd_fields = stack_local_fields(clean_data, 1)
+    kurt2 = np.zeros((60, 120))
+    p_value = np.zeros((60, 120))
+    for x in range(60):
+        for y in range(120):
+            kurt2[x][y], p_value[x][y] = ss.normaltest(np.random.choice(stackd_fields[0][x][y][:], 30))
+    return kurt2, p_value
+
 def wilcoxon_test_statistic(selected_patients):
     """
     Conduct a wilcoxon SIGN rank test
