@@ -82,7 +82,7 @@ def map_with_thresholds(statistic_map, critical_statistic_values=[5, 95], is_per
     plt.contour(coutour_map, levels=critical_statistic_values, colors=['magenta', 'lime'])
     plt.gca()
     axes = create_polar_axis()
-    heat_map = sns.heatmap(statistic_map, center=0, xticklabels=axes[0], yticklabels=axes[1], cmap='RdBu')
+    heat_map = sns.heatmap(statistic_map, center=1, xticklabels=axes[0], yticklabels=axes[1], cmap='RdBu', vmin=0, vmax=2)
     # heat_map = sns.heatmap(np.flip(t_map, 0), center=0, xticklabels=axes[0], yticklabels=axes[1], cmap='RdBu')
     heat_map.set(ylabel='Theta, $\dot{\Theta}$', xlabel='Azimutal, $\phi$', title='')
     plt.show()

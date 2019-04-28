@@ -32,9 +32,9 @@ def calculate_mean_sd_max_of__patient_map(patientMap):
     sdValue = np.sqrt(sxx / (patientMap.size - 1))
     mapMax = patientMap.max()
     mapMin = patientMap.min()
-    if np.abs(mapMin) > np.abs(mapMax):
-        mapMax = mapMin
-    return mapMean, sdValue, mapMax
+    # if np.abs(mapMin) > np.abs(mapMax):
+        # mapMax = mapMin
+    return mapMean, sdValue, mapMax, mapMin
 
 
 '''
@@ -73,7 +73,7 @@ Finds the Mean and the SD of the radial difference at each solid angle for each 
 '''
 
 
-def radial_mean_sd_for_patients(dataDir, allPatientsDF):
+def radial_mean_sd_for_patients(allPatientsDF, dataDir=r'../Data/Deep_learning_results/deltaRMaps'):
     '''
     Adds 3 additional parameters to the global dataset: the patients mean map value, the patient sd map value and the patients maximum value
     :param dataDir: The folder that contains the local radial fields
@@ -85,7 +85,8 @@ def radial_mean_sd_for_patients(dataDir, allPatientsDF):
         mean_sd_maxV=lambda df: df["patientList"].map(lambda x: patients_mean_sd_max_value(dataDir, x))) \
         .assign(mean=lambda df: df["mean_sd_maxV"].map(lambda x: x[0])) \
         .assign(sd=lambda df: df["mean_sd_maxV"].map(lambda x: x[1])) \
-        .assign(maxval=lambda df: df["mean_sd_maxV"].map(lambda x: x[2]))
+        .assign(maxval=lambda df: df["mean_sd_maxV"].map(lambda x: x[2]))\
+        .assign(minval=lambda df: df["mean_sd_maxV"].map(lambda x: x[3]))
     return df
 
 
