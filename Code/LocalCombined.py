@@ -369,16 +369,23 @@ def test_categorical_map():
 if __name__ == '__main__':
     # read_and_return_patient_stats()
     # dataDirectory = r"../Data/Deep_learning_results/deltaRMaps"
-    # enhancedDF = pd.read_csv(r'../Data/Deep_learning_results/global_results/all_patients.csv')
     # clean_dataset = clean_data(enhancedDF)
     # print(list(clean_dataset))
 
-    test_plot_subplot()
+    # test_plot_subplot()
+    patient_df = pd.read_csv(r'../Data/Deep_learning_results/global_results/19_fraction_data.csv')
+    patient_df = patient_df.drop_duplicates(subset='patientList')
+    patient_df = cuts_from_ct_scans(patient_df)
+    patient_df = radial_mean_sd_for_patients(patient_df)
+    extreme_r = pd.read_csv(r'../Data/Deep_learning_results/global_results/rogue_xtreme_patients.csv')
+    patient_df = patient_df[~patient_df['patientList'].isin(extreme_r)]
+    stacked = stack_local_fields(patient_df,0)
+    patient_df.dr_voxel = stacked[17][80]
+    print(stacked.shape)
+    print(list(patient_df))
 
-
-    # HR_map, p_map = cph_produce_map(clean_data)
 
     # survival_analysis_dsc(clean_dataset, 'volumeContourDifference')
-    
+    # # HR_map, p_map = cph_produce_map(clean_data)
     # clean_data.to_csv("../Data/Deep_learning_results/global_results/all_patients_cleaned.csv", index=False)
     # survival_analysis_fractions(enhancedDF)

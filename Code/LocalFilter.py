@@ -27,14 +27,16 @@ def calculate_mean_sd_max_of__patient_map(patientMap):
     '''
     sxx = 0
     mapMean = (sum(patientMap.flatten())) / patientMap.size
+    maprms = np.sqrt(np.mean(np.square(patientMap.flatten())))
     for radDiff in patientMap.flatten():
         sxx = sxx + (radDiff - mapMean) ** 2
     sdValue = np.sqrt(sxx / (patientMap.size - 1))
     mapMax = patientMap.max()
     mapMin = patientMap.min()
+    significance_map = mapMean/sdValue
     # if np.abs(mapMin) > np.abs(mapMax):
         # mapMax = mapMin
-    return mapMean, sdValue, mapMax, mapMin
+    return mapMean, sdValue, mapMax, mapMin, maprms, significance_map
 
 
 '''
@@ -68,11 +70,6 @@ def patients_mean_sd_max_value(dataDir, patientId):
     return result
 
 
-'''
-Finds the Mean and the SD of the radial difference at each solid angle for each patient. And appends data to global patient df
-'''
-
-
 def radial_mean_sd_for_patients(allPatientsDF, dataDir=r'../Data/Deep_learning_results/deltaRMaps'):
     '''
     Adds 3 additional parameters to the global dataset: the patients mean map value, the patient sd map value and the patients maximum value
@@ -85,9 +82,16 @@ def radial_mean_sd_for_patients(allPatientsDF, dataDir=r'../Data/Deep_learning_r
         mean_sd_maxV=lambda df: df["patientList"].map(lambda x: patients_mean_sd_max_value(dataDir, x))) \
         .assign(mean=lambda df: df["mean_sd_maxV"].map(lambda x: x[0])) \
         .assign(sd=lambda df: df["mean_sd_maxV"].map(lambda x: x[1])) \
-        .assign(maxval=lambda df: df["mean_sd_maxV"].map(lambda x: x[2]))\
-        .assign(minval=lambda df: df["mean_sd_maxV"].map(lambda x: x[3]))
+        .assign(maxval=lambda df: df["mean_sd_maxV"].map(lambda x: x[2])) \
+        .assign(minval=lambda df: df["mean_sd_maxV"].map(lambda x: x[3])) \
+        .assign(maprms=lambda df: df["mean_sd_maxV"].map(lambda x: x[4]))\
+        .assign(significance_map=lambda df: df["mean_sd_maxV"].map(lambda x: x[5]))
     return df
+
+
+'''
+Finds the Mean and the SD of the radial difference at each solid angle for each patient. And appends data to global patient df
+'''
 
 
 def partition_patient_data_with_outliers(data, lower_bound, upper_bound, discriminator_fieldname="sd"):
