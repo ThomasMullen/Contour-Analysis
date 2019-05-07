@@ -19,6 +19,7 @@ set_matplotlib_formats('pdf')
 
 
 from lifelines import KaplanMeierFitter, NelsonAalenFitter, CoxPHFitter
+from lifelines.statistics import logrank_test
 from AllPatients import separate_by_recurrence, separate_by_risk
 from LocalFilter import load_global_patients, radial_mean_sd_for_patients, partition_patient_data_with_outliers
 from plot_functions import plot_heat_map_np, plot_scatter, plot_histogram, plot_heat_map, show_local_fields, \
@@ -53,6 +54,7 @@ def make_average_field(global_df, dataDir=r'../Data//Deep_learning_results/delta
     variance_field = by_row_indexRec.var()
     std_field = by_row_indexRec.std()
     skew_field = by_row_indexRec.skew()
+    # rms_map = np.sqrt(np.mean(np.square(by_row_indexRec.values)))
 
     return mean_field, variance_field, std_field, skew_field
 
@@ -237,6 +239,141 @@ def survival_analysis_fractions(patient_df):
     plt.show()
 
 
+def survival_analysis_dsc(patient_data_base, category='DSC'):
+
+    category_groups = patient_data_base[category].quantile([.25, .5, .75, 1.0])
+    dsc = patient_data_base[category]
+
+    ix_1 = (dsc <= category_groups[0.25])
+    ix_2 = (dsc > category_groups[0.25]) & (dsc < category_groups[0.5])
+    ix_3 = (dsc > category_groups[0.5]) & (dsc < category_groups[0.75])
+    ix_4 = (dsc > category_groups[0.75])
+
+    # fit the model for 1st cohort
+    kmf = KaplanMeierFitter()
+    T = patient_data_base["timeToEvent"]
+    E = patient_data_base["recurrence_outcome"]
+    kmf.fit(T[ix_1], E[ix_1], label="First Quartile")
+    a1 = kmf.plot()
+    # fit the model for 2nd cohort
+    kmf.fit(T[ix_2], E[ix_2], label="Second Quartile")
+    kmf.plot(ax=a1)
+    # fit the model for 3rd cohort
+    kmf.fit(T[ix_3], E[ix_3], label='Third Quartile')
+    kmf.plot(ax=a1)
+    # fit the model for 4th cohort
+    kmf.fit(T[ix_4], E[ix_4], label='Forth Quartile')
+    kmf.plot(ax=a1)
+    plt.show()
+    return
+
+
+def survival_analysis(patient_data_base, category, save_name):
+    """
+    A function to produce KM plots for various categorical data (age, grade and manVol)
+
+    :param patient_data_base:
+    :param category:
+    :return:
+    """
+
+    category_data = patient_data_base[category]
+
+    if category == "age":
+        ix_1 = (category_data < 65)
+        ix_2 = (category_data >= 65) & (category_data <= 75)
+        ix_3 = (category_data > 75)
+        label_1 = "< 65 years"
+        label_2 = "65 - 75 years"
+        label_3 = "> 75 years"
+    elif category == "grade":
+        ix_1 = (category_data == 3)
+        ix_2 = (category_data == 2)
+        ix_3 = (category_data == 1)
+        ix_4 = (category_data == 0)
+        label_1 = "Gleason = 6"
+        label_2 = "Gleason = 7"
+        label_3 = "Gleason = 8"
+        label_4 = "Gleason = 9-10"
+    elif category == "manVol":
+        category_groups = patient_data_base[category].quantile([.25, .5, .75, 1.0])
+        ix_1 = (category_data <= category_groups[0.25])
+        ix_2 = (category_data > category_groups[0.25]) & (category_data <= category_groups[0.5])
+        ix_3 = (category_data > category_groups[0.5]) & (category_data <= category_groups[0.75])
+        ix_4 = (category_data > category_groups[0.75]) & (category_data <= category_groups[1.0])
+        label_1 = "< %.0f mm$^3$" % (category_groups[0.25])
+        label_2 = "%.0f - %.0f mm$^3$" % (category_groups[0.25], category_groups[0.5])
+        label_3 = "%.0f - %.0f mm$^3$" % (category_groups[0.5], category_groups[0.75])
+        label_4 = "> %.0f mm$^3$" % (category_groups[0.75])
+
+    else:
+        # category_groups = patient_data_base[category].quantile([.1, .5, .9, 1.0])
+        # ix_1 = (category_data <= category_groups[0.1])
+        # ix_2 = (category_data > category_groups[0.9]) & (category_data <= category_groups[1.0])
+        # label_1 = "< %.2f mm" % (category_groups[0.1])
+        # label_2 = "> %.2f mm" % (category_groups[0.9])
+        category_groups = patient_data_base[category].quantile([.5, 1.0])
+        ix_1 = (category_data <= category_groups[0.5])
+        ix_2 = (category_data > category_groups[0.5]) & (category_data <= category_groups[1.0])
+        label_1 = "< %.2f mm" % (category_groups[0.5])
+        label_2 = "> %.2f mm" % (category_groups[0.5])
+
+    # fit the model for 1st cohort
+    # ax.plot(x, y, ...)
+    # further stuff
+
+    kmf = KaplanMeierFitter()
+    T = patient_data_base["eventTime"]
+    E = patient_data_base["outcome"]
+    if (category != "mean_lower_region") and (category != "mean_upper_region"):
+        kmf.fit(T[ix_1], E[ix_1], label=label_1)
+        a1 = kmf.plot()
+        # fit the model for 2nd cohort
+        kmf.fit(T[ix_2], E[ix_2], label=label_2)
+        kmf.plot(ax=a1)
+        # fit the model for 3rd cohort
+        kmf.fit(T[ix_3], E[ix_3], label=label_3)
+        kmf.plot(ax=a1)
+
+        if category != "age":
+            # fit the model for 4th cohort
+            kmf.fit(T[ix_4], E[ix_4], label=label_4)
+            kmf.plot(ax=a1)
+    else:
+        kmf.fit(T[ix_1], E[ix_1], label=label_1)
+        a1 = kmf.plot()
+        # fit the model for 2nd cohort
+        kmf.fit(T[ix_2], E[ix_2], label=label_2)
+        kmf.plot(ax=a1)
+
+    plt.style.use('seaborn-ticks')
+    sns.set_context("talk")
+    plt.rcParams['font.family'] = 'times'
+    plt.rcParams['axes.labelweight'] = 'bold'
+    plt.rcParams['axes.labelsize'] = 14
+    plt.rcParams['legend.fontsize'] = 14
+
+    plt.xlim(0, 8.6)
+    plt.ylim(0, 1.05)
+    plt.xlabel('Time [years]')
+    plt.ylabel('Survival function, S(t)')
+    plt.legend(loc="lower left", frameon=True, framealpha=1)
+    plt.grid(True)
+    # ax.set_xticks()
+    # ax.set_yticks()
+    # # ax.grid()
+    # # ax.axis('equal')
+    plt.savefig(save_name, bbox_inches='tight')
+    plt.show()
+    if (category == "mean_lower_region") or (category == "mean_upper_region"):
+        results = logrank_test(T[ix_1], T[ix_2], E[ix_1], E[ix_2])
+    elif category != "age":
+        results = logrank_test(T[ix_1], T[ix_4], E[ix_1], E[ix_4])
+    else:
+        results = logrank_test(T[ix_1], T[ix_3], E[ix_1], E[ix_3])
+    results.print_summary()
+
+
 def file_conversion_test(patients):
     _, _ = stack_local_fields(patients, 0)
 
@@ -251,7 +388,8 @@ def numerate_categorical_data(clean_patient_data):
 
     # Numerate categorical data
     clean_patient_data['fractions'] = clean_patient_data['fractions'].apply(lambda x: 0 if x == 16 else 1)
-    clean_patient_data['grade'] = clean_patient_data['grade'].apply(lambda x: 0 if x <= 6 else (1 if x == 7 else 2))
+    clean_patient_data['grade'] = clean_patient_data['grade'].apply(lambda x: 0 if x <= 6 else
+    (1 if x == 7 else (2 if x == 8 else 3)))
     clean_patient_data['risk'] = clean_patient_data['risk'].apply(
         lambda x: 0 if (x == 'Low' or x == 'low') else (2 if (x == 'High' or x == 'high' or x == 'int/high') else 1))
 
@@ -279,62 +417,77 @@ def add_covariate_data(clean_patient_data, new_data_file='patientAges',  covaria
     return clean_patient_data, patientID_list
 
 
-def test_plot_subplot():
+def test_plot_subplot(patient_df):
 
-    covariates = ["deltaR", "age", "doseDiff", "gradeIntHigh", "gradeLowHigh", "manVol"]
+    covariates = ["deltaR", "age", "grade_6_to_910", "grade_7_to_910", "grade_8_to_910", "manVol"]
 
-    maps = [pd.read_csv(r'/Users/Tom/Documents/masters_results/CSV/%s_hazard.csv' % x, header=0) for x in covariates]
-
-    # f, axes = plt.subplots(3, 2, sharex='col', sharey='row')
-    # heat_map1 = sns.heatmap(maps[0], center=0, ax=axes[0,0], cmap='RdBu', vmin=0, vmax=2,
-    #             cbar=False)
-    # heat_map1.set_xlabel(''); heat_map1.set_ylabel('')
-    # heat_map2 = sns.heatmap(maps[1], center=0, ax=axes[0,1], cmap='RdBu', vmin=0, vmax=2,
-    #             cbar=False)
-    # heat_map2.set_xlabel(''); heat_map2.set_ylabel('')
+    maps = [pd.read_csv(r'C:\Users\Alexander\PycharmProjects\Contour-Analysis\Results\CSV\%s_hazardOnly.csv' % x,
+                        header=0) for x in covariates]
+    # new_patient_df = regional_investigation(maps[0], patient_df, np.exp(-0.369794153), np.exp(0.75875185))
     #
-    # heat_map3 = sns.heatmap(maps[2], center=0, ax=axes[1,0], cmap='RdBu', vmin=0, vmax=2,
-    #             cbar=False)
-    # heat_map3.set_xlabel(''); heat_map3.set_ylabel('')
-    # heat_map4 = sns.heatmap(maps[3], center=0, ax=axes[1,1], cmap='RdBu', vmin=0, vmax=2,
-    #             cbar=False)
-    # heat_map4.set_xlabel(''); heat_map4.set_ylabel('')
-    #
-    # heat_map5 = sns.heatmap(maps[4], center=0, ax=axes[2,0], cmap='RdBu', vmin=0, vmax=2,
-    #             cbar=False)
-    # heat_map5.set_xlabel(''); heat_map5.set_ylabel('')
-    # heat_map6 = sns.heatmap(maps[5], center=0, ax=axes[2,1], cmap='RdBu', vmin=0, vmax=2,
-    #             cbar=False)
-    # heat_map6.set_xlabel(''); heat_map6.set_ylabel('')
-    #
-    # # Fine-tune figure; make subplots farther from each other.
-    # f.subplots_adjust(hspace=0.3)
-    #
-    # plt.tight_layout()
-    # plt.show(block=True)
+    # survival_analysis(new_patient_df, "mean_upper_region", "lower_KM")
+    # print("lower_KM")
+    # survival_analysis(new_patient_df, "mean_lower_region", "lower_KM")
+    # print("lower_KM")
+    # survival_analysis(new_patient_df, "mean_upper_region", "upper_KM")
+    # print("upper_KM")
 
-    # Thresholds without grade
-    # map_with_thresholds(map1, [np.exp(0), np.exp(1.8348171773659745)], False)
-    # map_with_thresholds(map3, [np.exp(-0.69973541041431797), np.exp(1.4003677492629816)], False)
-    # map_with_thresholds(map4, [np.exp(-0.015974724319552071), np.exp(1.1236690064758252)], False)
-    # map_with_thresholds(map5, [np.exp(-0.0072990457219818941), np.exp(0.081051212841960679)], False)
-    # map_with_thresholds(map6, [np.exp(-1.8004828254133396), np.exp(2.3135563039910414)], False)
-
-    # Thresholds with grade
-    # map_with_thresholds(map1, [np.exp(-0.472801192), np.exp(1.880958152)], False)
-    # map_with_thresholds(map2, [np.exp(-0.481561145), np.exp(1.51658389)], False)
-    # map_with_thresholds(map3, [np.exp(-0.615623492), np.exp(1.393389023)], False)
-    # map_with_thresholds(map4, [np.exp(-0.01628528), np.exp(1.163254349)], False)
-    # map_with_thresholds(map5, [np.exp(-0.011873742), np.exp(0.09111272)], False)
-    map_with_thresholds(maps[0], [np.exp(-0.227846083), np.exp(0.382818947)], False)
+    map_with_thresholds(maps[0], 0.1, 1.2, 0.8, ['red', 'green', 'lime', 'magenta'], [np.exp(-0.369794153),
+                                                  np.exp(-0.018092986), np.exp(0.015032935),np.exp(0.75875185)], False)
 
 
-    # data = pd.read_csv(r'../Data/Deep_learning_results/per_vox_cox.csv')
-    # g = sns.PairGrid(data, vars=['fractions', 'risk', 'autoContourVolume', 'age'],
-    #                  hue='recurrence', palette='RdBu_r')
-    # g.map(plt.scatter, alpha=0.8)
-    # g.add_legend();
-    # plt.show(block=True)
+    # np.exp(-0.369794153),np.exp(0.75875185)
+    # map_with_thresholds(maps[0], 0.5, 1, 0.5, ['red', 'lime'], [np.exp(-0.369794153),
+    #                                            np.exp(-0.01766508)], False)
+
+    # mean_field, variance_field, std_field, skew_field = make_average_field(patient_df)
+    # plot_heat_map(maps[1], 0.9, 1.1)
+    # plot_heat_map(maps[2], 0.9, 1.1)
+    # plot_heat_map(maps[3], 0.9, 1.1)
+    # plot_heat_map(maps[4], 0.9, 1.1)
+    # plot_heat_map(maps[5], 0.9, 1.1)
+    # plot_heat_map(maps[6], 0.9, 1.1)
+
+
+def regional_investigation(HR_map, all_patients, lower_hazard, upper_hazard, dataDir=r'../Data//Deep_learning_results/deltaRMaps'):
+    """
+    A function that will extract statistics in a specified region of HR maps for all patients.
+    - Find the median value of delta R for each patient in the region.
+
+    :param HR_map: A hazard ratio map
+    :param all_patients: A data frame featuring all information for all patients
+    :param lower_hazard: The lower HR value (<1) on the map, will find all voxel coordinates at values below this
+    :param upper_hazard: The upper HR value (>1) on the map, will find all voxel coordinates at values greater than this
+    :return: A list of median values in the specified region for all patients (use for KM plots).
+    """
+
+    # Create a mask of the region of interests
+    HR_mask = HR_map.copy()
+    lower_ROI_mask = HR_mask.mask(HR_mask > lower_hazard, 0)
+    lower_ROI_mask = lower_ROI_mask.mask(lower_ROI_mask != 0, 1)
+    upper_ROI_mask = HR_mask.mask(HR_mask < upper_hazard, 0)
+    upper_ROI_mask = upper_ROI_mask.mask(upper_ROI_mask != 0, 1)
+
+    # Loop through all patient maps, and multiply each by each mask, and calculate ROI statistics
+    df = pd.DataFrame(all_patients["patientList"])
+    dfFiles = df.assign(file_path=lambda df: df["patientList"].map(lambda x: r'%s/%s.csv' % (dataDir, x)))
+    # masterDF = pd.DataFrame.empty
+    lower_array = []
+    upper_array = []
+    x = 0
+    for f in dfFiles.file_path:
+        patient_map = pd.read_csv(f, header=None)
+        patient_map = patient_map.drop(patient_map.index[59])
+        patient_lower_region = pd.DataFrame(lower_ROI_mask.values * patient_map.values)
+        patient_upper_region = pd.DataFrame(upper_ROI_mask.values * patient_map.values)
+        lower_array.append(np.sqrt(np.mean(np.square(patient_lower_region.values))))#.mean())
+        upper_array.append(np.sqrt(np.mean(np.square(patient_upper_region.values))))#patient_upper_region.values.mean())
+        x = x + 1
+
+    all_patients['mean_lower_region'] = lower_array
+    all_patients['mean_upper_region'] = upper_array
+
+    return all_patients
 
 
 def clean_data(data):
@@ -358,6 +511,7 @@ def clean_data(data):
 
     return cleaned_data
 
+
 def test_categorical_map():
     initial_map = pd.read_csv(r'/Users/Tom/PycharmProjects/Contour-Analysis/Data/Deep_learning_results/deltaRMaps/196703818.csv', header=None).values
     final_map = list(map(lambda y: list(map(lambda x: 0 if x <= -2 else (2 if x >= 2 else 1), y)), initial_map))
@@ -372,20 +526,18 @@ if __name__ == '__main__':
     # clean_dataset = clean_data(enhancedDF)
     # print(list(clean_dataset))
 
-    # test_plot_subplot()
-    patient_df = pd.read_csv(r'../Data/Deep_learning_results/global_results/19_fraction_data.csv')
-    patient_df = patient_df.drop_duplicates(subset='patientList')
-    patient_df = cuts_from_ct_scans(patient_df)
-    patient_df = radial_mean_sd_for_patients(patient_df)
-    extreme_r = pd.read_csv(r'../Data/Deep_learning_results/global_results/rogue_xtreme_patients.csv')
-    patient_df = patient_df[~patient_df['patientList'].isin(extreme_r)]
-    stacked = stack_local_fields(patient_df,0)
-    patient_df.dr_voxel = stacked[17][80]
-    print(stacked.shape)
-    print(list(patient_df))
+    patient_df = pd.read_csv(r'../Data/Deep_learning_results/global_results/19_fraction_FINAL_RESULTS.csv')
+    test_plot_subplot(patient_df)
+    # patient_df = pd.read_csv(r'../Data/Deep_learning_results/global_results/19_fraction_cleaned_AJ.csv')
+    #
+    # survival_analysis(patient_df, "age", "age_KM")
+    # print("age")
+    # survival_analysis(patient_df, "age", "age_KM")
+    # print("manVol")
+    # survival_analysis(patient_df, "manVol", "manVol_KM")
+    # print("grade")
+    # survival_analysis(patient_df, "grade", "grade_KM")
 
-
-    # survival_analysis_dsc(clean_dataset, 'volumeContourDifference')
-    # # HR_map, p_map = cph_produce_map(clean_data)
-    # clean_data.to_csv("../Data/Deep_learning_results/global_results/all_patients_cleaned.csv", index=False)
-    # survival_analysis_fractions(enhancedDF)
+    # survival_analysis(patient_df, "age", "age_KM")
+    # survival_analysis(patient_df, "manVol", "manVol_KM")
+    # survival_analysis(patient_df, "grade", "grade_KM")
