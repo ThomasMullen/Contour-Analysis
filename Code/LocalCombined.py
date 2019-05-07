@@ -250,9 +250,9 @@ def numerate_categorical_data(clean_patient_data):
     """
 
     # Numerate categorical data
-    clean_patient_data['fractions'] = clean_patient_data['fractions'].apply(lambda x: 0 if x == 16 else 1)
-    clean_patient_data['grade'] = clean_patient_data['grade'].apply(lambda x: 0 if x <= 6 else (1 if x == 7 else 2))
-    clean_patient_data['risk'] = clean_patient_data['risk'].apply(
+    clean_patient_data['Fractions'] = clean_patient_data['Fractions'].apply(lambda x: 0 if x == 16 else 1)
+    clean_patient_data['Grade'] = clean_patient_data['Grade'].apply(lambda x: 0 if x <= 6 else (1 if x == 7 else 2))
+    clean_patient_data['Risk'] = clean_patient_data['Risk'].apply(
         lambda x: 0 if (x == 'Low' or x == 'low') else (2 if (x == 'High' or x == 'high' or x == 'int/high') else 1))
 
     return clean_patient_data
