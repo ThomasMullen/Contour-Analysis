@@ -432,21 +432,45 @@ def test_plot_subplot(patient_df):
     # survival_analysis(new_patient_df, "mean_upper_region", "upper_KM")
     # print("upper_KM")
 
-    map_with_thresholds(maps[0], 0.1, 1.2, 0.8, ['red', 'green', 'lime', 'magenta'], [np.exp(-0.369794153),
-                                                  np.exp(-0.018092986), np.exp(0.015032935),np.exp(0.75875185)], False)
-
+    # map_with_thresholds(maps[0], 0.1, 1.2, 0.8, ['red', 'green', 'lime', 'magenta'], [np.exp(-0.369794153),
+    #                                               np.exp(-0.018092986), np.exp(0.015032935),np.exp(0.75875185)], False)
+    #
 
     # np.exp(-0.369794153),np.exp(0.75875185)
     # map_with_thresholds(maps[0], 0.5, 1, 0.5, ['red', 'lime'], [np.exp(-0.369794153),
     #                                            np.exp(-0.01766508)], False)
 
-    # mean_field, variance_field, std_field, skew_field = make_average_field(patient_df)
-    # plot_heat_map(maps[1], 0.9, 1.1)
-    # plot_heat_map(maps[2], 0.9, 1.1)
-    # plot_heat_map(maps[3], 0.9, 1.1)
-    # plot_heat_map(maps[4], 0.9, 1.1)
-    # plot_heat_map(maps[5], 0.9, 1.1)
-    # plot_heat_map(maps[6], 0.9, 1.1)
+    # # mean_field, variance_field, std_field, skew_field = make_average_field(patient_df)
+    # map_with_thresholds(maps[0], "Hazard ratio [mm$-1$]", 0.1, 1.2, 0.8, ['red', 'green', 'lime', 'magenta'],
+    #                     [np.exp(-6.401438146), np.exp(-0.130110886), np.exp(2), np.exp(2)], False)
+
+    # map_with_thresholds(maps[1], "Hazard ratio [year$^-1$]", 1, 0.5, 1, ['red', 'green', 'lime', 'magenta'], [np.exp(-6.401438146),
+    #                                                                                   np.exp(-0.130110886),
+    #                                                                                   np.exp(2),
+    #                                                                                   np.exp(2)], False)
+
+    map_with_thresholds(maps[5], "Hazard ratio [mm$^-3$]", 1, 1.2, 0.8, ['red', 'green', 'lime', 'magenta'],
+                        [np.exp(-2.427225235),
+                         np.exp(-1.649357101),
+                         np.exp(2.616209843),
+                         np.exp(3.444086765)], False)
+
+    map_with_thresholds(maps[4], "Hazard ratio [rel. to Gleason scores 9&10]", 1, 1.2, 0.8, ['red', 'green', 'lime', 'magenta'],
+                        [np.exp(-0.288813013),
+                         np.exp(-0.127722104),
+                         np.exp(0.331406814),
+                         np.exp(0.493446468)], False)
+
+    map_with_thresholds(maps[3], "Hazard ratio [rel. to Gleason scores 9&10]", 1, 1.2, 0.8, ['red', 'green', 'lime', 'magenta'],
+                        [np.exp(-0.029020724),
+                         np.exp(-0.017556072),
+                         np.exp(0.196187851),
+                         np.exp(0.41141268)], False)
+
+    # plot_heat_map(maps[2], 0.9, 1.1, "Hazard ratio [rel. to Gleason scores 9&10]")
+    # plot_heat_map(maps[3], 0.9, 1.1, "Hazard ratio [rel. to Gleason scores 9&10]")
+    # plot_heat_map(maps[4], 0.9, 1.1, "Hazard ratio [rel. to Gleason scores 9&10]")
+    # plot_heat_map(maps[5], 0.9, 1.1, "Hazard ratio [mm$^-3$]")
 
 
 def regional_investigation(HR_map, all_patients, lower_hazard, upper_hazard, dataDir=r'../Data//Deep_learning_results/deltaRMaps'):

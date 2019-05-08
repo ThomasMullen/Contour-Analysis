@@ -69,7 +69,7 @@ def test_superimpose(t_map, pos_t_dist, neg_t_dist):
     plt.show()
 
 
-def map_with_thresholds(statistic_map, per_what, vmax, vmin, colours, p_contours=[5, 95], is_percentile=True):
+def map_with_thresholds(statistic_map, cbar_label, per_what, vmax, vmin, colours, p_contours=[5, 95], is_percentile=True):
     '''
     This will plot the contours superimposed on the statistic map which is np.flip vertically
     :param t_map: take in the numpy array t-map
@@ -96,10 +96,9 @@ def map_with_thresholds(statistic_map, per_what, vmax, vmin, colours, p_contours
     # ax.set_xlabel("Angle in the transverse plane, $\phi$")
     # ax.set_ylabel("Angle in the coronal plane, $\Theta$")
     # cmap = sns.cm.rocket_r
-    cbar_label = 'Hazard ratio [%.1f mm$^{-1}$]' % per_what
+
     heat_map = sns.heatmap(pow(statistic_map, per_what), center=1, xticklabels=axes[0], yticklabels=axes[1],
-                           cmap='RdBu_r', vmin=vmin,
-                           vmax=vmax, cbar_kws={'label': cbar_label})
+                           cmap='RdBu_r', cbar_kws={'label': cbar_label})
                            # ylabel='Angle in the coronal plane, $\Theta$', xlabel='Angle in the transverse plane, $\phi$')
     # heat_map = sns.heatmap(np.flip(t_map, 0), center=0, xticklabels=axes[0], yticklabels=axes[1], cmap='RdBu')
     ax.set_xlabel("Angle in the transverse plane, $\phi$")

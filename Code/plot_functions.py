@@ -78,7 +78,7 @@ def create_polar_axis():
     return phi, theta
 
 
-def plot_heat_map(data, lower_limit, upper_limit, title=" "):
+def plot_heat_map(data, lower_limit, upper_limit, cbar_label):
     """
     defines the ticks on the 2d histogram axis
     :param: data is the field to be plotted
@@ -88,11 +88,10 @@ def plot_heat_map(data, lower_limit, upper_limit, title=" "):
     :returns: $\phi$ array with values and DSC cuts $\theta$ array with values
     """
     axes = create_polar_axis()
-    sns.set_context("talk")
+    sns.set_context("paper")
     fig, ax = plt.subplots(1, 1, figsize=(9, 7))
-    heat_map = sns.heatmap(data.as_matrix(), center=1, xticklabels=axes[0], yticklabels=axes[1], vmin=lower_limit,
-                           vmax=upper_limit,
-                           cmap='RdBu_r', cbar_kws={'label': 'Mean contouring variation [mm]'})
+    heat_map = sns.heatmap(data.as_matrix(), center=1, xticklabels=axes[0], yticklabels=axes[1],
+                           cmap='RdBu_r', cbar_kws={'label': cbar_label})
     ax.set_xlabel("Angle in the transverse plane, $\phi$")
     ax.set_ylabel("Angle in the coronal plane, $\Theta$")
     plt.show()
