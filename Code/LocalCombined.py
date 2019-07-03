@@ -582,7 +582,7 @@ def COM_jointplots():
     sns.jointplot(x=COM_df['dy'], y=COM_df['dz'], kind='scatter', ratio=3, color="g")
     plt.show()
 
-def COM_analysis():
+def COM_KS_test():
 
     COM_df = pd.read_csv(r'../Data/OnlyProstateResults/19_fractions_COM.csv')
     COM_df = cuts_from_ct_scans(COM_df)
@@ -611,7 +611,7 @@ if __name__ == '__main__':
     # clean_dataset = clean_data(enhancedDF)
     # print(list(clean_dataset))
     COM_jointplots()
-    COM_analysis()
+    COM_KS_test()
     # patient_df = pd.read_csv(r'../Data/Deep_learning_results/global_results/19_fraction_FINAL_RESULTS.csv')
     # test_plot_subplot(patient_df)
     # patient_df = pd.read_csv(r'../Data/Deep_learning_results/global_results/19_fraction_cleaned_AJ.csv')
