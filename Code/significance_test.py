@@ -69,7 +69,7 @@ def test_superimpose(t_map, pos_t_dist, neg_t_dist):
     plt.show()
 
 
-def map_with_thresholds(statistic_map, critical_statistic_values=[5, 95], is_percentile=True):
+def map_with_thresholds(statistic_map, cbar_label, contour_type, per_what, vmax, vmin, colours, p_contours=[5, 95], is_percentile=True):
     '''
     This will plot the contours superimposed on the statistic map which is np.flip vertically
     :param t_map: take in the numpy array t-map
@@ -77,16 +77,48 @@ def map_with_thresholds(statistic_map, critical_statistic_values=[5, 95], is_per
     '''
     coutour_map = statistic_map.copy()
 
+    fig, ax = plt.subplots(1, 1, figsize=(9, 6))
     if is_percentile == True:
-        critical_statistic_values = np.percentile(statistic_map.flatten(), critical_statistic_values)
-    plt.contour(coutour_map, levels=critical_statistic_values, colors=['magenta', 'lime'])
+        p_95 = np.percentile(statistic_map.flatten(), p_contours)
+        # p_999 = np.percentile(statistic_map.flatten(), p_999)
+    # levels = p_95 + p_999
+    plt.contour(coutour_map, levels=p_contours, colors=colours, linewidths=2, linestyles=contour_type)
     plt.gca()
     axes = create_polar_axis()
-    heat_map = sns.heatmap(statistic_map, center=1, xticklabels=axes[0], yticklabels=axes[1], cmap='RdBu', vmin=0, vmax=2)
-    # heat_map = sns.heatmap(np.flip(t_map, 0), center=0, xticklabels=axes[0], yticklabels=axes[1], cmap='RdBu')
-    heat_map.set(ylabel='Theta, $\dot{\Theta}$', xlabel='Azimutal, $\phi$', title='')
-    plt.show()
+    sns.set_style("ticks")
+    # sns.set_context("talk")
+    # sns.set_context("paper")
+    plt.rcParams['font.family'] = 'times'
+    # plt.rcParams['axes.labelweight'] = 'bold'
+    plt.rcParams['axes.labelsize'] = 12
+    # plt.style.use('seaborn-ticks')
 
+    # ax.set_xlabel("Angle in the transverse plane, $\phi$")
+    # ax.set_ylabel("Angle in the coronal plane, $\Theta$")
+    # cmap = sns.cm.rocket_r
+
+    heat_map = sns.heatmap(pow(statistic_map, per_what), center=1, xticklabels=axes[0], yticklabels=axes[1],
+                           cmap='RdBu_r', cbar_kws={'label': cbar_label})
+                           # ylabel='Angle in the coronal plane, $\Theta$', xlabel='Angle in the transverse plane, $\phi$')
+    # heat_map = sns.heatmap(np.flip(t_map, 0), center=0, xticklabels=axes[0], yticklabels=axes[1], cmap='RdBu')
+    ax.set_xlabel("Angle in the transverse plane, $\phi$")
+    ax.set_ylabel("Angle in the coronal plane, $\Theta$")
+    # heat_map.set(ylabel='Angle in the coronal plane, $\Theta$', xlabel='Angle in the transverse plane, $\phi$', title='')
+    # plt.style.use('seaborn-ticks')
+
+    # plt.rcParams['legend.fontsize'] = 12
+    #
+    # plt.xlim(0, 5)
+    # plt.ylim(0.4, 1.05)
+    # plt.xlabel('Time [years]')
+    # plt.ylabel('Survival function, S(t)')
+    # plt.legend(loc="lower left", frameon=True, framealpha=1)
+    # plt.grid(True)
+    # ax.set_xticks()
+    # ax.set_yticks()
+    # # ax.grid()
+    # # ax.axis('equal')
+    plt.show()
 
 def pValueMap(t_to_p_map):
     """
@@ -360,6 +392,39 @@ def cph_produce_map(clean_data):
             p_value[x][y] = cph_stats['p']['delta_r']
     print(HR)
     return HR, p_value
+
+
+def kolmogorov_smirnov_2sample_test(histogram1, histogram2):
+    """
+    Conduct a 2 sample Kolmogorov–Smirnov test, is a nonparametric test of the equality
+    of continuous, one-dimensional probability distributions
+    that can be used to compare two samples.
+
+    :param: histogram1: A 1D array containing one of the data sets.
+    :param: histogram2: A 1D array containing the other data set.
+    :return: KS_stat, p_value_2t, the KS statistic and p-value respectively.
+    """
+
+    # Compute a KS statistic and a 2 tailed p-value
+    ks_stat, p_value_2t = ss.ks_2samp(histogram1, histogram2)
+
+    return ks_stat, p_value_2t
+
+
+def kolmogorov_smirnov_test(histogram1):
+    """
+    Conduct a Kolmogorov–Smirnov test, a 1D non-parametric test for the distribution of our data.
+    We shall compare the distrbution of histogram1 to that of a normal distribution,
+    justifying if our data is randomly spread.
+
+    :param: histogram1: A 1D array containing the data sets.
+    :return: KS_stat, p_value_2t, the KS statistic and p-value respectively.
+    """
+
+    # Compute a KS statistic and a 2 tailed p-value
+    ks_stat, p_value_2t = ss.kstest(histogram1, 'norm', N=histogram1.size)
+
+    return ks_stat, p_value_2t
 
 
 def test():

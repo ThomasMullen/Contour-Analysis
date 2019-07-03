@@ -3,6 +3,7 @@ import seaborn as sns
 import pandas as pd
 import matplotlib.pyplot as plt
 
+from AllPatients import separate_by_recurrence
 
 sns.set()
 
@@ -77,7 +78,7 @@ def create_polar_axis():
     return phi, theta
 
 
-def plot_heat_map(data, lower_limit, upper_limit, title=" "):
+def plot_heat_map(data, lower_limit, upper_limit, cbar_label):
     """
     defines the ticks on the 2d histogram axis
     :param: data is the field to be plotted
@@ -87,10 +88,57 @@ def plot_heat_map(data, lower_limit, upper_limit, title=" "):
     :returns: $\phi$ array with values and DSC cuts $\theta$ array with values
     """
     axes = create_polar_axis()
-    heat_map = sns.heatmap(data.as_matrix(), center=0, xticklabels=axes[0], yticklabels=axes[1], vmin=lower_limit,
-                           vmax=upper_limit,
-                           cmap='RdBu')
-    heat_map.set(ylabel='Theta, $\dot{\Theta}$', xlabel='Azimutal, $\phi$', title=title)
+    sns.set_context("talk")
+    # plt.rcParams['axes.labelsize'] = 14
+    # plt.rcParams['axes.labelweight'] = 'bold'
+    fig, ax = plt.subplots(1, 1, figsize=(9, 7))
+    heat_map = sns.heatmap(data.as_matrix(), center=1, xticklabels=axes[0], yticklabels=axes[1],
+                           cmap='RdBu_r', cbar_kws={'label': cbar_label})
+    ax.set_xlabel("Angle in the transverse plane, $\phi$")
+    ax.set_ylabel("Angle in the coronal plane, $\Theta$")
+    plt.show()
+
+
+def plot_neat_scatter(data, save_name):
+
+    fit = np.polyfit(data["volumeContour"], data["volumeContourAuto"], 1)
+    fit_fn = np.poly1d(fit)
+
+    # Fitting the graph
+    #    fig = plt.figure()
+    x = np.linspace(10, 190, 1000)  # Plot straight line
+    y = x
+    # ax = plt.gca()
+    # ax.set_facecolor('white')
+    # plt.grid()
+
+    plt.style.use('seaborn-ticks')
+    plt.rcParams['font.family'] = 'times'
+    plt.rcParams['axes.labelweight'] = 'bold'
+    plt.rcParams['axes.labelsize'] = 12
+    plt.rcParams['legend.fontsize'] = 12
+
+    rec, n_rec = separate_by_recurrence(data)
+
+    plt.scatter(rec["volumeContour"], rec["volumeContourAuto"], c='#ff0000', alpha=0.5, label='Recurrence')
+    plt.scatter(n_rec["volumeContour"], n_rec["volumeContourAuto"], c='#00ff00', alpha=0.5, label='No Recurrence')
+    # plt.scatter(censored["volumeContour"], censored["volumeContourAuto"], c='#0000ff', alpha=0.5, label='Censored')
+
+    plt.plot(x, y, linestyle='dashed', color = 'k', label='Line of Equal Volumes')  # y = x line
+
+    # plt.plot(x,x,'yo', AllPatients["volumeContour"], fit_fn(AllPatients["volumeContour"]), '--k') # linear fit
+    plt.figure(1)
+    plt.xlim(0, 200)
+    plt.ylim(0, 200)
+    plt.xlabel('Manual-contour volume [mm$^3$]')
+    plt.ylabel('Auto-contour volume [mm$^3$]')
+    plt.legend(loc="upper left", frameon=True, framealpha=1)
+    plt.grid(True)
+    # ax.set_xticks()
+    # ax.set_yticks()
+    # # ax.grid()
+    # # ax.axis('equal')
+    plt.savefig(save_name, bbox_inches='tight')
     plt.show()
 
 
