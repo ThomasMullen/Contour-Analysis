@@ -582,6 +582,7 @@ def COM_jointplots():
     sns.jointplot(x=COM_df['dy'], y=COM_df['dz'], kind='scatter', ratio=3, color="g")
     plt.show()
 
+
 def COM_KS_test():
 
     COM_df = pd.read_csv(r'../Data/OnlyProstateResults/19_fractions_COM.csv')
@@ -605,13 +606,43 @@ def COM_KS_test():
     print('dy & dz p-value: %.9f' % p_stat_dydz)
 
 
+def dimensional_distribution():
+    """
+    Reads in the relative spatial differences and plots the cumulative and probability density function.
+    :return: subplot of the pdf and cdf
+    """
+    COM_df = pd.read_csv(r'../Data/OnlyProstateResults/19_fractions_COM.csv')
+    COM_df = cuts_from_ct_scans(COM_df)
+    COM_df = COM_analysis(COM_df)
+    # print(COM_df.shape, list(COM_df))
+    delta_df = COM_df[['dx','dy','dz']]
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
+    ax1 = sns.distplot(delta_df['dx'], bins=50, ax=ax1, label="dx")
+    sns.distplot(delta_df['dy'], bins=50, ax=ax1, label="dy")
+    sns.distplot(delta_df['dz'], bins=50, ax=ax1,label="dz")
+    plt.xlabel("relative difference [cm]")
+    plt.ylabel("PDF")
+
+    ax2 = sns.kdeplot(delta_df['dx'], cumulative=True, ax=ax2)
+    sns.kdeplot(delta_df['dy'], cumulative=True, ax=ax2)
+    sns.kdeplot(delta_df['dz'], cumulative=True, ax=ax2)
+    plt.ylabel("CDF")
+    plt.show()
+    return
+
+
 if __name__ == '__main__':
     # read_and_return_patient_stats()
     # dataDirectory = r"../Data/Deep_learning_results/deltaRMaps"
     # clean_dataset = clean_data(enhancedDF)
     # print(list(clean_dataset))
-    COM_jointplots()
-    COM_KS_test()
+    # COM_jointplots()
+    # COM_KS_test()
+
+    dimensional_distribution()
+
+
     # patient_df = pd.read_csv(r'../Data/Deep_learning_results/global_results/19_fraction_FINAL_RESULTS.csv')
     # test_plot_subplot(patient_df)
     # patient_df = pd.read_csv(r'../Data/Deep_learning_results/global_results/19_fraction_cleaned_AJ.csv')
