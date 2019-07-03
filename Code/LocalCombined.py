@@ -26,7 +26,8 @@ from plot_functions import plot_heat_map_np, plot_scatter, plot_histogram, plot_
     test_on_single_map, triangulation_qa, load_map, create_polar_axis
 from significance_test import cph_global_test, mann_whitney_test_statistic, pymining_t_test, \
     t_map_with_thresholds, test_superimpose, sample_normality_test, cph_produce_map, \
-    global_statistical_analysis, map_with_thresholds, non_parametric_permutation_test, stack_local_fields, normality_map
+    global_statistical_analysis, map_with_thresholds, non_parametric_permutation_test, stack_local_fields, \
+    normality_map, kolmogorov_smirnov_test, kolmogorov_smirnov_2sample_test
 from DataFormatting import data_frame_to_XDR
 
 sns.set()
@@ -558,7 +559,7 @@ def COM_analysis(COM_df):
     return COM_df
 
 
-def COM_test_analysis():
+def COM_jointplots():
     COM_df = pd.read_csv(r'../Data/OnlyProstateResults/19_fractions_COM.csv')
     COM_df = cuts_from_ct_scans(COM_df)
     COM_df = COM_analysis(COM_df)
@@ -581,13 +582,36 @@ def COM_test_analysis():
     sns.jointplot(x=COM_df['dy'], y=COM_df['dz'], kind='scatter', ratio=3, color="g")
     plt.show()
 
+def COM_analysis():
+
+    COM_df = pd.read_csv(r'../Data/OnlyProstateResults/19_fractions_COM.csv')
+    COM_df = cuts_from_ct_scans(COM_df)
+    COM_df = COM_analysis(COM_df)
+
+    # Conduct statistics on each distribution
+    ks_stat_dx, p_stat_dx = kolmogorov_smirnov_test(COM_df['dx'])
+    ks_stat_dz, p_stat_dz = kolmogorov_smirnov_test(COM_df['dz'])
+    ks_stat_dy, p_stat_dy = kolmogorov_smirnov_test(COM_df['dy'])
+    print('dx p-value: %.9f' % p_stat_dx)
+    print('dz p-value: %.9f' % p_stat_dz)
+    print('dy p-value: %.9f' % p_stat_dy)
+
+    # Conduct statistics between distributions
+    ks_stat_dxdy, p_stat_dxdy = kolmogorov_smirnov_2sample_test(COM_df['dx'], COM_df['dy'])
+    ks_stat_dxdz, p_stat_dxdz = kolmogorov_smirnov_2sample_test(COM_df['dx'], COM_df['dz'])
+    ks_stat_dydz, p_stat_dydz = kolmogorov_smirnov_2sample_test(COM_df['dy'], COM_df['dz'])
+    print('dx & dy p-value: %.9f' % p_stat_dxdy)
+    print('dx & dz p-value: %.9f' % p_stat_dxdz)
+    print('dy & dz p-value: %.9f' % p_stat_dydz)
+
 
 if __name__ == '__main__':
     # read_and_return_patient_stats()
     # dataDirectory = r"../Data/Deep_learning_results/deltaRMaps"
     # clean_dataset = clean_data(enhancedDF)
     # print(list(clean_dataset))
-    COM_test_analysis()
+    COM_jointplots()
+    COM_analysis()
     # patient_df = pd.read_csv(r'../Data/Deep_learning_results/global_results/19_fraction_FINAL_RESULTS.csv')
     # test_plot_subplot(patient_df)
     # patient_df = pd.read_csv(r'../Data/Deep_learning_results/global_results/19_fraction_cleaned_AJ.csv')

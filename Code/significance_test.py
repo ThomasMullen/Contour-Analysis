@@ -394,6 +394,39 @@ def cph_produce_map(clean_data):
     return HR, p_value
 
 
+def kolmogorov_smirnov_2sample_test(histogram1, histogram2):
+    """
+    Conduct a 2 sample Kolmogorov–Smirnov test, is a nonparametric test of the equality
+    of continuous, one-dimensional probability distributions
+    that can be used to compare two samples.
+
+    :param: histogram1: A 1D array containing one of the data sets.
+    :param: histogram2: A 1D array containing the other data set.
+    :return: KS_stat, p_value_2t, the KS statistic and p-value respectively.
+    """
+
+    # Compute a KS statistic and a 2 tailed p-value
+    ks_stat, p_value_2t = ss.ks_2samp(histogram1, histogram2)
+
+    return ks_stat, p_value_2t
+
+
+def kolmogorov_smirnov_test(histogram1):
+    """
+    Conduct a Kolmogorov–Smirnov test, a 1D non-parametric test for the distribution of our data.
+    We shall compare the distrbution of histogram1 to that of a normal distribution,
+    justifying if our data is randomly spread.
+
+    :param: histogram1: A 1D array containing the data sets.
+    :return: KS_stat, p_value_2t, the KS statistic and p-value respectively.
+    """
+
+    # Compute a KS statistic and a 2 tailed p-value
+    ks_stat, p_value_2t = ss.kstest(histogram1, 'norm', N=histogram1.size)
+
+    return ks_stat, p_value_2t
+
+
 def test():
     return 0
 
