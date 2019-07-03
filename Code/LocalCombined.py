@@ -558,14 +558,38 @@ def COM_analysis(COM_df):
     return COM_df
 
 
+def COM_test_analysis():
+    COM_df = pd.read_csv(r'../Data/OnlyProstateResults/19_fractions_COM.csv')
+    COM_df = cuts_from_ct_scans(COM_df)
+    COM_df = COM_analysis(COM_df)
+
+    sns.set(style="whitegrid", color_codes=True)
+    sns.set_context("paper")
+
+    # Histogram details
+    print(COM_df['dx'].describe())
+    print(COM_df['dy'].describe())
+    print(COM_df['dz'].describe())
+
+    # Produce jointplots of the difference between COM coordinates
+    sns.jointplot(x=COM_df['dx'], y=COM_df['dy'], kind='scatter', ratio=3, color="g")
+    plt.show()
+
+    sns.jointplot(x=COM_df['dx'], y=COM_df['dz'], kind='scatter', ratio=3, color="g")
+    plt.show()
+
+    sns.jointplot(x=COM_df['dy'], y=COM_df['dz'], kind='scatter', ratio=3, color="g")
+    plt.show()
+
+
 if __name__ == '__main__':
     # read_and_return_patient_stats()
     # dataDirectory = r"../Data/Deep_learning_results/deltaRMaps"
     # clean_dataset = clean_data(enhancedDF)
     # print(list(clean_dataset))
-
-    patient_df = pd.read_csv(r'../Data/Deep_learning_results/global_results/19_fraction_FINAL_RESULTS.csv')
-    test_plot_subplot(patient_df)
+    COM_test_analysis()
+    # patient_df = pd.read_csv(r'../Data/Deep_learning_results/global_results/19_fraction_FINAL_RESULTS.csv')
+    # test_plot_subplot(patient_df)
     # patient_df = pd.read_csv(r'../Data/Deep_learning_results/global_results/19_fraction_cleaned_AJ.csv')
     #
     # survival_analysis(patient_df, "age", "age_KM")
