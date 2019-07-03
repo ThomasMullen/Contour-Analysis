@@ -88,7 +88,9 @@ def plot_heat_map(data, lower_limit, upper_limit, cbar_label):
     :returns: $\phi$ array with values and DSC cuts $\theta$ array with values
     """
     axes = create_polar_axis()
-    sns.set_context("paper")
+    sns.set_context("talk")
+    # plt.rcParams['axes.labelsize'] = 14
+    # plt.rcParams['axes.labelweight'] = 'bold'
     fig, ax = plt.subplots(1, 1, figsize=(9, 7))
     heat_map = sns.heatmap(data.as_matrix(), center=1, xticklabels=axes[0], yticklabels=axes[1],
                            cmap='RdBu_r', cbar_kws={'label': cbar_label})

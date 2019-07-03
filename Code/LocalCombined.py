@@ -302,8 +302,8 @@ def survival_analysis(patient_data_base, category, save_name):
         ix_3 = (category_data > category_groups[0.5]) & (category_data <= category_groups[0.75])
         ix_4 = (category_data > category_groups[0.75]) & (category_data <= category_groups[1.0])
         label_1 = "< %.0f mm$^3$" % (category_groups[0.25])
-        label_2 = "%.0f - %.0f mm$^3$" % (category_groups[0.25], category_groups[0.5])
-        label_3 = "%.0f - %.0f mm$^3$" % (category_groups[0.5], category_groups[0.75])
+        label_2 = "%.0f - %.0f cm$^3$" % (category_groups[0.25], category_groups[0.5])
+        label_3 = "%.0f - %.0f cm$^3$" % (category_groups[0.5], category_groups[0.75])
         label_4 = "> %.0f mm$^3$" % (category_groups[0.75])
 
     else:
@@ -315,8 +315,8 @@ def survival_analysis(patient_data_base, category, save_name):
         category_groups = patient_data_base[category].quantile([.5, 1.0])
         ix_1 = (category_data <= category_groups[0.5])
         ix_2 = (category_data > category_groups[0.5]) & (category_data <= category_groups[1.0])
-        label_1 = "< %.2f mm" % (category_groups[0.5])
-        label_2 = "> %.2f mm" % (category_groups[0.5])
+        label_1 = "< %.2f cm" % (category_groups[0.5])
+        label_2 = "> %.2f cm" % (category_groups[0.5])
 
     # fit the model for 1st cohort
     # ax.plot(x, y, ...)
@@ -421,19 +421,29 @@ def test_plot_subplot(patient_df):
 
     covariates = ["deltaR", "age", "grade_6_to_910", "grade_7_to_910", "grade_8_to_910", "manVol"]
 
-    maps = [pd.read_csv(r'C:\Users\Alexander\PycharmProjects\Contour-Analysis\Results\CSV\%s_hazardOnly.csv' % x,
+    maps = [pd.read_csv(r'/Users/Alex Jenkins/PycharmProjects/Contour-Analysis/Results/CSV/%s_hazardOnly.csv' % x,
                         header=0) for x in covariates]
-    # new_patient_df = regional_investigation(maps[0], patient_df, np.exp(-0.369794153), np.exp(0.75875185))
+
     #
-    # survival_analysis(new_patient_df, "mean_upper_region", "lower_KM")
+    # new_patient_df = regional_investigation(maps[0], patient_df, "SV", np.exp(-0.369794153))
+    #
+    # survival_analysis(new_patient_df, "mean_upper_region", "upper_KM")
+    # survival_analysis(new_patient_df, "mean_upper_region", "upper_KM")
     # print("lower_KM")
     # survival_analysis(new_patient_df, "mean_lower_region", "lower_KM")
     # print("lower_KM")
     # survival_analysis(new_patient_df, "mean_upper_region", "upper_KM")
     # print("upper_KM")
 
-    # map_with_thresholds(maps[0], 0.1, 1.2, 0.8, ['red', 'green', 'lime', 'magenta'], [np.exp(-0.369794153),
-    #                                               np.exp(-0.018092986), np.exp(0.015032935),np.exp(0.75875185)], False)
+
+
+    # np.exp(-0.018092986), np.exp(0.015032935)
+    # HR_upper = maps[0].mask(maps[0] < 1, 0)
+    # HR_lower = maps[0].mask(maps[0] > 1, 1)
+    # map_with_thresholds(HR_upper, "Hazard ratio [mm$^{-1}$]", "solid", 0.1, 1.2, 1, ['lime', 'magenta'],
+    #                     [np.exp(0.015032935), np.exp(0.75875185)], False)
+    # map_with_thresholds(maps[0], "Hazard ratio [mm$^{-1}$]", ["dashed", "solid"], 0.1, 1.2, 0.9, ['magenta', 'magenta'],
+    #                     [np.exp(-0.369794153), np.exp(0.75875185)], False)
     #
 
     # np.exp(-0.369794153),np.exp(0.75875185)
@@ -448,67 +458,54 @@ def test_plot_subplot(patient_df):
     #                                                                                   np.exp(-0.130110886),
     #                                                                                   np.exp(2),
     #                                                                                   np.exp(2)], False)
+    #
+    # map_with_thresholds(maps[5], "Hazard ratio [cm$^-3$]", 1, 1.2, 0.8, ['red', 'green', 'lime', 'magenta'],
+    #                     [], False)
 
-    map_with_thresholds(maps[5], "Hazard ratio [mm$^-3$]", 1, 1.2, 0.8, ['red', 'green', 'lime', 'magenta'],
-                        [np.exp(-2.427225235),
-                         np.exp(-1.649357101),
-                         np.exp(2.616209843),
-                         np.exp(3.444086765)], False)
+    map_with_thresholds(maps[4], "Hazard ratio [rel. to Gleason scores 9&10]", "dashed", 1, 1.2, 0.8, ['magenta'],
+                        [np.exp(-0.288813013)], False)
 
-    map_with_thresholds(maps[4], "Hazard ratio [rel. to Gleason scores 9&10]", 1, 1.2, 0.8, ['red', 'green', 'lime', 'magenta'],
-                        [np.exp(-0.288813013),
-                         np.exp(-0.127722104),
-                         np.exp(0.331406814),
-                         np.exp(0.493446468)], False)
+    map_with_thresholds(maps[3], "Hazard ratio [rel. to Gleason scores 9&10]", "dashed", 1, 1.2, 0.8, ['magenta'],
+                        [np.exp(-0.029020724)], False)
 
-    map_with_thresholds(maps[3], "Hazard ratio [rel. to Gleason scores 9&10]", 1, 1.2, 0.8, ['red', 'green', 'lime', 'magenta'],
-                        [np.exp(-0.029020724),
-                         np.exp(-0.017556072),
-                         np.exp(0.196187851),
-                         np.exp(0.41141268)], False)
-
-    # plot_heat_map(maps[2], 0.9, 1.1, "Hazard ratio [rel. to Gleason scores 9&10]")
+    # plot_heat_map(maps[1], 0.9, 1.1, "Hazard ratio [year $^{-1}$]")
     # plot_heat_map(maps[3], 0.9, 1.1, "Hazard ratio [rel. to Gleason scores 9&10]")
     # plot_heat_map(maps[4], 0.9, 1.1, "Hazard ratio [rel. to Gleason scores 9&10]")
-    # plot_heat_map(maps[5], 0.9, 1.1, "Hazard ratio [mm$^-3$]")
+    # plot_heat_map(maps[5], 0.9, 1.1, "Hazard ratio [cm$^{-3}$]")
 
 
-def regional_investigation(HR_map, all_patients, lower_hazard, upper_hazard, dataDir=r'../Data//Deep_learning_results/deltaRMaps'):
+def regional_investigation(HR_map, all_patients, region_of_interest, upper_hazard, dataDir=r'../Data//Deep_learning_results/deltaRMaps'):
     """
     A function that will extract statistics in a specified region of HR maps for all patients.
     - Find the median value of delta R for each patient in the region.
 
     :param HR_map: A hazard ratio map
     :param all_patients: A data frame featuring all information for all patients
-    :param lower_hazard: The lower HR value (<1) on the map, will find all voxel coordinates at values below this
+    :param region_of_interest: A string containing the region you wish to analyse
     :param upper_hazard: The upper HR value (>1) on the map, will find all voxel coordinates at values greater than this
     :return: A list of median values in the specified region for all patients (use for KM plots).
     """
 
-    # Create a mask of the region of interests
-    HR_mask = HR_map.copy()
-    lower_ROI_mask = HR_mask.mask(HR_mask > lower_hazard, 0)
-    lower_ROI_mask = lower_ROI_mask.mask(lower_ROI_mask != 0, 1)
-    upper_ROI_mask = HR_mask.mask(HR_mask < upper_hazard, 0)
+    # Import mask of the ROI
+    ROI_mask = pd.read_csv(r'/Users/Alex Jenkins/PycharmProjects/Contour-Analysis/Results/CSV/deltaR_%s_HR.csv'
+                           % region_of_interest, header=0)
+
+    upper_ROI_mask = ROI_mask.mask(ROI_mask > upper_hazard, 0)
     upper_ROI_mask = upper_ROI_mask.mask(upper_ROI_mask != 0, 1)
 
     # Loop through all patient maps, and multiply each by each mask, and calculate ROI statistics
     df = pd.DataFrame(all_patients["patientList"])
     dfFiles = df.assign(file_path=lambda df: df["patientList"].map(lambda x: r'%s/%s.csv' % (dataDir, x)))
-    # masterDF = pd.DataFrame.empty
-    lower_array = []
+
     upper_array = []
     x = 0
     for f in dfFiles.file_path:
         patient_map = pd.read_csv(f, header=None)
         patient_map = patient_map.drop(patient_map.index[59])
-        patient_lower_region = pd.DataFrame(lower_ROI_mask.values * patient_map.values)
         patient_upper_region = pd.DataFrame(upper_ROI_mask.values * patient_map.values)
-        lower_array.append(np.sqrt(np.mean(np.square(patient_lower_region.values))))#.mean())
-        upper_array.append(np.sqrt(np.mean(np.square(patient_upper_region.values))))#patient_upper_region.values.mean())
+        upper_array.append(patient_upper_region.values.mean())
         x = x + 1
 
-    all_patients['mean_lower_region'] = lower_array
     all_patients['mean_upper_region'] = upper_array
 
     return all_patients
@@ -543,6 +540,23 @@ def test_categorical_map():
     print(new)
     # print(final_map.shape)
     return
+
+
+def COM_analysis(COM_df):
+    """
+    A function which will calculate the distance between the COM_auto and COM_man.
+
+    :param COM_df: A dataframe containing the COM coordinates of the auto and man contours for all patients.
+    :param
+    :return: COM_df, updated to contain differences in each direction
+    """
+
+    COM_df['dx'] = COM_df['COMx'] - COM_df['ManCOMx']
+    COM_df['dy'] = COM_df['COMy'] - COM_df['ManCOMy']
+    COM_df['dz'] = COM_df['COMz'] - COM_df['ManCOMz']
+
+    return COM_df
+
 
 if __name__ == '__main__':
     # read_and_return_patient_stats()

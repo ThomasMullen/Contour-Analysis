@@ -69,7 +69,7 @@ def test_superimpose(t_map, pos_t_dist, neg_t_dist):
     plt.show()
 
 
-def map_with_thresholds(statistic_map, cbar_label, per_what, vmax, vmin, colours, p_contours=[5, 95], is_percentile=True):
+def map_with_thresholds(statistic_map, cbar_label, contour_type, per_what, vmax, vmin, colours, p_contours=[5, 95], is_percentile=True):
     '''
     This will plot the contours superimposed on the statistic map which is np.flip vertically
     :param t_map: take in the numpy array t-map
@@ -82,11 +82,11 @@ def map_with_thresholds(statistic_map, cbar_label, per_what, vmax, vmin, colours
         p_95 = np.percentile(statistic_map.flatten(), p_contours)
         # p_999 = np.percentile(statistic_map.flatten(), p_999)
     # levels = p_95 + p_999
-    plt.contour(coutour_map, levels=p_contours, colors=colours, linewidths=2, linestyles=['dashed','dashed','solid','solid'])
+    plt.contour(coutour_map, levels=p_contours, colors=colours, linewidths=2, linestyles=contour_type)
     plt.gca()
     axes = create_polar_axis()
     sns.set_style("ticks")
-    # sns.set_context("paper")
+    # sns.set_context("talk")
     # sns.set_context("paper")
     plt.rcParams['font.family'] = 'times'
     # plt.rcParams['axes.labelweight'] = 'bold'
